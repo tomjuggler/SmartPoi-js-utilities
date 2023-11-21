@@ -19,7 +19,7 @@
 
   <script>
     function getFileList() {
-      fetch('http://192.168.1.1/list?dir=/')
+      fetch('http://192.168.8.78/list?dir=/')
         .then(response => {
           if (!response.ok) {
             throw new Error('Network response was not ok');

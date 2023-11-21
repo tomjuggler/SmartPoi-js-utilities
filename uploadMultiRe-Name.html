@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Multiple File Upload</title>
+</head>
+<body>
+  <h1>Upload Multiple Files</h1>
+  <input type="file" id="fileInput" multiple>
+  <button onclick="uploadFiles()">Upload</button>
+  
+  <script>
+    function getCharFromIndex(index) {
+      const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      return characters.charAt(index);
+    }
+
+    function uploadFiles() {
+      const fileInput = document.getElementById('fileInput');
+      const files = fileInput.files;
+
+      if (!files.length) {
+        alert('Please select at least one file.');
+        return;
+      }
+
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData();
+        const charAtIndex = getCharFromIndex(i);
+        const fileName = charAtIndex + '.bin'; // Single-character name with .bin extension
+        formData.append('file', files[i], fileName);
+
+        fetch('http://192.168.1.1/edit', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`File ${fileName} upload failed`);
+          }
+          if (i === files.length - 1) {
+            alert('Files uploaded successfully!');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert(`There was an error uploading file ${fileName}.`);
+        });
+      }
+    }
+  </script>
+</body>
+</html>

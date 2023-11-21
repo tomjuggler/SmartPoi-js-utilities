@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Upload and Conversion</title>
+</head>
+<body>
+    <input type="file" id="fileInput" accept="image/*">
+    <button onclick="handleUpload()">Upload and Convert</button>
+
+    <script src="jimp.min.js"></script>
+    <script>
+        async function compressImageTo8BitColor(file) {
+            try {
+                const reader = new FileReader();
+
+                reader.onload = async function (event) {
+                    try {
+                        const image = await Jimp.read(event.target.result);
+
+                        const resizedImage = image.resize(36, Jimp.AUTO);
+                        const rotatedImage = resizedImage.rotate(90);
+                        // const rotatedImage = image.rotate(90);
+
+                        const binaryData = [];
+
+                        rotatedImage.scan(0, 0, rotatedImage.bitmap.height, rotatedImage.bitmap.width, function (x, y, idx) {
+                            const r = this.bitmap.data[idx + 0];
+                            const g = this.bitmap.data[idx + 1];
+                            const b = this.bitmap.data[idx + 2];
+
+                            const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6));
+                            binaryData.push(encoded);
+                            console.log(".");
+                        });
+
+                        const fileName = file.name.replace(/\.[^/.]+$/, "") + '.bin'; // Create the new filename with .bin extension
+
+                        const formData = new FormData();
+                        formData.append('file', new Blob([Buffer.from(binaryData)], { type: 'application/octet-stream' }), fileName);
+
+                        const requestOptions = {
+                            method: 'POST',
+                            body: formData,
+                        };
+
+                        fetch('http://192.168.8.78/edit', requestOptions)
+                            .then(response => response.text())
+                            .then(data => console.log(data))
+                            .catch(error => console.error('Error:', error));
+                    } catch (error) {
+                        console.error('Error processing image:', error);
+                    }
+                };
+
+                reader.readAsDataURL(file);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function handleUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (file) {
+                compressImageTo8BitColor(file);
+            } else {
+                console.error('Please select a file.');
+            }
+        }
+    </script>
+</body>
+</html>
