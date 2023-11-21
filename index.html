@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>File List</title>
+  <style>
+    textarea {
+      width: 300px;
+      height: 200px;
+      resize: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>File List</h1>
+  <button onclick="getFileList()">Get File List</button>
+  <br>
+  <textarea id="fileListTextArea" placeholder="File list will appear here"></textarea>
+
+  <script>
+    function getFileList() {
+      fetch('http://192.168.1.1/list?dir=/')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.text();
+        })
+        .then(data => {
+          document.getElementById('fileListTextArea').value = data;
+        })
+        .catch(error => {
+          console.error('There was a problem fetching the file list:', error);
+        });
+    }
+  </script>
+</body>
+</html>
