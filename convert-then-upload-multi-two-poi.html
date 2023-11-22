@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Upload and Conversion</title>
+</head>
+<body>
+    <input type="file" id="fileInput" accept="image/*" multiple>
+    <button onclick="handleUpload()">Upload and Convert</button>
+
+    <script src="jimp.min.js"></script>
+    <script>
+        function getCharFromIndex(index) {
+            const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            return characters.charAt(index);
+        }
+
+        async function compressImagesAndSend(files) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const charAtIndex = getCharFromIndex(i);
+                try {
+                    const reader = new FileReader();
+
+                    reader.onload = async function (event) {
+                        try {
+                            const image = await Jimp.read(event.target.result);
+
+                            const rotatedImage = image.rotate(-90);
+                            const resizedImage = rotatedImage.resize(36, Jimp.AUTO);
+
+                            const binaryData = [];
+
+                            resizedImage.scan(0, 0, resizedImage.bitmap.width, resizedImage.bitmap.height, function (x, y, idx) {
+                                const r = this.bitmap.data[idx + 0];
+                                const g = this.bitmap.data[idx + 1];
+                                const b = this.bitmap.data[idx + 2];
+
+                                const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6));
+                                binaryData.push(encoded);
+                            });
+
+                            const fileName = charAtIndex + '.bin'; // Single-character name with .bin extension    
+
+                            await uploadToURL('http://192.168.1.1/edit', binaryData, fileName);
+                            await uploadToURL('http://192.168.1.78/edit', binaryData, fileName); // Modify this line for the second URL
+
+                            console.log(`File ${file.name} uploaded.`);
+                        } catch (error) {
+                            console.error('Error processing image:', error);
+                        }
+                    };
+
+                    reader.readAsDataURL(file);
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+            alert("FINISHED UPLOADING");
+        }
+
+        async function uploadToURL(url, data, fileName) {
+            const formData = new FormData();
+            formData.append('file', new Blob([Buffer.from(data)], { type: 'application/octet-stream' }), fileName);
+
+            const requestOptions = {
+                method: 'POST',
+                body: formData,
+            };
+
+            await fetch(url, requestOptions);
+        }
+
+        function handleUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+
+            if (files.length > 0) {
+                compressImagesAndSend(files);
+            } else {
+                alert("Please select at least one file.");
+                console.error('Please select at least one file.');
+            }
+        }
+    </script>
+</body>
+</html>
