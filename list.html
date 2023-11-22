@@ -5,8 +5,8 @@
   <title>File List</title>
   <style>
     textarea {
-      width: 300px;
-      height: 200px;
+      width: 500px;
+      height: 500px;
       resize: none;
     }
   </style>
@@ -19,7 +19,7 @@
 
   <script>
     function getFileList() {
-      fetch('http://192.168.8.78/list?dir=/')
+      fetch('http://192.168.1.1/list?dir=/')
         .then(response => {
           if (!response.ok) {
             throw new Error('Network response was not ok');
