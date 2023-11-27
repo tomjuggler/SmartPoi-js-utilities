@@ -43,7 +43,7 @@
                             body: formData,
                         };
 
-                        fetch('http://192.168.8.78/edit', requestOptions)
+                        fetch('http://192.168.1.1/edit', requestOptions)
                             .then(response => response.text())
                             .then(data => console.log(data))
                             .catch(error => console.error('Error:', error));

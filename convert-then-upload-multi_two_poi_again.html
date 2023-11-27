@@ -1,9 +1,7 @@
-<!-- CURRENTLY NOT WORKING CORRECTLY -->
-
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Two Poi Convert then Upload</title>
+    <title>Again</title>
 </head>
 <body>
     <input type="file" id="fileInput" accept="image/*" multiple>
@@ -12,11 +10,11 @@
     <script src="jimp.min.js"></script>
     <script>
         function getCharFromIndex(index) {
-            const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            return characters.charAt(index);
+        const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        return characters.charAt(index);
         }
 
-        async function compressImagesAndSend(files) {
+        async function compressImagesAndSend(files, ip) {
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const charAtIndex = getCharFromIndex(i);
@@ -29,6 +27,7 @@
 
                             const rotatedImage = image.rotate(-90);
                             const resizedImage = rotatedImage.resize(36, Jimp.AUTO);
+                            // const resizedImage = rotatedImage;
 
                             const binaryData = [];
 
@@ -39,15 +38,21 @@
 
                                 const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6));
                                 binaryData.push(encoded);
+                                console.log(".");
                             });
-
                             const fileName = charAtIndex + '.bin'; // Single-character name with .bin extension    
+                            // const fileName = file.name.replace(/\.[^/.]+$/, "") + '.bin'; // Create the new filename with .bin extension
 
-                            await uploadToURL('http://192.168.1.78/edit', binaryData, fileName);
-                            await uploadToURL('http://192.168.1.1/edit', binaryData, fileName);
-                             
+                            const formData = new FormData();
+                            formData.append('file', new Blob([Buffer.from(binaryData)], { type: 'application/octet-stream' }), fileName);
 
-                            console.log(`File ${file.name} uploaded.`);
+                            const requestOptions = {
+                                method: 'POST',
+                                body: formData,
+                            };
+
+                            await fetch('http://' + ip + '/edit', requestOptions);
+                            console.log('File ${file.name} uploaded. to ip http://'+ ip +'/edit');
                         } catch (error) {
                             console.error('Error processing image:', error);
                         }
@@ -58,19 +63,7 @@
                     console.error('Error:', error);
                 }
             }
-            // alert("FINISHED UPLOADING");
-        }
-
-        async function uploadToURL(url, data, fileName) {
-            const formData = new FormData();
-            formData.append('file', new Blob([Buffer.from(data)], { type: 'application/octet-stream' }), fileName);
-
-            const requestOptions = {
-                method: 'POST',
-                body: formData,
-            };
-
-            await fetch(url, requestOptions);
+            
         }
 
         function handleUpload() {
@@ -78,7 +71,10 @@
             const files = fileInput.files;
 
             if (files.length > 0) {
-                compressImagesAndSend(files);
+                let ipOne = "192.168.1.1";
+                let ipTwo = "192.168.1.78";
+                compressImagesAndSend(files, ipOne);
+                compressImagesAndSend(files, ipTwo);
             } else {
                 alert("Please select at least one file.");
                 console.error('Please select at least one file.');

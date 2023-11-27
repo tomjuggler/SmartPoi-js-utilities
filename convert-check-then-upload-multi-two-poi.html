@@ -1,0 +1,163 @@
+<!-- CURRENTLY NOT WORKING CORRECTLY -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Two Poi CHECK IMAGE convert and upload</title>
+</head>
+<body>
+    <input type="file" id="fileInput" accept="image/*" multiple onchange="handleFileSelect(event)">
+
+    <button onclick="handleUpload()">Upload and Convert</button>
+
+    <!-- Add an area to display images -->
+    <div id="imageDisplay"></div>
+
+    <script>
+        function getCharFromIndex(index) {
+            const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            return characters.charAt(index);
+        }
+
+        // Function to display the images
+        function displayImages(files) {
+            const imageDisplay = document.getElementById('imageDisplay');
+            imageDisplay.innerHTML = ''; // Clear previous images
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const reader = new FileReader();
+
+                reader.onload = function (event) {
+                    const imageElement = document.createElement('img');
+                    imageElement.src = event.target.result;
+                    imageElement.style.maxWidth = '200px'; // Set max width for display
+
+                    // Create checkboxes for selection
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = i;
+                    checkbox.name = 'imageCheckbox';
+
+                    // Append the image and checkbox to the display area
+                    imageDisplay.appendChild(checkbox);
+                    imageDisplay.appendChild(imageElement);
+                };
+
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleFileSelect(event) {
+            const files = event.target.files;
+
+            const imageDisplay = document.getElementById('imageDisplay');
+            imageDisplay.innerHTML = ''; // Clear previous images
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const reader = new FileReader();
+
+                reader.onload = function (event) {
+                    const imageElement = document.createElement('img');
+                    imageElement.src = event.target.result;
+                    imageElement.style.maxWidth = '200px'; // Set max width for display
+
+                    // Create checkboxes for selection
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = i;
+                    checkbox.name = 'imageCheckbox';
+
+                    // Append the image and checkbox to the display area
+                    imageDisplay.appendChild(checkbox);
+                    imageDisplay.appendChild(imageElement);
+                };
+
+                reader.readAsDataURL(file);
+            }
+        }
+
+       async function compressImagesAndSend() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+            const checkboxes = document.getElementsByName('imageCheckbox');
+
+            const selectedFiles = [];
+            checkboxes.forEach((checkbox, index) => {
+                if (checkbox.checked) {
+                    selectedFiles.push(files[index]);
+                }
+            });
+
+            if (selectedFiles.length === 0) {
+                alert("Please select at least one image to upload.");
+                return;
+            }
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const charAtIndex = getCharFromIndex(i);
+                
+                try {
+                    const reader = new FileReader();
+
+                    reader.onload = async function (event) {
+                        try {
+                            const image = new Image();
+                            image.onload = async function() {
+                                const canvas = document.createElement('canvas');
+                                const ctx = canvas.getContext('2d');
+                                canvas.width = image.width;
+                                canvas.height = image.height;
+                                ctx.drawImage(image, 0, 0);
+
+                                // Manipulate image here if needed
+
+                                const binaryData = canvas.toDataURL('image/jpeg'); // Convert image to data URL
+
+                                const fileName = charAtIndex + '.bin'; // Single-character name with .bin extension    
+
+                                await uploadToURL('http://192.168.1.78/edit', binaryData, fileName);
+                                await uploadToURL('http://192.168.1.1/edit', binaryData, fileName);
+
+                                console.log(`File ${file.name} uploaded.`);
+                            };
+                            image.src = event.target.result;
+                        } catch (error) {
+                            console.error('Error processing image:', error);
+                        }
+                    };
+
+                    reader.readAsDataURL(file);
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+
+            // alert("Selected images uploaded.");
+        }
+
+        async function uploadToURL(url, data, fileName) {
+            compressImagesAndSend();
+            // Simulate upload to URL - you'll need to implement your actual upload logic here
+            console.log(`Uploading ${fileName} to ${url}...`);
+            // Simulated delay for demonstration purposes (replace this with your actual upload logic)
+            // await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log(`Upload complete: ${fileName}`);
+        }
+
+        function handleUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+
+            if (files.length > 0) {
+                displayImages(files); // Display images for selection
+            } else {
+                alert("Please select at least one file.");
+                console.error('Please select at least one file.');
+            }
+        }
+    </script>
+</body>
+</html>
