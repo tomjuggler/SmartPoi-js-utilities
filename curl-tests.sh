@@ -25,3 +25,10 @@ curl http://192.168.1.78/pattern?patternChooserChange=1
 # maximum is 1800 (half an hour) - any more and re-set to 30min 
 curl http://192.168.1.1/intervalChange?interval=2
 curl http://192.168.1.78/intervalChange?interval=2
+
+# change brightness (integer): 
+# change brightness on the poi
+# minimum is 20 - default low brightness
+# maximum is 255 
+curl http://192.168.1.1/brightness?brt=100
+curl http://192.168.1.78/brightness?brt=100
