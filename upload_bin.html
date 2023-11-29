@@ -1,11 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Again</title>
+    <title>Uploads</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        /* Style for the input and button */
+        #fileInput {
+            display: block;
+            margin-bottom: 10px;
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        #uploadButton {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        /* Additional styles for mobile */
+        @media (max-width: 767px) {
+            #fileInput, #uploadButton {
+                width: calc(100% - 20px); /* Adjusting for padding and border */
+            }
+        }
+    </style>
 </head>
 <body>
     <input type="file" id="fileInput" accept="image/*" multiple>
-    <button onclick="handleUpload()">Upload and Convert</button>
+    <button id="uploadButton" onclick="handleUpload()">Upload and Convert</button>
 
     <script src="jimp.min.js"></script>
     <script>
