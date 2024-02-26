@@ -41,6 +41,31 @@
 
     <script src="jimp.min.js"></script>
     <script>
+
+        function createMessage(message) {
+            const messagesDiv = document.createElement('div');
+            messagesDiv.textContent = message;
+            messagesDiv.style.backgroundColor = '#DFF0D8';
+            messagesDiv.style.padding = '10px';
+            messagesDiv.style.border = '1px solid #007bff';
+            messagesDiv.style.borderRadius = '4px';
+            messagesDiv.style.marginBottom = '10px';
+
+            const body = document.getElementsByTagName('body')[0];
+            body.insertBefore(messagesDiv, body.firstChild);
+
+            setTimeout(() => {
+                messagesDiv.style.transition = 'all 50s';
+                messagesDiv.style.opacity = 0;
+
+                setTimeout(() => {
+                messagesDiv.remove();
+                }, 5000);
+            }, 10000);
+        }
+
+
+        const number_of_pixels = 72;
         function getCharFromIndex(index) {
         const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         return characters.charAt(index);
@@ -58,7 +83,7 @@
                             const image = await Jimp.read(event.target.result);
 
                             const rotatedImage = image.rotate(-90);
-                            const resizedImage = rotatedImage.resize(36, Jimp.AUTO);
+                            const resizedImage = rotatedImage.resize(number_of_pixels, Jimp.AUTO);
                             // const resizedImage = rotatedImage;
 
                             const binaryData = [];
@@ -85,6 +110,7 @@
 
                             await fetch('http://' + ip + '/edit', requestOptions);
                             console.log('File ${file.name} uploaded. to ip http://'+ ip +'/edit');
+                            createMessage('File ' + file.name + ' uploaded. to ip <a href="http://' + ip + '/edit">' + ip + '</a>');
                         } catch (error) {
                             console.error('Error processing image:', error);
                         }
@@ -105,8 +131,8 @@
             if (files.length > 0) {
                 let ipOne = "192.168.1.1";
                 let ipTwo = "192.168.1.78";
+                compressImagesAndSend(files, ipTwo); //Auxillary first
                 compressImagesAndSend(files, ipOne);
-                compressImagesAndSend(files, ipTwo);
             } else {
                 alert("Please select at least one file.");
                 console.error('Please select at least one file.');

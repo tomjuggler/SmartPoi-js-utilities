@@ -32,3 +32,8 @@ curl http://192.168.1.78/intervalChange?interval=2
 # maximum is 255 
 curl http://192.168.1.1/brightness?brt=100
 curl http://192.168.1.78/brightness?brt=100
+
+
+# list all files on device: 
+curl http://192.168.1.1/list?dir=/
+curl http://192.168.1.78/list?dir=/
