@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decompressed Image</title>
+</head>
+<body>
+    <img id="imageDisplay" src="" alt="Decompressed Image">
+
+    <script src="jimp.min.js"></script>
+
+    <script>
+        async function rotateImage90(imageUrl) {
+            return new Promise((resolve, reject) => {
+                Jimp.read(imageUrl, (err, image) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        // Rotate the image by -90 degrees
+                        image.rotate(90).getBase64Async(Jimp.MIME_PNG)
+                            .then(rotatedImageUrl => {
+                                resolve(rotatedImageUrl);
+                            })
+                            .catch(error => {
+                                reject(error);
+                            });
+                    }
+                });
+            });
+        }
+
+        async function decompress(binaryData) {
+            console.log("Decompress started");
+            const width = 72;
+            const height = Math.ceil(binaryData.length / width);
+            console.log("Height is: " + height);
+            // Create a new Jimp image with the specified width and height
+            const decompressedImage = new Jimp(width, height);
+
+            let dataIndex = 0;
+
+            // Iterate through each pixel and decompress
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    // Ensure we don't exceed the length of the binaryData
+                    if (dataIndex < binaryData.length) {
+                        const encodedValue = binaryData[dataIndex];
+
+                        // Decode the encoded value to extract RGB components
+                        const r = ((encodedValue & 0xE0) >> 5) << 3; // Red component
+                        const g = ((encodedValue & 0x1C) >> 2) << 3; // Green component
+                        const b = (encodedValue & 0x03) << 6; // Blue component
+
+                        // Set the pixel color in the decompressed image
+                        decompressedImage.setPixelColor(Jimp.rgbaToInt(r, g, b, 255), x, y);
+
+                        dataIndex++; // Move to the next encoded value
+                    } else {
+                        // If we run out of data, break the loop
+                        break;
+                    }
+                }
+            }
+
+            // Convert the decompressed image to a data URL
+            const imageUrl = await decompressedImage.getBase64Async(Jimp.MIME_PNG);
+
+            return imageUrl;
+        }
+
+async function decompressAndDisplay(ip, fileName) {
+    try {
+        const response = await fetch(`http://${ip}/edit?file=${fileName}`);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.statusText}`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const binaryData = new Uint8Array(arrayBuffer);
+        const imageUrl = await decompress(binaryData);
+        // Rotate the decompressed image
+        const rotatedImageUrl = await rotateImage90(imageUrl);
+        const imgElement = document.getElementById('imageDisplay');
+        imgElement.src = rotatedImageUrl; // Update the src attribute with the data URL
+    } catch (error) {
+        console.error('Error decompressing and displaying image:', error);
+    }
+}
+
+// Call the function with IP and file name
+decompressAndDisplay('192.168.1.1', 'b.bin');
+    </script>
+</body>
+</html>

@@ -76,6 +76,7 @@
                 const file = files[i];
                 const charAtIndex = getCharFromIndex(i);
                 try {
+                    createMessage("Processing " + file.name);
                     const reader = new FileReader();
 
                     reader.onload = async function (event) {
@@ -89,6 +90,7 @@
                             const binaryData = [];
 
                             resizedImage.scan(0, 0, resizedImage.bitmap.width, resizedImage.bitmap.height, function (x, y, idx) {
+                                
                                 const r = this.bitmap.data[idx + 0];
                                 const g = this.bitmap.data[idx + 1];
                                 const b = this.bitmap.data[idx + 2];
@@ -97,6 +99,7 @@
                                 binaryData.push(encoded);
                                 console.log(".");
                             });
+                            console.log("resizedImage.bitmap.height: of: " + charAtIndex + " is " + resizedImage.bitmap.height);
                             const fileName = charAtIndex + '.bin'; // Single-character name with .bin extension    
                             // const fileName = file.name.replace(/\.[^/.]+$/, "") + '.bin'; // Create the new filename with .bin extension
 
@@ -109,7 +112,7 @@
                             };
 
                             await fetch('http://' + ip + '/edit', requestOptions);
-                            console.log('File ${file.name} uploaded. to ip http://'+ ip +'/edit');
+                            console.log('File ' + file.name + ' uploaded. to ip http://'+ ip +'/edit');
                             createMessage('File ' + file.name + ' uploaded. to ip <a href="http://' + ip + '/edit">' + ip + '</a>');
                         } catch (error) {
                             console.error('Error processing image:', error);
@@ -121,14 +124,15 @@
                     console.error('Error:', error);
                 }
             }
-            
         }
+        
 
         function handleUpload() {
             const fileInput = document.getElementById('fileInput');
             const files = fileInput.files;
 
             if (files.length > 0) {
+                createMessage('Beginning Processing and Upload (Processing may take a while for lots of files)');
                 let ipOne = "192.168.1.1";
                 let ipTwo = "192.168.1.78";
                 compressImagesAndSend(files, ipTwo); //Auxillary first
