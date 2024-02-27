@@ -2,6 +2,28 @@
 <html lang="en">
 <head>
     <style>
+        body {
+            background-color: #222; /* Dark color code */
+            color: #fff; /* White text color for contrast */
+        }
+
+        /* Style for the button */
+        .dark-button {
+            background-color: #444; /* Darker shade than the body background */
+            color: #fff; /* White text color */
+            padding: 10px 20px; /* Adjust padding as needed */
+            border: none; /* Remove border */
+            border-radius: 5px; /* Optional: Add rounded corners */
+            cursor: pointer; /* Show pointer cursor on hover */
+            text-decoration: none; /* Remove default underline */
+            transition: background-color 0.3s ease; /* Smooth transition effect */
+        }
+
+        /* Style for button hover effect */
+        .dark-button:hover {
+            background-color: #666; /* Darken button color on hover */
+        }
+
         .image-container {
             background-color: black;
             border: 2px solid white;
@@ -34,13 +56,17 @@
     <title>Decompressed Images</title>
 </head>
 <body>
-    
+    <h1>File List</h1>
+  <button class="dark-button" onclick="getFilesAndDisplay()">Fetch and Display your poi images</button>
+  <br>
     <div id="imageContainer" style="background-color: black; border: 2px solid rgb(122, 122, 122); padding: 10px;"></div>
 
     <script src="jimp.min.js"></script>
 
     <script>
         
+        
+
         async function increaseBrightness(imageUrl, brightnessAmount) {
             return new Promise((resolve, reject) => {
                 Jimp.read(imageUrl, (err, image) => {
@@ -173,7 +199,7 @@ async function decompressAndDisplay(ip, fileName) {
         // Append the image and overlay elements to the container
         
         container.appendChild(imgElement);
-        container.appendChild(overlayElement);
+        // container.appendChild(overlayElement);
 
     } catch (error) {
         console.error('Error decompressing and displaying image:', error);
@@ -185,13 +211,58 @@ function getCharFromIndex(index) {
     return characters.charAt(index);
 }
 
+
 //get i number of images and display: 
-for (let i = 0; i < 52; i++) {
-    const charAtIndex = getCharFromIndex(i);
-    const fileName = charAtIndex + '.bin'; 
-    // Call the displaying function with IP and file name
-    decompressAndDisplay('192.168.1.1', fileName);
+// for (let i = 0; i < 52; i++) {
+//     const charAtIndex = getCharFromIndex(i);
+//     const fileName = charAtIndex + '.bin'; 
+//     // Call the displaying function with IP and file name
+//     decompressAndDisplay('192.168.1.1', fileName);
+// }
+
+// function getFileList() {
+//             fetch('http://192.168.1.1/list?dir=/')
+//                 .then(response => {
+//                 if (!response.ok) {
+//                     throw new Error('Network response was not ok');
+//                 }
+//                 return response.text();
+//                 })
+//                 .then(data => {
+//                 document.getElementById('fileListTextArea').value = data;
+//                 })
+//                 .catch(error => {
+//                 console.error('There was a problem fetching the file list:', error);
+//                 });
+//         }
+
+// Function to fetch file list and process files
+async function getFilesAndDisplay() {
+    const ip = '192.168.1.1'; // IP address
+    try {
+        // Fetch file list from the server
+        const fileListResponse = await fetch('http://' + ip + '/list?dir=/');
+        if (!fileListResponse.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const fileListJson = await fileListResponse.json();
+
+        // Filter file names to get only those ending with '.bin'
+        const fileNames = fileListJson.filter(entry => entry.name.endsWith('.bin'))
+                                       .map(entry => entry.name);
+
+        // Loop over file names and call decompressAndDisplay for each
+        for (const fileName of fileNames) {            
+            await decompressAndDisplay(ip, fileName);
+        }
+    } catch (error) {
+        console.error('There was a problem fetching the file list:', error);
+    }
 }
+
+// Call the processFiles function to fetch file list and process files
+// processFiles();
+
     </script>
 </body>
 </html>

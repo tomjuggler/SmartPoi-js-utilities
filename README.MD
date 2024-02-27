@@ -33,5 +33,5 @@ and reload to check the auxillary poi files.
 ### *curl examples for all poi http request end-points are provided in curl-tests.sh*
 
 ### NEW! 
-fetch_and_display.html - fetches binary data from poi and displays in the browser (actual data from poi!)
+fetch_and_display.html - fetches binary data from poi and displays as de-compressed images in the browser (actual images from poi!)
 - requires latest [SmartPoi firmware](https://github.com/tomjuggler/SmartPoi-Firmware) running on the SmartPoi hardware. Older firmware versions do not work with some features
