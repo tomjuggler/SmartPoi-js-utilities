@@ -79,6 +79,13 @@
     font-size: 18px;
     margin-top: 10px;
 }
+.black-image {
+    width: 72px;
+    height: 72px;
+    background-color: black;
+    display: inline-block;
+    margin: 5px; /* Adjust margin as needed */
+}
     </style>
 
 
@@ -95,7 +102,32 @@
     <script src="jimp.min.js"></script>
 
     <script>
-        
+        // Function to create placeholder images
+ // Function to create black images
+function createBlackImages() {
+    const container = document.getElementById('imageContainer');
+
+    // Loop through characters and create image elements
+    for (let i = 0; i < 52; i++) {
+        const char = getCharFromIndex(i);
+        const fileName = char + '.bin'; // Add ".bin" extension
+
+        try {
+            // Create image element
+            const imgElement = document.createElement('img');
+            imgElement.className = 'black-image'; // Add class for styling
+            imgElement.alt = fileName; // Set alt attribute with filename
+
+            // Append image element to container
+            container.appendChild(imgElement);
+        } catch (error) {
+            console.error('Error creating image:', error);
+        }
+    }
+}
+
+// Call the function to create black images
+createBlackImages();
         
 
         async function increaseBrightness(imageUrl, brightnessAmount) {
@@ -253,7 +285,22 @@ async function decompressAndDisplay(ip, fileName) {
         const container = document.getElementById('imageContainer');
 
         // Append the image element to the container
-        container.appendChild(imgElement);
+        // container.appendChild(imgElement);
+
+        //replace images: 
+        const images = container.querySelectorAll('img'); // Get all img elements in the container
+
+        images.forEach(img => {
+            if (img.alt === fileName) {
+                // Create a new image element
+                // const newImgElement = document.createElement('img');
+                // newImgElement.src = newSrc; // Set the src attribute with the new image URL
+                // newImgElement.alt = fileName; // Set the alt attribute with the file name
+
+                // Replace the old image with the new one
+                img.parentNode.replaceChild(imgElement, img);
+            }
+        });
 
     } catch (error) {
         console.error('Error decompressing and displaying image:', error);
@@ -462,7 +509,7 @@ async function getFilesAndDisplay() {
     const imageContainer = document.getElementById('imageContainer');
 
     // Clear the contents of the image container
-    imageContainer.innerHTML = '';
+    // imageContainer.innerHTML = '';
 
     const ip = '192.168.1.1'; // IP address
     try {
