@@ -48,6 +48,37 @@
         .image-container:hover .image-overlay {
             display: flex; /* Display the overlay on hover */
         }
+
+        .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8); /* semi-transparent black */
+    z-index: 9999; /* Higher z-index to ensure it appears above other content */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-container {
+    max-width: 90%;
+    max-height: 90%;
+    overflow: auto;
+    text-align: center;
+}
+
+.modal-container img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.modal-container p {
+    color: white;
+    font-size: 18px;
+    margin-top: 10px;
+}
     </style>
 
 
@@ -148,7 +179,7 @@
             return imageUrl;
         }
 
-async function decompressAndDisplay(ip, fileName) {
+        async function decompressAndDisplay(ip, fileName) {
     try {
         const response = await fetch(`http://${ip}/edit?file=${fileName}`);
         if (!response.ok) {
@@ -159,11 +190,6 @@ async function decompressAndDisplay(ip, fileName) {
         const binaryData = new Uint8Array(arrayBuffer);
         const imageUrl = await decompress(binaryData);
 
-        //increase brightness: (todo: not quite right, needs more contrast)
-        // const brightnessAmount = 0.3; // Increase brightness by 0.3
-
-        // brighterImageUrl = await increaseBrightness(imageUrl, brightnessAmount);
-
         // Rotate the decompressed image
         const rotatedImageUrl = await rotateImage90(imageUrl);
 
@@ -172,39 +198,66 @@ async function decompressAndDisplay(ip, fileName) {
         imgElement.src = rotatedImageUrl; // Set the src attribute with the rotated image URL
         imgElement.alt = fileName; // Set the alt attribute with the file name
 
+        // Attach click event listener to the image element
+        imgElement.addEventListener('click', function() {
+            displayImageInModal(imgElement.src, imgElement.alt);
+        });
+
         const container = document.getElementById('imageContainer');
 
-        //todo: mouseOver functions not working
-        // imgElement.addEventListener('mouseover', function() {
-        //     // Create a text overlay element
-        //     const overlayElement = document.createElement('div');
-        //     overlayElement.classList.add('image-overlay');
-        //     overlayElement.textContent = fileName; // Display the file name
-
-        //     // Append the overlay element to the image container
-        //     container.appendChild(overlayElement);
-        // });
-
-        // // Add mouseout event listener to remove the overlay when mouse leaves the image
-        // imgElement.addEventListener('mouseout', function() {
-        //     // Select and remove the overlay element
-        //     const overlayElement = container.querySelector('.image-overlay');
-        //     if (overlayElement) {
-        //         overlayElement.remove();
-        //     }
-        // });
-
-        
-
-        // Append the image and overlay elements to the container
-        
+        // Append the image element to the container
         container.appendChild(imgElement);
-        // container.appendChild(overlayElement);
 
     } catch (error) {
         console.error('Error decompressing and displaying image:', error);
     }
 }
+
+function displayImageInModal(imageSrc, imageName) {
+    // Clear existing modal if any
+    clearModal();
+
+    // Create a modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.classList.add('modal-overlay');
+
+    // Create a modal container
+    const modalContainer = document.createElement('div');
+    modalContainer.classList.add('modal-container');
+
+    // Create an image element for the modal
+    const modalImage = document.createElement('img');
+    modalImage.src = imageSrc;
+    modalImage.style.width = '200%'; // Zoom the image to 200%
+
+    // Create a paragraph element for the filename
+    const filenameParagraph = document.createElement('p');
+    filenameParagraph.textContent = imageName;
+
+    // Append the image and filename paragraph to the modal container
+    modalContainer.appendChild(modalImage);
+    modalContainer.appendChild(filenameParagraph);
+
+    // Append the modal container to the modal overlay
+    modalOverlay.appendChild(modalContainer);
+
+    // Append the modal overlay to the body
+    document.body.appendChild(modalOverlay);
+
+    // Add a click event listener to close the modal when clicked outside the image
+    modalOverlay.addEventListener('click', function() {
+        clearModal();
+    });
+}
+
+function clearModal() {
+    const modalOverlay = document.querySelector('.modal-overlay');
+    if (modalOverlay) {
+        modalOverlay.remove();
+    }
+}
+
+
 
 function getCharFromIndex(index) {
     const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
