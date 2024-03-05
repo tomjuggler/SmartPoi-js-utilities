@@ -179,14 +179,43 @@
             return imageUrl;
         }
 
+
+
+
+async function fetchDataWithRetry(url) {
+    console.log("fetching...");
+    const maxRetries = 5; // Maximum number of retries
+    let retries = 0; // Initialize the number of retries
+    while (retries < maxRetries) {
+        try {
+            console.log(retries);
+            const response = await fetch(url);
+            if (!response.ok) {
+                // throw new Error(`Failed to fetch image: ${response.statusText}`);
+                console.log("not able to get image, should retry now?");
+            }
+            // Return response if successful
+            console.log(`got response for ${url}`);
+            return response;
+        } catch (error) {
+            console.error('Error fetching image:', error);
+            retries++; // Increment the retry count
+            console.log(`Retrying... Attempt ${retries}/${maxRetries}`);
+        }
+    }
+    // If all retries fail, throw an error
+    throw new Error(`Failed to fetch image after ${maxRetries} attempts`);
+}
+
 // DISPLAY IMAGES FROM POI CODE HERE: 
 
-async function decompressAndDisplay(ip, fileName) {
+async function decompressAndDisplay(ip, fileName) {    
     try {
-        const response = await fetch(`http://${ip}/edit?file=${fileName}`);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch image: ${response.statusText}`);
-        }
+        // const response = await fetch(`http://${ip}/edit?file=${fileName}`);
+        const response = await fetchDataWithRetry(`http://${ip}/edit?file=${fileName}`);
+        // if (!response.ok) {
+        //     throw new Error(`Failed to fetch image: ${response.statusText}`);
+        // }
 
         const arrayBuffer = await response.arrayBuffer();
         const binaryData = new Uint8Array(arrayBuffer);
@@ -214,10 +243,11 @@ async function decompressAndDisplay(ip, fileName) {
             event.preventDefault();
             // Accessing the first file from the dropped files
             const droppedFile = event.dataTransfer.files[0];
-            const draggedFilePath = droppedFile ? URL.createObjectURL(droppedFile) : '';            
+            const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';            
             const imageName = imgElement.alt;
             // displayDraggedFileDetails(draggedFilePath, imageName);
-            uploadDraggedFile(draggedFilePath, imageName);
+            uploadDraggedFile(draggedFileBlob, imageName);
+            imgElement.src = draggedFileBlob;
         });
 
         const container = document.getElementById('imageContainer');
@@ -265,6 +295,17 @@ function displayImageInModal(imageSrc, imageName) {
     modalOverlay.addEventListener('click', function() {
         clearModal();
     });
+
+    // not working
+    // modalOverlay.addEventListener('drop', function(event) {
+    //     event.preventDefault();
+    //     // Accessing the first file from the dropped files
+    //     const droppedFile = event.dataTransfer.files[0];
+    //     const draggedFilePath = droppedFile ? URL.createObjectURL(droppedFile) : '';            
+    //     const imageName = imageName;
+    //     // displayDraggedFileDetails(draggedFilePath, imageName);
+    //     uploadDraggedFile(draggedFilePath, imageName);
+    // });
 }
 
 function clearModal() {
@@ -417,6 +458,12 @@ async function send_specific_image(image_blob, replace_filename, ip) {
 
 // Function to fetch file list and process files
 async function getFilesAndDisplay() {
+    // Select the image container element
+    const imageContainer = document.getElementById('imageContainer');
+
+    // Clear the contents of the image container
+    imageContainer.innerHTML = '';
+
     const ip = '192.168.1.1'; // IP address
     try {
         // Fetch file list from the server
