@@ -354,7 +354,15 @@ async function decompressAndDisplay(ip, fileName) {
             imgElementReplacement.alt = fileName; // Set alt attribute with filename
 
             // Append image element to container
-            container_replace.appendChild(imgElementReplacement);
+            // container_replace.appendChild(imgElementReplacement);
+
+            const imagestwo = container_replace.querySelectorAll('img'); // Get all img elements in the container
+
+            imagestwo.forEach(img => {
+                if (img.alt === fileName) {
+                    img.parentNode.replaceChild(imgElementReplacement, img);
+                }
+            });
         } catch (error) {
             console.error('Error creating image:', error);
         }
