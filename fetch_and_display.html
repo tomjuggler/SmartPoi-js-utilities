@@ -268,20 +268,51 @@ async function fetchDataWithRetry(url) {
 // DISPLAY IMAGES FROM POI CODE HERE: 
 
 async function decompressAndDisplay(ip, fileName) {    
-    try {
-        // const response = await fetch(`http://${ip}/edit?file=${fileName}`);
-        const response = await fetchDataWithRetry(`http://${ip}/edit?file=${fileName}`);
-        // if (!response.ok) {
-        //     throw new Error(`Failed to fetch image: ${response.statusText}`);
+    try{
+        let response;
+        try {
+            // response = await fetch(`http://${ip}/edit?file=${fileName}`);
+            response = await fetchDataWithRetry(`http://${ip}/edit?file=${fileName}`);
+            // if (!response.ok) {
+            //     throw new Error(`Failed to fetch image: ${response.statusText}`);
+            // }
+        } catch(error){
+            console.error("error fetching data for: " + fileName + " ", error);
+        }
+        
+        // try{
+            const arrayBuffer = await response.arrayBuffer();
+            if(arrayBuffer){
+                console.log("arrayBuffer for : " + fileName + " " + arrayBuffer);
+            } else{
+                console.log("NO ARRAYBUFFER!" + fileName + " ");
+            }
+            
+            const binaryData = new Uint8Array(arrayBuffer);
+            if(binaryData){
+                console.log("binaryData: " + fileName + " " + binaryData);
+            } else{
+                console.log("NO BINARYDATA!" + fileName + " ");
+            }
+            const imageUrl = await decompress(binaryData);
+            if(imageUrl){
+                console.log("imageUrl: " + fileName + " " + imageUrl);
+            } else{
+                console.log("NO IMAGEURL!" + fileName + " ");
+            }
+        // } catch(error){
+        //     console.log("error with binary decompression?");
         // }
-
-        const arrayBuffer = await response.arrayBuffer();
-        const binaryData = new Uint8Array(arrayBuffer);
-        const imageUrl = await decompress(binaryData);
+        
 
         // Rotate the decompressed image
-        const rotatedImageUrl = await rotateImage90(imageUrl);
-
+        let rotatedImageUrl;
+        try{
+            rotatedImageUrl = await rotateImage90(imageUrl);
+        } catch (error){
+            console.error('error rotating:', error);
+        }
+       
         // Create a new image element
         const imgElement = document.createElement('img');
         imgElement.src = rotatedImageUrl; // Set the src attribute with the rotated image URL
@@ -337,7 +368,7 @@ async function decompressAndDisplay(ip, fileName) {
         });
 
     } catch (error) {
-        console.error('Error decompressing and displaying image:', error);
+        console.error('Error decompressing and displaying image: ' + fileName, error);
         try {
             let containerId_replace;
 
