@@ -12,10 +12,14 @@
   </style>
 </head>
 <body>
-  <h1>File List</h1>
-  <button onclick="getFileList()">Get File List</button>
+  <h1>File Lists</h1>
+  <button onclick="getFileList()">Get Main File List</button>
   <br>
-  <textarea id="fileListTextArea" placeholder="File list will appear here"></textarea>
+  <textarea id="fileListTextArea" placeholder="Main Poi Files will appear here"></textarea>
+  <br>
+  <button onclick="getFileListTwo()">Get Auxillary File List</button>
+  <br>
+  <textarea id="fileListTextAreatwo" placeholder="Auxillary Poi Files will appear here"></textarea>
 
   <script>
     function getFileList() {
@@ -28,6 +32,21 @@
         })
         .then(data => {
           document.getElementById('fileListTextArea').value = data;
+        })
+        .catch(error => {
+          console.error('There was a problem fetching the file list:', error);
+        });
+    }
+    function getFileListTwo() {
+      fetch('http://192.168.1.78/list?dir=/')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.text();
+        })
+        .then(data => {
+          document.getElementById('fileListTextAreatwo').value = data;
         })
         .catch(error => {
           console.error('There was a problem fetching the file list:', error);

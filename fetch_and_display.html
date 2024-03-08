@@ -97,7 +97,10 @@
     <h1>File List</h1>
   <button class="dark-button" onclick="getFilesAndDisplay()">Fetch and Display your poi images</button>
   <br>
+    <h1>MAIN POI</h1>
     <div id="imageContainer" style="background-color: black; border: 2px solid rgb(122, 122, 122); padding: 10px;"></div>
+    <h1>AUXILLARY POI</h1>
+    <div id="imageContainertwo" style="background-color: black; border: 2px solid rgb(122, 122, 122); padding: 10px;"></div>
 
     <script src="jimp.min.js"></script>
 
@@ -126,8 +129,31 @@ function createBlackImages() {
     }
 }
 
+function createBlackImagesTwo() {
+    const containertwo = document.getElementById('imageContainertwo');
+
+    // Loop through characters and create image elements
+    for (let i = 0; i < 52; i++) {
+        const char = getCharFromIndex(i);
+        const fileName = char + '.bin'; // Add ".bin" extension
+
+        try {
+            // Create image element
+            const imgElementtwo = document.createElement('img');
+            imgElementtwo.className = 'black-image'; // Add class for styling
+            imgElementtwo.alt = fileName; // Set alt attribute with filename
+
+            // Append image element to container
+            containertwo.appendChild(imgElementtwo);
+        } catch (error) {
+            console.error('Error creating image:', error);
+        }
+    }
+}
+
 // Call the function to create black images
 createBlackImages();
+createBlackImagesTwo();
         
 
         async function increaseBrightness(imageUrl, brightnessAmount) {
@@ -278,11 +304,19 @@ async function decompressAndDisplay(ip, fileName) {
             const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';            
             const imageName = imgElement.alt;
             // displayDraggedFileDetails(draggedFilePath, imageName);
-            uploadDraggedFile(draggedFileBlob, imageName);
+            uploadDraggedFile(draggedFileBlob, imageName, ip);
             imgElement.src = draggedFileBlob;
         });
 
-        const container = document.getElementById('imageContainer');
+        let containerId;
+
+        if (ip === '192.168.1.78') {
+            containerId = 'imageContainertwo';
+        } else {
+            containerId = 'imageContainer';
+        }
+
+        const container = document.getElementById(containerId);
 
         // Append the image element to the container
         // container.appendChild(imgElement);
@@ -304,6 +338,26 @@ async function decompressAndDisplay(ip, fileName) {
 
     } catch (error) {
         console.error('Error decompressing and displaying image:', error);
+        try {
+            let containerId_replace;
+
+            if (ip === '192.168.1.78') {
+                containerId_replace = 'imageContainertwo';
+            } else {
+                containerId_replace = 'imageContainer';
+            }
+
+            const container_replace = document.getElementById(containerId_replace);
+            // Create image element - blank image on fail
+            const imgElementReplacement = document.createElement('img');
+            imgElementReplacement.className = 'black-image'; // Add class for styling
+            imgElementReplacement.alt = fileName; // Set alt attribute with filename
+
+            // Append image element to container
+            container_replace.appendChild(imgElementReplacement);
+        } catch (error) {
+            console.error('Error creating image:', error);
+        }
     }
 }
 
@@ -366,9 +420,8 @@ function displayDraggedFileDetails(filePath, imageName) {
     alert("File path of the dragged image: " + filePath + "\nFilename of the image it was dragged onto: " + imageName);
 }
 
-function uploadDraggedFile(file_blob, file_name){
-    let ipOne = "192.168.1.1";
-    send_specific_image(file_blob, file_name, ipOne);
+function uploadDraggedFile(file_blob, file_name, ip){
+    send_specific_image(file_blob, file_name, ip);
 }
 
 function clearModal() {
@@ -530,6 +583,36 @@ async function getFilesAndDisplay() {
         }
     } catch (error) {
         console.error('There was a problem fetching the file list:', error);
+    }
+
+
+    // All again for 2nd poi: 
+    // Select the image container element
+    const imageContainertwo = document.getElementById('imageContainertwo');
+
+    // Clear the contents of the image container
+    // imageContainer.innerHTML = '';
+
+    
+    const iptwo = '192.168.1.78'; // IP address
+    try {
+        // Fetch file list from the server
+        const fileListResponsetwo = await fetch('http://' + iptwo + '/list?dir=/');
+        if (!fileListResponsetwo.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const fileListJsontwo = await fileListResponsetwo.json();
+
+        // Filter file names to get only those ending with '.bin'
+        const fileNamestwo = fileListJsontwo.filter(entry => entry.name.endsWith('.bin'))
+                                       .map(entry => entry.name);
+
+        // Loop over file names and call decompressAndDisplay for each
+        for (const fileNametwo of fileNamestwo) {            
+            await decompressAndDisplay(iptwo, fileNametwo);
+        }
+    } catch (errortwo) {
+        console.error('There was a problem fetching the file list:', errortwo);
     }
 }
 
