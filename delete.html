@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delete Files</title>
+</head>
+<body>
+  <button id="deleteButton">Delete .bin</button>
+
+  <script>
+    const deleteButton = document.getElementById('deleteButton');
+
+    deleteButton.addEventListener('click', () => {
+
+      //main:
+      fetch('http://192.168.1.1/edit?path=/Z.bin', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          console.log('File deleted successfully');
+        } else {
+          console.error('Failed to delete file');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+
+      //auxillary
+      fetch('http://192.168.1.78/edit?path=/Z.bin', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          console.log('File deleted successfully');
+        } else {
+          console.error('Failed to delete file');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    });
+  </script>
+</body>
+</html>

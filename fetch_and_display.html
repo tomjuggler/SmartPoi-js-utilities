@@ -1,100 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <style>
         body {
-            background-color: #222; /* Dark color code */
-            color: #fff; /* White text color for contrast */
+            background-color: #222;
+            /* Dark color code */
+            color: #fff;
+            /* White text color for contrast */
         }
 
         /* Style for the button */
         .dark-button {
-            background-color: #444; /* Darker shade than the body background */
-            color: #fff; /* White text color */
-            padding: 10px 20px; /* Adjust padding as needed */
-            border: none; /* Remove border */
-            border-radius: 5px; /* Optional: Add rounded corners */
-            cursor: pointer; /* Show pointer cursor on hover */
-            text-decoration: none; /* Remove default underline */
-            transition: background-color 0.3s ease; /* Smooth transition effect */
+            background-color: #444;
+            /* Darker shade than the body background */
+            color: #fff;
+            /* White text color */
+            padding: 10px 20px;
+            /* Adjust padding as needed */
+            border: none;
+            /* Remove border */
+            border-radius: 5px;
+            /* Optional: Add rounded corners */
+            cursor: pointer;
+            /* Show pointer cursor on hover */
+            text-decoration: none;
+            /* Remove default underline */
+            transition: background-color 0.3s ease;
+            /* Smooth transition effect */
         }
 
         /* Style for button hover effect */
         .dark-button:hover {
-            background-color: #666; /* Darken button color on hover */
+            background-color: #666;
+            /* Darken button color on hover */
         }
 
         #file-list-container {
             display: flex;
-            flex-direction: column; /* This stacks the elements vertically */
-            align-items: center; /* This centers the elements horizontally */
-            justify-content: center; /* This centers the elements vertically */
+            flex-direction: column;
+            /* This stacks the elements vertically */
+            align-items: center;
+            /* This centers the elements horizontally */
+            justify-content: center;
+            /* This centers the elements vertically */
         }
+
         #container {
             display: flex;
         }
+
+        .centered-container {
+            display: flex;
+            flex-direction: column;
+            /* This stacks the elements vertically */
+            align-items: center;
+            /* This centers the elements horizontally */
+            justify-content: center;
+            /* This centers the elements vertically */
+        }
+
         .image-container {
             background-color: black;
             border: 2px solid white;
             padding: 10px;
-            position: relative; /* Required for positioning the overlay */
+            position: relative;
+            /* Required for positioning the overlay */
         }
-        
+
         .image-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+            background-color: rgba(0, 0, 0, 0.5);
+            /* Semi-transparent black background */
             /* display: none; Initially hidden */
             justify-content: center;
             align-items: center;
             color: white;
             font-size: 16px;
         }
-        
+
         .image-container:hover .image-overlay {
-            display: flex; /* Display the overlay on hover */
+            display: flex;
+            /* Display the overlay on hover */
         }
 
         .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8); /* semi-transparent black */
-    z-index: 9999; /* Higher z-index to ensure it appears above other content */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            /* semi-transparent black */
+            z-index: 9999;
+            /* Higher z-index to ensure it appears above other content */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-.modal-container {
-    max-width: 90%;
-    max-height: 90%;
-    overflow: auto;
-    text-align: center;
-}
+        .modal-container {
+            max-width: 90%;
+            max-height: 90%;
+            overflow: auto;
+            text-align: center;
+        }
 
-.modal-container img {
-    max-width: 100%;
-    max-height: 100%;
-}
+        .modal-container img {
+            max-width: 100%;
+            max-height: 100%;
+        }
 
-.modal-container p {
-    color: white;
-    font-size: 18px;
-    margin-top: 10px;
-}
-.black-image {
-    width: 72px;
-    height: 72px;
-    background-color: black;
-    display: inline-block;
-    margin: 5px; /* Adjust margin as needed */
-}
+        .modal-container p {
+            color: white;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        .black-image {
+            width: 72px;
+            height: 72px;
+            background-color: black;
+            display: inline-block;
+            margin: 5px;
+            /* Adjust margin as needed */
+        }
     </style>
 
 
@@ -102,89 +136,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Decompressed Images</title>
 </head>
+
 <body>
 
     <div id="file-list-container">
-        <h1>POI IMAGES:</h1>        
-        <p><i>Click image to see name - if no image is displayed, clicking the name will attempt to fetch from poi and display</i></p>
+        <h1>POI IMAGES:</h1>
+        <p><i>Click image to see name - if no image is displayed, clicking the name will attempt to fetch from poi and
+                display</i></p>
         <p><i>Drag an image from file manager and drop onto the image (or name) you want to replace.</i></p>
         <p><i>You can even drag images between poi.</i></p>
         <button class="dark-button" onclick="getFilesAndDisplay()">Fetch and Display all poi images</button>
-      </div>
-      
-    
-  
-  <div id="container">
-    <div>
-      <h1>MAIN POI</h1>
-      <button class="dark-button" onclick="getFilesOne()">Fetch and Display Main poi images</button>
-      <div id="imageContainer" style="background-color: black; border: 2px solid rgb(122, 122, 122); padding: 10px;"></div>
     </div>
-    <div>
-      <h1>AUXILLARY POI</h1>
-      <button class="dark-button" onclick="getFilesTwo()">Fetch and Display Auxillary poi images</button>
-      <div id="imageContainertwo" style="background-color: black; border: 2px solid rgb(122, 122, 122); padding: 10px;"></div>
+
+
+
+    <div id="container">
+        <div>
+            <h1>MAIN POI</h1>
+            <button class="dark-button" onclick="getFilesOne()">Fetch and Display Main poi images</button>
+            <div id="imageContainer"
+                style="background-color: black; border: 2px solid rgb(122, 122, 122); padding: 10px;"></div>
+        </div>
+        <div>
+            <h1>AUXILLARY POI</h1>
+            <button class="dark-button" onclick="getFilesTwo()">Fetch and Display Auxillary poi images</button>
+            <div id="imageContainertwo"
+                style="background-color: black; border: 2px solid rgb(122, 122, 122); padding: 10px;"></div>
+        </div>
     </div>
-  </div>
-  
+
+    <div class="centered-container">
+        <button id='deletebutton' class="dark-button" onclick="deleteAll()">!? BUTTON TO DELETE ALL IMAGES CURRENTLY ON POI  ?!</button>
+    </div>
 
     <script src="jimp.min.js"></script>
 
     <script>
-        
- // Function to create black placeholder images
+    const deleteButton = document.getElementById('deleteButton');
+        // Function to create black placeholder images
 
- function createBlackImages(containerId, ip) {
-    const container = document.getElementById(containerId);
+        function createBlackImages(containerId, ip) {
+            const container = document.getElementById(containerId);
 
-    // Loop through characters and create image elements
-    for (let i = 0; i < 52; i++) {
-        const char = getCharFromIndex(i);
-        const fileName = char + '.bin'; // Add ".bin" extension
+            // Loop through characters and create image elements
+            for (let i = 0; i < 52; i++) {
+                const char = getCharFromIndex(i);
+                const fileName = char + '.bin'; // Add ".bin" extension
 
-        try {
-            // Create image element
-            const imgElement = document.createElement('img');
-            imgElement.className = 'black-image'; // Add class for styling
-            imgElement.alt = fileName; // Set alt attribute with filename
-
-            // Attach click event listener to the image element
-            imgElement.addEventListener('click', function() {
-                decompressAndDisplay(ip, fileName);
-                // displayImageInModal(imgElement.src, imgElement.alt);
-            });
-
-            // Attach dragover and drop event listeners to the image element
-            imgElement.addEventListener('dragover', function(event) {
-                event.preventDefault();
-            });
-
-            imgElement.addEventListener('drop', function(event) {
-                event.preventDefault();
-                // Accessing the first file from the dropped files
-                const droppedFile = event.dataTransfer.files[0];
-                const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';            
-                const imageName = imgElement.alt;
                 try {
-                    uploadDraggedFile(draggedFileBlob, imageName, ip);
-                } catch(error) {
-                    console.error('Error uploading: ', error);
-                } finally {
-                    imgElement.src = draggedFileBlob;
+                    // Create image element
+                    const imgElement = document.createElement('img');
+                    imgElement.className = 'black-image'; // Add class for styling
+                    imgElement.alt = fileName; // Set alt attribute with filename
+
+                    // Attach click event listener to the image element
+                    imgElement.addEventListener('click', function () {
+                        decompressAndDisplay(ip, fileName);
+                        // displayImageInModal(imgElement.src, imgElement.alt);
+                    });
+
+                    // Attach dragover and drop event listeners to the image element
+                    imgElement.addEventListener('dragover', function (event) {
+                        event.preventDefault();
+                    });
+
+                    imgElement.addEventListener('drop', function (event) {
+                        event.preventDefault();
+                        // Accessing the first file from the dropped files
+                        const droppedFile = event.dataTransfer.files[0];
+                        const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';
+                        const imageName = imgElement.alt;
+                        try {
+                            uploadDraggedFile(draggedFileBlob, imageName, ip);
+                        } catch (error) {
+                            console.error('Error uploading: ', error);
+                        } finally {
+                            imgElement.src = draggedFileBlob;
+                        }
+                    });
+
+                    // Append image element to container
+                    container.appendChild(imgElement);
+                } catch (error) {
+                    console.error('Error creating image:', error);
                 }
-            });
-
-            // Append image element to container
-            container.appendChild(imgElement);
-        } catch (error) {
-            console.error('Error creating image:', error);
+            }
         }
-    }
-}
 
-// Call the function to create black images:
-createBlackImages('imageContainer', '192.168.1.1');
-createBlackImages('imageContainertwo', '192.168.1.78');
+        // Call the function to create black images:
+        createBlackImages('imageContainer', '192.168.1.1');
+        createBlackImages('imageContainertwo', '192.168.1.78');
 
         async function increaseBrightness(imageUrl, brightnessAmount) {
             return new Promise((resolve, reject) => {
@@ -270,417 +311,449 @@ createBlackImages('imageContainertwo', '192.168.1.78');
 
 
 
-async function fetchDataWithRetry(url) {
-    console.log("fetching...");
-    const maxRetries = 5; // Maximum number of retries
-    let retries = 0; // Initialize the number of retries
-    while (retries < maxRetries) {
-        try {
-            console.log(retries);
-            const response = await fetch(url);
-            if (!response.ok) {
-                // throw new Error(`Failed to fetch image: ${response.statusText}`);
-                console.log("not able to get image, should retry now?");
-            }
-            // Return response if successful
-            console.log(`got response for ${url} : ${response}`);
-            return response;
-        } catch (error) {
-            console.error('Error fetching image:', error);
-            retries++; // Increment the retry count
-            console.log(`Retrying... Attempt ${retries}/${maxRetries}`);
-        }
-    }
-    // If all retries fail, throw an error
-    throw new Error(`Failed to fetch image after ${maxRetries} attempts`);
-}
-
-// DISPLAY IMAGES FROM POI CODE HERE: 
-let retryCount = 0;
-const MAX_RETRY_COUNT = 7;
-
-async function decompressAndDisplay(ip, fileName) {    
-    try{
-        let response;
-        try {
-            // response = await fetch(`http://${ip}/edit?file=${fileName}`);
-            response = await fetchDataWithRetry(`http://${ip}/edit?file=${fileName}`);
-            // if (!response.ok) {
-            //     throw new Error(`Failed to fetch image: ${response.statusText}`);
-            // }
-        } catch(error){
-            console.error("error fetching data for: " + fileName + " ", error);
-            throw error;
-        } finally{  
-        
-            const arrayBuffer = await response.arrayBuffer();
-            if(arrayBuffer){
-                console.log("arrayBuffer for : " + fileName + " " + arrayBuffer);
-            } else{
-                console.log("NO ARRAYBUFFER!" + fileName + " ");
-            }
-            
-            const binaryData = new Uint8Array(arrayBuffer);
-            if(binaryData){
-                console.log("binaryData: " + fileName + " " + binaryData);
-            } else{
-                console.log("NO BINARYDATA!" + fileName + " ");
-            }
-            const imageUrl = await decompress(binaryData);
-            if(imageUrl){
-                console.log("imageUrl: " + fileName + " " + imageUrl);
-            } else{
-                console.log("NO IMAGEURL!" + fileName + " ");
-            }
-        
-
-            // Rotate the decompressed image
-            let rotatedImageUrl;
-            try{
-                rotatedImageUrl = await rotateImage90(imageUrl);
-            } catch (error){
-                console.error('error rotating:', error);
-                throw error;
-            } finally{
-
-            
-        
-                // Create a new image element
-                const imgElement = document.createElement('img');
-                imgElement.src = rotatedImageUrl; // Set the src attribute with the rotated image URL
-                imgElement.alt = fileName; // Set the alt attribute with the file name
-
-                // Attach click event listener to the image element
-                imgElement.addEventListener('click', function() {
-                    displayImageInModal(imgElement.src, imgElement.alt);
-                });
-
-                // Attach dragover and drop event listeners to the image element
-                imgElement.addEventListener('dragover', function(event) {
-                    event.preventDefault();
-                });
-
-                imgElement.addEventListener('drop', function(event) {
-                    event.preventDefault();
-                    // Accessing the first file from the dropped files
-                    const droppedFile = event.dataTransfer.files[0];
-                    const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';            
-                    const imageName = imgElement.alt;
-                    // displayDraggedFileDetails(draggedFilePath, imageName);
-                    uploadDraggedFile(draggedFileBlob, imageName, ip);
-                    imgElement.src = draggedFileBlob;
-                });
-
-                let containerId;
-
-                if (ip === '192.168.1.78') {
-                    containerId = 'imageContainertwo';
-                } else {
-                    containerId = 'imageContainer';
+        async function fetchDataWithRetry(url) {
+            console.log("fetching...");
+            const maxRetries = 5; // Maximum number of retries
+            let retries = 0; // Initialize the number of retries
+            while (retries < maxRetries) {
+                try {
+                    console.log(retries);
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        // throw new Error(`Failed to fetch image: ${response.statusText}`);
+                        console.log("not able to get image, should retry now?");
+                    }
+                    // Return response if successful
+                    console.log(`got response for ${url} : ${response}`);
+                    return response;
+                } catch (error) {
+                    console.error('Error fetching image:', error);
+                    retries++; // Increment the retry count
+                    console.log(`Retrying... Attempt ${retries}/${maxRetries}`);
                 }
+            }
+            // If all retries fail, throw an error
+            throw new Error(`Failed to fetch image after ${maxRetries} attempts`);
+        }
 
-                const container = document.getElementById(containerId);
+        // DISPLAY IMAGES FROM POI CODE HERE: 
+        let retryCount = 0;
+        const MAX_RETRY_COUNT = 7;
 
-                // Append the image element to the container
-                // container.appendChild(imgElement);
+        async function decompressAndDisplay(ip, fileName) {
+            try {
+                let response;
+                try {
+                    // response = await fetch(`http://${ip}/edit?file=${fileName}`);
+                    response = await fetchDataWithRetry(`http://${ip}/edit?file=${fileName}`);
+                    // if (!response.ok) {
+                    //     throw new Error(`Failed to fetch image: ${response.statusText}`);
+                    // }
+                } catch (error) {
+                    console.error("error fetching data for: " + fileName + " ", error);
+                    throw error;
+                } finally {
 
-                //replace images: 
-                const images = container.querySelectorAll('img'); // Get all img elements in the container
+                    const arrayBuffer = await response.arrayBuffer();
+                    if (arrayBuffer) {
+                        console.log("arrayBuffer for : " + fileName + " " + arrayBuffer);
+                    } else {
+                        console.log("NO ARRAYBUFFER!" + fileName + " ");
+                    }
 
-                images.forEach(img => {
-                    if (img.alt === fileName) {
+                    const binaryData = new Uint8Array(arrayBuffer);
+                    if (binaryData) {
+                        console.log("binaryData: " + fileName + " " + binaryData);
+                    } else {
+                        console.log("NO BINARYDATA!" + fileName + " ");
+                    }
+                    const imageUrl = await decompress(binaryData);
+                    if (imageUrl) {
+                        console.log("imageUrl: " + fileName + " " + imageUrl);
+                    } else {
+                        console.log("NO IMAGEURL!" + fileName + " ");
+                    }
+
+
+                    // Rotate the decompressed image
+                    let rotatedImageUrl;
+                    try {
+                        rotatedImageUrl = await rotateImage90(imageUrl);
+                    } catch (error) {
+                        console.error('error rotating:', error);
+                        throw error;
+                    } finally {
+
+
+
                         // Create a new image element
-                        // const newImgElement = document.createElement('img');
-                        // newImgElement.src = newSrc; // Set the src attribute with the new image URL
-                        // newImgElement.alt = fileName; // Set the alt attribute with the file name
+                        const imgElement = document.createElement('img');
+                        imgElement.src = rotatedImageUrl; // Set the src attribute with the rotated image URL
+                        imgElement.alt = fileName; // Set the alt attribute with the file name
 
-                        // Replace the old image with the new one
-                        img.parentNode.replaceChild(imgElement, img);
+                        // Attach click event listener to the image element
+                        imgElement.addEventListener('click', function () {
+                            displayImageInModal(imgElement.src, imgElement.alt);
+                        });
+
+                        // Attach dragover and drop event listeners to the image element
+                        imgElement.addEventListener('dragover', function (event) {
+                            event.preventDefault();
+                        });
+
+                        imgElement.addEventListener('drop', function (event) {
+                            event.preventDefault();
+                            // Accessing the first file from the dropped files
+                            const droppedFile = event.dataTransfer.files[0];
+                            const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';
+                            const imageName = imgElement.alt;
+                            // displayDraggedFileDetails(draggedFilePath, imageName);
+                            uploadDraggedFile(draggedFileBlob, imageName, ip);
+                            imgElement.src = draggedFileBlob;
+                        });
+
+                        let containerId;
+
+                        if (ip === '192.168.1.78') {
+                            containerId = 'imageContainertwo';
+                        } else {
+                            containerId = 'imageContainer';
+                        }
+
+                        const container = document.getElementById(containerId);
+
+                        // Append the image element to the container
+                        // container.appendChild(imgElement);
+
+                        //replace images: 
+                        const images = container.querySelectorAll('img'); // Get all img elements in the container
+
+                        images.forEach(img => {
+                            if (img.alt === fileName) {
+                                // Create a new image element
+                                // const newImgElement = document.createElement('img');
+                                // newImgElement.src = newSrc; // Set the src attribute with the new image URL
+                                // newImgElement.alt = fileName; // Set the alt attribute with the file name
+
+                                // Replace the old image with the new one
+                                img.parentNode.replaceChild(imgElement, img);
+                            }
+                        });
                     }
-                });
-            }
-        }
-    } catch (error) {
-        console.error('Error decompressing and displaying image: ' + fileName, error);
-        if (retryCount < MAX_RETRY_COUNT) {
-            retryCount++;
-            decompressAndDisplay(ip, fileName); // Retry
-        } else {
-            console.error('Max retry count exceeded. Unable to decompress and display image: ' + fileName);
-            retryCount = 0;
-            //create placeholder image: 
-            try {
-                let containerId_replace;
-
-                if (ip === '192.168.1.78') {
-                    containerId_replace = 'imageContainertwo';
-                } else {
-                    containerId_replace = 'imageContainer';
                 }
-
-                const container_replace = document.getElementById(containerId_replace);
-                // Create image element - blank image on fail
-                const imgElementReplacement = document.createElement('img');
-                imgElementReplacement.className = 'black-image'; // Add class for styling
-                imgElementReplacement.alt = fileName; // Set alt attribute with filename
-
-                // Attach click event listener to the image element
-                imgElementReplacement.addEventListener('click', function() {
-                    decompressAndDisplay(ip, fileName);
-                    // displayImageInModal(imgElementReplacement.src, imgElementReplacement.alt);
-                });
-
-                // Attach dragover and drop event listeners to the image element
-                imgElementReplacement.addEventListener('dragover', function(event) {
-                    event.preventDefault();
-                });
-
-                imgElementReplacement.addEventListener('drop', function(event) {
-                    event.preventDefault();
-                    // Accessing the first file from the dropped files
-                    const droppedFileReplacement = event.dataTransfer.files[0];
-                    const draggedFileBlobReplacement = droppedFileReplacement ? URL.createObjectURL(droppedFileReplacement) : '';            
-                    const imageNameReplacement = imgElementReplacement.alt;
-                    // displayDraggedFileDetails(draggedFilePath, imageName);
-                    uploadDraggedFile(draggedFileBlobReplacement, imageNameReplacement, ip);
-                    imgElementReplacement.src = draggedFileBlobReplacement;
-                });
-
-                // Append image element to container
-                // container_replace.appendChild(imgElementReplacement);
-
-                const imagestwo = container_replace.querySelectorAll('img'); // Get all img elements in the container
-
-                imagestwo.forEach(img => {
-                    if (img.alt === fileName) {
-                        img.parentNode.replaceChild(imgElementReplacement, img);
-                    }
-                });
             } catch (error) {
-                console.error('Error creating image:', error);
+                console.error('Error decompressing and displaying image: ' + fileName, error);
+                if (retryCount < MAX_RETRY_COUNT) {
+                    retryCount++;
+                    decompressAndDisplay(ip, fileName); // Retry
+                } else {
+                    console.error('Max retry count exceeded. Unable to decompress and display image: ' + fileName);
+                    retryCount = 0;
+                    //create placeholder image: 
+                    try {
+                        let containerId_replace;
+
+                        if (ip === '192.168.1.78') {
+                            containerId_replace = 'imageContainertwo';
+                        } else {
+                            containerId_replace = 'imageContainer';
+                        }
+
+                        const container_replace = document.getElementById(containerId_replace);
+                        // Create image element - blank image on fail
+                        const imgElementReplacement = document.createElement('img');
+                        imgElementReplacement.className = 'black-image'; // Add class for styling
+                        imgElementReplacement.alt = fileName; // Set alt attribute with filename
+
+                        // Attach click event listener to the image element
+                        imgElementReplacement.addEventListener('click', function () {
+                            decompressAndDisplay(ip, fileName);
+                            // displayImageInModal(imgElementReplacement.src, imgElementReplacement.alt);
+                        });
+
+                        // Attach dragover and drop event listeners to the image element
+                        imgElementReplacement.addEventListener('dragover', function (event) {
+                            event.preventDefault();
+                        });
+
+                        imgElementReplacement.addEventListener('drop', function (event) {
+                            event.preventDefault();
+                            // Accessing the first file from the dropped files
+                            const droppedFileReplacement = event.dataTransfer.files[0];
+                            const draggedFileBlobReplacement = droppedFileReplacement ? URL.createObjectURL(droppedFileReplacement) : '';
+                            const imageNameReplacement = imgElementReplacement.alt;
+                            // displayDraggedFileDetails(draggedFilePath, imageName);
+                            uploadDraggedFile(draggedFileBlobReplacement, imageNameReplacement, ip);
+                            imgElementReplacement.src = draggedFileBlobReplacement;
+                        });
+
+                        // Append image element to container
+                        // container_replace.appendChild(imgElementReplacement);
+
+                        const imagestwo = container_replace.querySelectorAll('img'); // Get all img elements in the container
+
+                        imagestwo.forEach(img => {
+                            if (img.alt === fileName) {
+                                img.parentNode.replaceChild(imgElementReplacement, img);
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Error creating image:', error);
+                    }
+                }
             }
         }
-    }
-}
 
-function displayImageInModal(imageSrc, imageName) {
-    // Clear existing modal if any
-    clearModal();
-    // Create a modal overlay
-    const modalOverlay = document.createElement('div');
-    modalOverlay.classList.add('modal-overlay');
+        function displayImageInModal(imageSrc, imageName) {
+            // Clear existing modal if any
+            clearModal();
+            // Create a modal overlay
+            const modalOverlay = document.createElement('div');
+            modalOverlay.classList.add('modal-overlay');
 
-    // Create a modal container
-    const modalContainer = document.createElement('div');
-    modalContainer.classList.add('modal-container');
+            // Create a modal container
+            const modalContainer = document.createElement('div');
+            modalContainer.classList.add('modal-container');
 
-    // Create an image element for the modal
-    const modalImage = document.createElement('img');
-    modalImage.style.width = '200%'; // Zoom the image to 200% - todo: not working! 
-    modalImage.src = imageSrc;
-    
+            // Create an image element for the modal
+            const modalImage = document.createElement('img');
+            modalImage.style.width = '200%'; // Zoom the image to 200% - todo: not working! 
+            modalImage.src = imageSrc;
 
-    // Create a paragraph element for the filename
-    const filenameParagraph = document.createElement('p');
-    filenameParagraph.textContent = imageName;
 
-    // Append the image and filename paragraph to the modal container
-    modalContainer.appendChild(modalImage);
-    modalContainer.appendChild(filenameParagraph);
+            // Create a paragraph element for the filename
+            const filenameParagraph = document.createElement('p');
+            filenameParagraph.textContent = imageName;
 
-    // Append the modal container to the modal overlay
-    modalOverlay.appendChild(modalContainer);
+            // Append the image and filename paragraph to the modal container
+            modalContainer.appendChild(modalImage);
+            modalContainer.appendChild(filenameParagraph);
 
-    // Append the modal overlay to the body
-    document.body.appendChild(modalOverlay);
+            // Append the modal container to the modal overlay
+            modalOverlay.appendChild(modalContainer);
 
-    // Add a click event listener to close the modal when clicked outside the image
-    modalOverlay.addEventListener('click', function() {
-        clearModal();
-    });
+            // Append the modal overlay to the body
+            document.body.appendChild(modalOverlay);
 
-    
-}
+            // Add a click event listener to close the modal when clicked outside the image
+            modalOverlay.addEventListener('click', function () {
+                clearModal();
+            });
 
-function clearModal() {
-    const modalOverlay = document.querySelector('.modal-overlay');
-    if (modalOverlay) {
-        modalOverlay.remove();
-    }
-}
 
-function displayDraggedFileDetails(filePath, imageName) {
-    alert("File path of the dragged image: " + filePath + "\nFilename of the image it was dragged onto: " + imageName);
-}
+        }
 
-function uploadDraggedFile(file_blob, file_name, ip){
-    send_specific_image(file_blob, file_name, ip);
-}
+        function clearModal() {
+            const modalOverlay = document.querySelector('.modal-overlay');
+            if (modalOverlay) {
+                modalOverlay.remove();
+            }
+        }
 
-function clearModal() {
-    const modalOverlay = document.querySelector('.modal-overlay');
-    if (modalOverlay) {
-        modalOverlay.remove();
-    }
-}
+        function displayDraggedFileDetails(filePath, imageName) {
+            alert("File path of the dragged image: " + filePath + "\nFilename of the image it was dragged onto: " + imageName);
+        }
+
+        function uploadDraggedFile(file_blob, file_name, ip) {
+            send_specific_image(file_blob, file_name, ip);
+        }
+
+        function clearModal() {
+            const modalOverlay = document.querySelector('.modal-overlay');
+            if (modalOverlay) {
+                modalOverlay.remove();
+            }
+        }
 
 
 
-function getCharFromIndex(index) {
-    const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return characters.charAt(index);
-}
+        function getCharFromIndex(index) {
+            const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            return characters.charAt(index);
+        }
 
-function createMessage(message) {
-    const messagesDiv = document.createElement('div');
-    messagesDiv.textContent = message;
-    messagesDiv.style.backgroundColor = '#DFF0D8';
-    messagesDiv.style.padding = '10px';
-    messagesDiv.style.border = '1px solid #007bff';
-    messagesDiv.style.borderRadius = '4px';
-    messagesDiv.style.marginBottom = '10px';
+        function createMessage(message) {
+            const messagesDiv = document.createElement('div');
+            messagesDiv.textContent = message;
+            messagesDiv.style.backgroundColor = '#DFF0D8';
+            messagesDiv.style.padding = '10px';
+            messagesDiv.style.border = '1px solid #007bff';
+            messagesDiv.style.borderRadius = '4px';
+            messagesDiv.style.marginBottom = '10px';
 
-    const body = document.getElementsByTagName('body')[0];
-    body.insertBefore(messagesDiv, body.firstChild);
+            const body = document.getElementsByTagName('body')[0];
+            body.insertBefore(messagesDiv, body.firstChild);
 
-    setTimeout(() => {
-        messagesDiv.style.transition = 'all 50s';
-        messagesDiv.style.opacity = 0;
+            setTimeout(() => {
+                messagesDiv.style.transition = 'all 50s';
+                messagesDiv.style.opacity = 0;
 
-        setTimeout(() => {
-        messagesDiv.remove();
-        }, 5000);
-    }, 10000);
-}
+                setTimeout(() => {
+                    messagesDiv.remove();
+                }, 5000);
+            }, 10000);
+        }
 
-const number_of_pixels = 72;
+        const number_of_pixels = 72;
 
-async function send_specific_image(image_blob, replace_filename, ip) {
-    try {
-        // Reading the Blob URL
-        const response = await fetch(image_blob);
-        const blob = await response.blob();
-        const reader = new FileReader();
-
-        reader.onload = async function (event) {
-            try {
-                const image = await Jimp.read(event.target.result);
-
-                const rotatedImage = image.rotate(-90);
-                const resizedImage = rotatedImage.resize(number_of_pixels, Jimp.AUTO);
-
-                const binaryData = [];
-
-                resizedImage.scan(0, 0, resizedImage.bitmap.width, resizedImage.bitmap.height, function (x, y, idx) {
-                    const r = this.bitmap.data[idx + 0];
-                    const g = this.bitmap.data[idx + 1];
-                    const b = this.bitmap.data[idx + 2];
-
-                    const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6));
-                    binaryData.push(encoded);
+        async function deleteAll() {
+            // Loop through characters and create image elements
+            for (let i = 0; i < 52; i++) {
+                const char = getCharFromIndex(i);
+                const fileName = char + '.bin'; // Add ".bin" extension
+                const ipMain = '192.168.1.1';
+                const ipAux = '192.168.1.78';
+                await deleteFile(ipMain, fileName);
+                await deleteFile(ipAux, fileName)
+            }
+        }
+        
+        async function deleteFile(ip, fileName) {
+            fetch('http://' + ip + '/edit?path=/' + fileName, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('File deleted successfully');
+                    } else {
+                        console.error('Failed to delete file');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
                 });
+        }
 
-                // Replace the charAtIndex with the provided filename
-                // const fileName = replace_filename + '.bin'; 
-                const fileName = replace_filename;
+        async function send_specific_image(image_blob, replace_filename, ip) {
+            try {
+                // Reading the Blob URL
+                const response = await fetch(image_blob);
+                const blob = await response.blob();
+                const reader = new FileReader();
 
-                const formData = new FormData();
-                formData.append('file', new Blob([Buffer.from(binaryData)], { type: 'application/octet-stream' }), fileName);
+                reader.onload = async function (event) {
+                    try {
+                        const image = await Jimp.read(event.target.result);
 
-                const requestOptions = {
-                    method: 'POST',
-                    body: formData,
+                        const rotatedImage = image.rotate(-90);
+                        const resizedImage = rotatedImage.resize(number_of_pixels, Jimp.AUTO);
+
+                        const binaryData = [];
+
+                        resizedImage.scan(0, 0, resizedImage.bitmap.width, resizedImage.bitmap.height, function (x, y, idx) {
+                            const r = this.bitmap.data[idx + 0];
+                            const g = this.bitmap.data[idx + 1];
+                            const b = this.bitmap.data[idx + 2];
+
+                            const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6));
+                            binaryData.push(encoded);
+                        });
+
+                        // Replace the charAtIndex with the provided filename
+                        // const fileName = replace_filename + '.bin'; 
+                        const fileName = replace_filename;
+
+                        const formData = new FormData();
+                        formData.append('file', new Blob([Buffer.from(binaryData)], { type: 'application/octet-stream' }), fileName);
+
+                        const requestOptions = {
+                            method: 'POST',
+                            body: formData,
+                        };
+
+                        // Assuming 'ip' is defined somewhere in your code
+                        await fetch('http://' + ip + '/edit', requestOptions);
+                        console.log('File ' + fileName + ' uploaded to http://' + ip + '/edit');
+                        createMessage('File ' + fileName + ' uploaded to <a href="http://' + ip + '/edit">http://' + ip + '/edit</a>');
+                    } catch (error) {
+                        console.error('Error processing image:', error);
+                    }
                 };
 
-                // Assuming 'ip' is defined somewhere in your code
-                await fetch('http://' + ip + '/edit', requestOptions);
-                console.log('File ' + fileName + ' uploaded to http://' + ip + '/edit');
-                createMessage('File ' + fileName + ' uploaded to <a href="http://' + ip + '/edit">http://' + ip + '/edit</a>');
+                // Reading the Blob URL as data URL
+                reader.readAsDataURL(blob);
             } catch (error) {
-                console.error('Error processing image:', error);
+                console.error('Error:', error);
             }
-        };
-
-        // Reading the Blob URL as data URL
-        reader.readAsDataURL(blob);
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-        
-        
-
-        
-
-// Function to fetch file list and process files
-
-async function getFilesOne(){
-    // Select the image container element
-    const imageContainer = document.getElementById('imageContainer');
-
-    // Clear the contents of the image container
-    // imageContainer.innerHTML = '';
-
-    const ip = '192.168.1.1'; // IP address
-    try {
-        // Fetch file list from the server
-        const fileListResponse = await fetch('http://' + ip + '/list?dir=/');
-        if (!fileListResponse.ok) {
-            throw new Error('Network response was not ok');
         }
-        const fileListJson = await fileListResponse.json();
 
-        // Filter file names to get only those ending with '.bin'
-        const fileNames = fileListJson.filter(entry => entry.name.endsWith('.bin'))
-                                       .map(entry => entry.name);
 
-        // Loop over file names and call decompressAndDisplay for each
-        for (const fileName of fileNames) {            
-            await decompressAndDisplay(ip, fileName);
+
+
+
+        // Function to fetch file list and process files
+
+        async function getFilesOne() {
+            // Select the image container element
+            const imageContainer = document.getElementById('imageContainer');
+
+            // Clear the contents of the image container
+            // imageContainer.innerHTML = '';
+
+            const ip = '192.168.1.1'; // IP address
+            try {
+                // Fetch file list from the server
+                const fileListResponse = await fetch('http://' + ip + '/list?dir=/');
+                if (!fileListResponse.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const fileListJson = await fileListResponse.json();
+
+                // Filter file names to get only those ending with '.bin'
+                const fileNames = fileListJson.filter(entry => entry.name.endsWith('.bin'))
+                    .map(entry => entry.name);
+
+                // Loop over file names and call decompressAndDisplay for each
+                for (const fileName of fileNames) {
+                    await decompressAndDisplay(ip, fileName);
+                }
+            } catch (error) {
+                console.error('There was a problem fetching the file list:', error);
+            }
         }
-    } catch (error) {
-        console.error('There was a problem fetching the file list:', error);
-    }
-}
 
-async function getFilesTwo(){
-// All again for 2nd poi: 
-    // Select the image container element
-    const imageContainertwo = document.getElementById('imageContainertwo');
+        async function getFilesTwo() {
+            // All again for 2nd poi: 
+            // Select the image container element
+            const imageContainertwo = document.getElementById('imageContainertwo');
 
-    // Clear the contents of the image container
-    // imageContainer.innerHTML = '';
+            // Clear the contents of the image container
+            // imageContainer.innerHTML = '';
 
-    
-    const iptwo = '192.168.1.78'; // IP address
-    try {
-        // Fetch file list from the server
-        const fileListResponsetwo = await fetch('http://' + iptwo + '/list?dir=/');
-        if (!fileListResponsetwo.ok) {
-            throw new Error('Network response was not ok');
+
+            const iptwo = '192.168.1.78'; // IP address
+            try {
+                // Fetch file list from the server
+                const fileListResponsetwo = await fetch('http://' + iptwo + '/list?dir=/');
+                if (!fileListResponsetwo.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const fileListJsontwo = await fileListResponsetwo.json();
+
+                // Filter file names to get only those ending with '.bin'
+                const fileNamestwo = fileListJsontwo.filter(entry => entry.name.endsWith('.bin'))
+                    .map(entry => entry.name);
+
+                // Loop over file names and call decompressAndDisplay for each
+                for (const fileNametwo of fileNamestwo) {
+                    await decompressAndDisplay(iptwo, fileNametwo);
+                }
+            } catch (errortwo) {
+                console.error('There was a problem fetching the file list:', errortwo);
+            }
         }
-        const fileListJsontwo = await fileListResponsetwo.json();
-
-        // Filter file names to get only those ending with '.bin'
-        const fileNamestwo = fileListJsontwo.filter(entry => entry.name.endsWith('.bin'))
-                                       .map(entry => entry.name);
-
-        // Loop over file names and call decompressAndDisplay for each
-        for (const fileNametwo of fileNamestwo) {            
-            await decompressAndDisplay(iptwo, fileNametwo);
+        async function getFilesAndDisplay() {
+            getFilesOne();
+            getFilesTwo();
         }
-    } catch (errortwo) {
-        console.error('There was a problem fetching the file list:', errortwo);
-    }
-}
-async function getFilesAndDisplay() {
-    getFilesOne();
-    getFilesTwo();    
-}
 
-// Call the processFiles function to fetch file list and process files
-// processFiles();
+        // Call the processFiles function to fetch file list and process files
+        // processFiles();
 
     </script>
 </body>
+
 </html>

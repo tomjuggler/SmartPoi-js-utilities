@@ -47,3 +47,6 @@ curl http://192.168.1.78/returnsettings
 curl http://192.168.1.1/edit?file=/a.bin --output a.bin # saves to a.bin in current directory
 curl http://192.168.1.78/edit?file=/a.bin --output a.bin
 
+# delete file from poi: 
+curl -X DELETE 'http://192.168.1.1/edit?path=/x.bin' -H 'Content-Type: application/json'
+curl -X DELETE 'http://192.168.1.78/edit?path=/x.bin' -H 'Content-Type: application/json' 
