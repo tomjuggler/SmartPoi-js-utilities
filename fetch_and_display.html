@@ -105,10 +105,11 @@
     <script src="jimp.min.js"></script>
 
     <script>
-        // Function to create placeholder images
- // Function to create black images
-function createBlackImages() {
-    const container = document.getElementById('imageContainer');
+        
+ // Function to create black placeholder images
+
+ function createBlackImages(containerId, ip) {
+    const container = document.getElementById(containerId);
 
     // Loop through characters and create image elements
     for (let i = 0; i < 52; i++) {
@@ -121,6 +122,31 @@ function createBlackImages() {
             imgElement.className = 'black-image'; // Add class for styling
             imgElement.alt = fileName; // Set alt attribute with filename
 
+            // Attach click event listener to the image element
+            imgElement.addEventListener('click', function() {
+                displayImageInModal(imgElement.src, imgElement.alt);
+            });
+
+            // Attach dragover and drop event listeners to the image element
+            imgElement.addEventListener('dragover', function(event) {
+                event.preventDefault();
+            });
+
+            imgElement.addEventListener('drop', function(event) {
+                event.preventDefault();
+                // Accessing the first file from the dropped files
+                const droppedFile = event.dataTransfer.files[0];
+                const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';            
+                const imageName = imgElement.alt;
+                try {
+                    uploadDraggedFile(draggedFileBlob, imageName, ip);
+                } catch(error) {
+                    console.error('Error uploading: ', error);
+                } finally {
+                    imgElement.src = draggedFileBlob;
+                }
+            });
+
             // Append image element to container
             container.appendChild(imgElement);
         } catch (error) {
@@ -129,32 +155,9 @@ function createBlackImages() {
     }
 }
 
-function createBlackImagesTwo() {
-    const containertwo = document.getElementById('imageContainertwo');
-
-    // Loop through characters and create image elements
-    for (let i = 0; i < 52; i++) {
-        const char = getCharFromIndex(i);
-        const fileName = char + '.bin'; // Add ".bin" extension
-
-        try {
-            // Create image element
-            const imgElementtwo = document.createElement('img');
-            imgElementtwo.className = 'black-image'; // Add class for styling
-            imgElementtwo.alt = fileName; // Set alt attribute with filename
-
-            // Append image element to container
-            containertwo.appendChild(imgElementtwo);
-        } catch (error) {
-            console.error('Error creating image:', error);
-        }
-    }
-}
-
-// Call the function to create black images
-createBlackImages();
-createBlackImagesTwo();
-        
+// Call the function to create black images:
+createBlackImages('imageContainer', '192.168.1.1');
+createBlackImages('imageContainertwo', '192.168.1.78');
 
         async function increaseBrightness(imageUrl, brightnessAmount) {
             return new Promise((resolve, reject) => {
@@ -267,7 +270,7 @@ async function fetchDataWithRetry(url) {
 
 // DISPLAY IMAGES FROM POI CODE HERE: 
 let retryCount = 0;
-const MAX_RETRY_COUNT = 4;
+const MAX_RETRY_COUNT = 7;
 
 async function decompressAndDisplay(ip, fileName) {    
     try{
