@@ -24,6 +24,15 @@
             background-color: #666; /* Darken button color on hover */
         }
 
+        #file-list-container {
+            display: flex;
+            flex-direction: column; /* This stacks the elements vertically */
+            align-items: center; /* This centers the elements horizontally */
+            justify-content: center; /* This centers the elements vertically */
+        }
+        #container {
+            display: flex;
+        }
         .image-container {
             background-color: black;
             border: 2px solid white;
@@ -94,13 +103,30 @@
     <title>Decompressed Images</title>
 </head>
 <body>
-    <h1>File List</h1>
-  <button class="dark-button" onclick="getFilesAndDisplay()">Fetch and Display your poi images</button>
-  <br>
-    <h1>MAIN POI</h1>
-    <div id="imageContainer" style="background-color: black; border: 2px solid rgb(122, 122, 122); padding: 10px;"></div>
-    <h1>AUXILLARY POI</h1>
-    <div id="imageContainertwo" style="background-color: black; border: 2px solid rgb(122, 122, 122); padding: 10px;"></div>
+
+    <div id="file-list-container">
+        <h1>POI IMAGES:</h1>        
+        <p><i>Click image to see name - if no image is displayed, clicking the name will attempt to fetch from poi and display</i></p>
+        <p><i>Drag an image from file manager and drop onto the image (or name) you want to replace.</i></p>
+        <p><i>You can even drag images between poi.</i></p>
+        <button class="dark-button" onclick="getFilesAndDisplay()">Fetch and Display all poi images</button>
+      </div>
+      
+    
+  
+  <div id="container">
+    <div>
+      <h1>MAIN POI</h1>
+      <button class="dark-button" onclick="getFilesOne()">Fetch and Display Main poi images</button>
+      <div id="imageContainer" style="background-color: black; border: 2px solid rgb(122, 122, 122); padding: 10px;"></div>
+    </div>
+    <div>
+      <h1>AUXILLARY POI</h1>
+      <button class="dark-button" onclick="getFilesTwo()">Fetch and Display Auxillary poi images</button>
+      <div id="imageContainertwo" style="background-color: black; border: 2px solid rgb(122, 122, 122); padding: 10px;"></div>
+    </div>
+  </div>
+  
 
     <script src="jimp.min.js"></script>
 
@@ -284,6 +310,7 @@ async function decompressAndDisplay(ip, fileName) {
             // }
         } catch(error){
             console.error("error fetching data for: " + fileName + " ", error);
+            throw error;
         } finally{  
         
             const arrayBuffer = await response.arrayBuffer();
@@ -313,6 +340,7 @@ async function decompressAndDisplay(ip, fileName) {
                 rotatedImageUrl = await rotateImage90(imageUrl);
             } catch (error){
                 console.error('error rotating:', error);
+                throw error;
             } finally{
 
             
@@ -582,47 +610,11 @@ async function send_specific_image(image_blob, replace_filename, ip) {
         
         
 
-        // function handleUpload() {
-        //     const fileInput = document.getElementById('fileInput');
-        //     const files = fileInput.files;
-
-        //     if (files.length > 0) {
-        //         createMessage('Beginning Processing and Upload (Processing may take a while for lots of files)');
-        //         let ipOne = "192.168.1.1";
-        //         let ipTwo = "192.168.1.78";
-        //         compressImagesAndSend(files, ipTwo); //Auxillary first
-        //         compressImagesAndSend(files, ipOne);
-        //     } else {
-        //         alert("Please select at least one file.");
-        //         console.error('Please select at least one file.');
-        //     }
-        // }
-//get i number of images and display: 
-// for (let i = 0; i < 52; i++) {
-//     const charAtIndex = getCharFromIndex(i);
-//     const fileName = charAtIndex + '.bin'; 
-//     // Call the displaying function with IP and file name
-//     decompressAndDisplay('192.168.1.1', fileName);
-// }
-
-// function getFileList() {
-//             fetch('http://192.168.1.1/list?dir=/')
-//                 .then(response => {
-//                 if (!response.ok) {
-//                     throw new Error('Network response was not ok');
-//                 }
-//                 return response.text();
-//                 })
-//                 .then(data => {
-//                 document.getElementById('fileListTextArea').value = data;
-//                 })
-//                 .catch(error => {
-//                 console.error('There was a problem fetching the file list:', error);
-//                 });
-//         }
+        
 
 // Function to fetch file list and process files
-async function getFilesAndDisplay() {
+
+async function getFilesOne(){
     // Select the image container element
     const imageContainer = document.getElementById('imageContainer');
 
@@ -649,9 +641,10 @@ async function getFilesAndDisplay() {
     } catch (error) {
         console.error('There was a problem fetching the file list:', error);
     }
+}
 
-
-    // All again for 2nd poi: 
+async function getFilesTwo(){
+// All again for 2nd poi: 
     // Select the image container element
     const imageContainertwo = document.getElementById('imageContainertwo');
 
@@ -679,6 +672,10 @@ async function getFilesAndDisplay() {
     } catch (errortwo) {
         console.error('There was a problem fetching the file list:', errortwo);
     }
+}
+async function getFilesAndDisplay() {
+    getFilesOne();
+    getFilesTwo();    
 }
 
 // Call the processFiles function to fetch file list and process files
