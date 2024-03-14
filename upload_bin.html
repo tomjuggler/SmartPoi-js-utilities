@@ -114,7 +114,7 @@
 
                             await fetch('http://' + ip + '/edit', requestOptions);
                             console.log('File ' + file.name + ' uploaded. to ip http://'+ ip +'/edit');
-                            createMessage('File ' + file.name + ' uploaded. to ip <a href="http://' + ip + '/edit">' + ip + '</a>');
+                            createMessage('File ' + file.name + ' uploaded. to ip http://' + ip +'/edit');
                         } catch (error) {
                             console.error('Error processing image:', error);
                         }

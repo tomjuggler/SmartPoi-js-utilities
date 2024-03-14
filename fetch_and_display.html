@@ -253,7 +253,7 @@ async function fetchDataWithRetry(url) {
                 console.log("not able to get image, should retry now?");
             }
             // Return response if successful
-            console.log(`got response for ${url}`);
+            console.log(`got response for ${url} : ${response}`);
             return response;
         } catch (error) {
             console.error('Error fetching image:', error);
@@ -266,6 +266,8 @@ async function fetchDataWithRetry(url) {
 }
 
 // DISPLAY IMAGES FROM POI CODE HERE: 
+let retryCount = 0;
+const MAX_RETRY_COUNT = 4;
 
 async function decompressAndDisplay(ip, fileName) {    
     try{
@@ -278,9 +280,8 @@ async function decompressAndDisplay(ip, fileName) {
             // }
         } catch(error){
             console.error("error fetching data for: " + fileName + " ", error);
-        }
+        } finally{  
         
-        // try{
             const arrayBuffer = await response.arrayBuffer();
             if(arrayBuffer){
                 console.log("arrayBuffer for : " + fileName + " " + arrayBuffer);
@@ -300,102 +301,131 @@ async function decompressAndDisplay(ip, fileName) {
             } else{
                 console.log("NO IMAGEURL!" + fileName + " ");
             }
-        // } catch(error){
-        //     console.log("error with binary decompression?");
-        // }
         
 
-        // Rotate the decompressed image
-        let rotatedImageUrl;
-        try{
-            rotatedImageUrl = await rotateImage90(imageUrl);
-        } catch (error){
-            console.error('error rotating:', error);
-        }
-       
-        // Create a new image element
-        const imgElement = document.createElement('img');
-        imgElement.src = rotatedImageUrl; // Set the src attribute with the rotated image URL
-        imgElement.alt = fileName; // Set the alt attribute with the file name
+            // Rotate the decompressed image
+            let rotatedImageUrl;
+            try{
+                rotatedImageUrl = await rotateImage90(imageUrl);
+            } catch (error){
+                console.error('error rotating:', error);
+            } finally{
 
-        // Attach click event listener to the image element
-        imgElement.addEventListener('click', function() {
-            displayImageInModal(imgElement.src, imgElement.alt);
-        });
-
-        // Attach dragover and drop event listeners to the image element
-        imgElement.addEventListener('dragover', function(event) {
-            event.preventDefault();
-        });
-
-        imgElement.addEventListener('drop', function(event) {
-            event.preventDefault();
-            // Accessing the first file from the dropped files
-            const droppedFile = event.dataTransfer.files[0];
-            const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';            
-            const imageName = imgElement.alt;
-            // displayDraggedFileDetails(draggedFilePath, imageName);
-            uploadDraggedFile(draggedFileBlob, imageName, ip);
-            imgElement.src = draggedFileBlob;
-        });
-
-        let containerId;
-
-        if (ip === '192.168.1.78') {
-            containerId = 'imageContainertwo';
-        } else {
-            containerId = 'imageContainer';
-        }
-
-        const container = document.getElementById(containerId);
-
-        // Append the image element to the container
-        // container.appendChild(imgElement);
-
-        //replace images: 
-        const images = container.querySelectorAll('img'); // Get all img elements in the container
-
-        images.forEach(img => {
-            if (img.alt === fileName) {
+            
+        
                 // Create a new image element
-                // const newImgElement = document.createElement('img');
-                // newImgElement.src = newSrc; // Set the src attribute with the new image URL
-                // newImgElement.alt = fileName; // Set the alt attribute with the file name
+                const imgElement = document.createElement('img');
+                imgElement.src = rotatedImageUrl; // Set the src attribute with the rotated image URL
+                imgElement.alt = fileName; // Set the alt attribute with the file name
 
-                // Replace the old image with the new one
-                img.parentNode.replaceChild(imgElement, img);
+                // Attach click event listener to the image element
+                imgElement.addEventListener('click', function() {
+                    displayImageInModal(imgElement.src, imgElement.alt);
+                });
+
+                // Attach dragover and drop event listeners to the image element
+                imgElement.addEventListener('dragover', function(event) {
+                    event.preventDefault();
+                });
+
+                imgElement.addEventListener('drop', function(event) {
+                    event.preventDefault();
+                    // Accessing the first file from the dropped files
+                    const droppedFile = event.dataTransfer.files[0];
+                    const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';            
+                    const imageName = imgElement.alt;
+                    // displayDraggedFileDetails(draggedFilePath, imageName);
+                    uploadDraggedFile(draggedFileBlob, imageName, ip);
+                    imgElement.src = draggedFileBlob;
+                });
+
+                let containerId;
+
+                if (ip === '192.168.1.78') {
+                    containerId = 'imageContainertwo';
+                } else {
+                    containerId = 'imageContainer';
+                }
+
+                const container = document.getElementById(containerId);
+
+                // Append the image element to the container
+                // container.appendChild(imgElement);
+
+                //replace images: 
+                const images = container.querySelectorAll('img'); // Get all img elements in the container
+
+                images.forEach(img => {
+                    if (img.alt === fileName) {
+                        // Create a new image element
+                        // const newImgElement = document.createElement('img');
+                        // newImgElement.src = newSrc; // Set the src attribute with the new image URL
+                        // newImgElement.alt = fileName; // Set the alt attribute with the file name
+
+                        // Replace the old image with the new one
+                        img.parentNode.replaceChild(imgElement, img);
+                    }
+                });
             }
-        });
-
+        }
     } catch (error) {
         console.error('Error decompressing and displaying image: ' + fileName, error);
-        try {
-            let containerId_replace;
+        if (retryCount < MAX_RETRY_COUNT) {
+            retryCount++;
+            decompressAndDisplay(ip, fileName); // Retry
+        } else {
+            console.error('Max retry count exceeded. Unable to decompress and display image: ' + fileName);
+            retryCount = 0;
+            //create placeholder image: 
+            try {
+                let containerId_replace;
 
-            if (ip === '192.168.1.78') {
-                containerId_replace = 'imageContainertwo';
-            } else {
-                containerId_replace = 'imageContainer';
-            }
-
-            const container_replace = document.getElementById(containerId_replace);
-            // Create image element - blank image on fail
-            const imgElementReplacement = document.createElement('img');
-            imgElementReplacement.className = 'black-image'; // Add class for styling
-            imgElementReplacement.alt = fileName; // Set alt attribute with filename
-
-            // Append image element to container
-            // container_replace.appendChild(imgElementReplacement);
-
-            const imagestwo = container_replace.querySelectorAll('img'); // Get all img elements in the container
-
-            imagestwo.forEach(img => {
-                if (img.alt === fileName) {
-                    img.parentNode.replaceChild(imgElementReplacement, img);
+                if (ip === '192.168.1.78') {
+                    containerId_replace = 'imageContainertwo';
+                } else {
+                    containerId_replace = 'imageContainer';
                 }
-            });
-        } catch (error) {
-            console.error('Error creating image:', error);
+
+                const container_replace = document.getElementById(containerId_replace);
+                // Create image element - blank image on fail
+                const imgElementReplacement = document.createElement('img');
+                imgElementReplacement.className = 'black-image'; // Add class for styling
+                imgElementReplacement.alt = fileName; // Set alt attribute with filename
+
+                // Attach click event listener to the image element
+                imgElementReplacement.addEventListener('click', function() {
+                    displayImageInModal(imgElementReplacement.src, imgElementReplacement.alt);
+                });
+
+                // Attach dragover and drop event listeners to the image element
+                imgElementReplacement.addEventListener('dragover', function(event) {
+                    event.preventDefault();
+                });
+
+                imgElementReplacement.addEventListener('drop', function(event) {
+                    event.preventDefault();
+                    // Accessing the first file from the dropped files
+                    const droppedFileReplacement = event.dataTransfer.files[0];
+                    const draggedFileBlobReplacement = droppedFileReplacement ? URL.createObjectURL(droppedFileReplacement) : '';            
+                    const imageNameReplacement = imgElementReplacement.alt;
+                    // displayDraggedFileDetails(draggedFilePath, imageName);
+                    uploadDraggedFile(draggedFileBlobReplacement, imageNameReplacement, ip);
+                    imgElementReplacement.src = draggedFileBlobReplacement;
+                });
+
+                // Append image element to container
+                // container_replace.appendChild(imgElementReplacement);
+
+                const imagestwo = container_replace.querySelectorAll('img'); // Get all img elements in the container
+
+                imagestwo.forEach(img => {
+                    if (img.alt === fileName) {
+                        img.parentNode.replaceChild(imgElementReplacement, img);
+                    }
+                });
+            } catch (error) {
+                console.error('Error creating image:', error);
+            }
         }
     }
 }
