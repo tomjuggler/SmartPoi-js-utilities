@@ -124,7 +124,8 @@
 
             // Attach click event listener to the image element
             imgElement.addEventListener('click', function() {
-                displayImageInModal(imgElement.src, imgElement.alt);
+                decompressAndDisplay(ip, fileName);
+                // displayImageInModal(imgElement.src, imgElement.alt);
             });
 
             // Attach dragover and drop event listeners to the image element
@@ -397,7 +398,8 @@ async function decompressAndDisplay(ip, fileName) {
 
                 // Attach click event listener to the image element
                 imgElementReplacement.addEventListener('click', function() {
-                    displayImageInModal(imgElementReplacement.src, imgElementReplacement.alt);
+                    decompressAndDisplay(ip, fileName);
+                    // displayImageInModal(imgElementReplacement.src, imgElementReplacement.alt);
                 });
 
                 // Attach dragover and drop event listeners to the image element
@@ -436,7 +438,6 @@ async function decompressAndDisplay(ip, fileName) {
 function displayImageInModal(imageSrc, imageName) {
     // Clear existing modal if any
     clearModal();
-
     // Create a modal overlay
     const modalOverlay = document.createElement('div');
     modalOverlay.classList.add('modal-overlay');
@@ -447,8 +448,9 @@ function displayImageInModal(imageSrc, imageName) {
 
     // Create an image element for the modal
     const modalImage = document.createElement('img');
+    modalImage.style.width = '200%'; // Zoom the image to 200% - todo: not working! 
     modalImage.src = imageSrc;
-    modalImage.style.width = '200%'; // Zoom the image to 200%
+    
 
     // Create a paragraph element for the filename
     const filenameParagraph = document.createElement('p');
@@ -469,16 +471,7 @@ function displayImageInModal(imageSrc, imageName) {
         clearModal();
     });
 
-    // not working
-    // modalOverlay.addEventListener('drop', function(event) {
-    //     event.preventDefault();
-    //     // Accessing the first file from the dropped files
-    //     const droppedFile = event.dataTransfer.files[0];
-    //     const draggedFilePath = droppedFile ? URL.createObjectURL(droppedFile) : '';            
-    //     const imageName = imageName;
-    //     // displayDraggedFileDetails(draggedFilePath, imageName);
-    //     uploadDraggedFile(draggedFilePath, imageName);
-    // });
+    
 }
 
 function clearModal() {
