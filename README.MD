@@ -32,3 +32,10 @@ Files on the poi can be checked by opening list.html while connected to the poi 
 - drag and drop image from file manager to the specific image  to replace on the poi
 - currently set to 72px (search and change to 36 in code if needed)
 - requires latest [SmartPoi firmware](https://github.com/tomjuggler/SmartPoi-Firmware) running on the SmartPoi hardware. Older firmware versions do not work with some features
+
+### This project is now Electron capable! Turn it into a native app!
+- from the root directory, run on Linux, Windows or Mac with: 
+```
+npm install
+npm start
+```
