@@ -1,0 +1,17 @@
+{
+    "name": "SmartPoi-js-utilities",
+    "version": "0.0.2",
+    "description": "JavaScript and html Utilities for SmartPoi",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron ."
+    },
+    "repository": "https://github.com/tomjuggler/SmartPoi-js-utilities",
+    "author": "Tom Hastings",
+    "license": "MIT",
+    "devDependencies": {
+        "@types/marked": "^5.0.2",
+        "electron": "^13.0.0",
+        "marked": "^4.0.0"
+    }
+}

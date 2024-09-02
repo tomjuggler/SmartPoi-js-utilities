@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Menu</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .menu-item {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 10px 0;
+            padding: 20px;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+        .menu-item h2 {
+            margin-top: 0;
+        }
+        .menu-item p {
+            margin: 10px 0;
+        }
+        .menu-item button {
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 10px 20px;
+            text-transform: uppercase;
+        }
+        .menu-item button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Main Menu</h1>
+    <div>
+        <p>Requires the latest SmartPoi firmware running on the SmartPoi hardware.</p>
+    </div>
+    <div class="menu-item">
+        <h2>Controls</h2>
+        <p> Options include Pattern, Speed, and Brightness change. Speed is how long each image is displayed, ranging from 0 to 1800 seconds.</p>
+        <button onclick="openPage('controls.html')">Open Controls</button>
+    </div>
+
+    <div class="menu-item">
+        <h2>Fetch and Display</h2>
+        <p>Fetch and display images from the SmartPoi hardware. This section allows you to view the main and auxiliary POI images by fetching them from the Poi file system. 
+        Also allows you to upload images to the POI, using convenient drag and drop, as well as replace or delete images on the POI.
+        </p>
+        <button onclick="openPage('fetch_and_display.html')">Open Fetch and Display</button>
+    </div>
+
+    <div class="menu-item">
+        <h2>List</h2>
+        <p>Check the files on the POI by opening this section while connected to the POI (AP). Click on "Get File List" to view the files.</p>
+        <button onclick="openPage('list.html')">Open List</button>
+    </div>
+
+    <div class="menu-item">
+        <h2>Upload Bin</h2>
+        <p>Upload multiple backup images to SmartPoi for offline display. Images are resized, rotated, and converted to .bin format before being uploaded sequentially to the two POI.</p>
+        <button onclick="openPage('upload_bin.html')">Open Upload Bin</button>
+    </div>
+
+    <script>
+        function openPage(page) {
+            window.location.href = page;
+        }
+    </script>
+</body>
+</html>
