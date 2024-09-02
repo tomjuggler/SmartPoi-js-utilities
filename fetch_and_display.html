@@ -122,8 +122,8 @@
         }
 
         .black-image {
-            width: 72px;
-            height: 72px;
+            width: 36px;
+            height: 36px;
             background-color: black;
             display: inline-block;
             margin: 5px;
@@ -144,7 +144,7 @@
         <p><i>Click image to see name - if no image is displayed, clicking the name will attempt to fetch from poi and
                 display</i></p>
         <p><i>Drag an image from file manager and drop onto the image (or name) you want to replace.</i></p>
-        <p><i>You can even drag images between poi.</i></p>
+        <p><i>You can even drag images between poi *currently not working..</i></p>
         <button class="dark-button" onclick="getFilesAndDisplay()">Fetch and Display all poi images</button>
     </div>
 
@@ -166,13 +166,14 @@
     </div>
 
     <div class="centered-container">
-        <button id='deletebutton' class="dark-button" onclick="deleteAll()">!? BUTTON TO DELETE ALL IMAGES CURRENTLY ON POI  ?!</button>
+        <button id='deletebutton' class="dark-button" onclick="deleteAll()">!? BUTTON TO DELETE ALL IMAGES CURRENTLY ON
+            POI ?!</button>
     </div>
 
     <script src="jimp.min.js"></script>
 
     <script>
-    const deleteButton = document.getElementById('deleteButton');
+        const deleteButton = document.getElementById('deleteButton');
         // Function to create black placeholder images
 
         function createBlackImages(containerId, ip) {
@@ -271,7 +272,7 @@
 
         async function decompress(binaryData) {
             console.log("Decompress started");
-            const width = 72;
+            const width = 36;
             const height = Math.ceil(binaryData.length / width);
             console.log("Height is: " + height);
             // Create a new Jimp image with the specified width and height
@@ -504,6 +505,45 @@
             }
         }
 
+        // function displayImageInModal(imageSrc, imageName) {
+        //     // Clear existing modal if any
+        //     clearModal();
+        //     // Create a modal overlay
+        //     const modalOverlay = document.createElement('div');
+        //     modalOverlay.classList.add('modal-overlay');
+
+        //     // Create a modal container
+        //     const modalContainer = document.createElement('div');
+        //     modalContainer.classList.add('modal-container');
+
+        //     // Create an image element for the modal
+        //     const modalImage = document.createElement('img');
+        //     modalImage.style.width = '200%'; // Zoom the image to 200% - todo: not working! 
+        //     modalImage.src = imageSrc;
+
+
+        //     // Create a paragraph element for the filename
+        //     const filenameParagraph = document.createElement('p');
+        //     filenameParagraph.textContent = imageName;
+
+        //     // Append the image and filename paragraph to the modal container
+        //     modalContainer.appendChild(modalImage);
+        //     modalContainer.appendChild(filenameParagraph);
+
+        //     // Append the modal container to the modal overlay
+        //     modalOverlay.appendChild(modalContainer);
+
+        //     // Append the modal overlay to the body
+        //     document.body.appendChild(modalOverlay);
+
+        //     // Add a click event listener to close the modal when clicked outside the image
+        //     modalOverlay.addEventListener('click', function () {
+        //         clearModal();
+        //     });
+
+
+        // }
+
         function displayImageInModal(imageSrc, imageName) {
             // Clear existing modal if any
             clearModal();
@@ -517,17 +557,29 @@
 
             // Create an image element for the modal
             const modalImage = document.createElement('img');
-            modalImage.style.width = '200%'; // Zoom the image to 200% - todo: not working! 
+            modalImage.style.width = '200%'; // Zoom the image to 200% - todo: not working!
             modalImage.src = imageSrc;
-
 
             // Create a paragraph element for the filename
             const filenameParagraph = document.createElement('p');
             filenameParagraph.textContent = imageName;
 
-            // Append the image and filename paragraph to the modal container
+            // Create a delete button
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+
+            // Add click event listener to the delete button
+            deleteButton.addEventListener('click', () => {
+                const ipAddresses = ['192.168.1.1', '192.168.1.78'];
+                ipAddresses.forEach(ip => {
+                    deleteFile(ip, imageName);
+                });
+            });
+
+            // Append the image, filename paragraph, and delete button to the modal container
             modalContainer.appendChild(modalImage);
             modalContainer.appendChild(filenameParagraph);
+            modalContainer.appendChild(deleteButton);
 
             // Append the modal container to the modal overlay
             modalOverlay.appendChild(modalContainer);
@@ -539,9 +591,27 @@
             modalOverlay.addEventListener('click', function () {
                 clearModal();
             });
-
-
         }
+
+        function deleteFile(ip, filename) {
+            fetch(ip + '/edit?path=/' + filename + '.bin', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('File deleted successfully from', ip);
+                    } else {
+                        console.error('Failed to delete file from', ip);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
 
         function clearModal() {
             const modalOverlay = document.querySelector('.modal-overlay');
@@ -594,7 +664,7 @@
             }, 10000);
         }
 
-        const number_of_pixels = 72;
+        const number_of_pixels = 36;
 
         async function deleteAll() {
             // Loop through characters and create image elements
@@ -607,7 +677,7 @@
                 await deleteFile(ipAux, fileName)
             }
         }
-        
+
         async function deleteFile(ip, fileName) {
             fetch('http://' + ip + '/edit?path=/' + fileName, {
                 method: 'DELETE',
