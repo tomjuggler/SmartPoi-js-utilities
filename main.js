@@ -1,4 +1,5 @@
 const { app, BrowserWindow, Menu, screen } = require('electron'); // Updated import
+app.setName('smartPoi-js-utilities');
 const fs = require('fs');
 const path = require('path');
 const { marked } = require('marked'); // Updated import
@@ -6,9 +7,15 @@ const { marked } = require('marked'); // Updated import
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize; // Get screen size
 
+  const iconPath = process.platform === 'darwin' ? path.join(__dirname, 'build/icon.icns') :
+                   process.platform === 'win32' ? path.join(__dirname, 'build/icon.ico') :
+                   path.join(__dirname, 'build/icon.png'); // Default for Linux
+
   const win = new BrowserWindow({
     width: width, // Set width to screen width
     height: height, // Set height to screen height
+    title: 'SmartPoi-js-utilities',
+    icon: iconPath, // Set platform-specific icon
     resizable: true, // Make window resizable
     webPreferences: {
       nodeIntegration: true,

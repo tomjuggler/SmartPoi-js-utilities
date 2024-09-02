@@ -1,17 +1,62 @@
 {
-    "name": "SmartPoi-js-utilities",
-    "version": "0.0.2",
+    "name": "smartpoi-js-utilities",
+    "version": "0.0.4",
     "description": "JavaScript and html Utilities for SmartPoi",
     "main": "main.js",
     "scripts": {
-        "start": "electron ."
+        "start": "electron .",
+        "pack": "electron-builder --dir",
+        "dist": "electron-builder",
+        "postinstall": "electron-builder install-app-deps"
     },
-    "repository": "https://github.com/tomjuggler/SmartPoi-js-utilities",
-    "author": "Tom Hastings",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/tomjuggler/SmartPoi-js-utilities"
+    },
+    "author": {
+        "name": "Tom Hastings",
+        "email": "info@devsoft.co.za",
+        "url": "https://devsoft.co.za"
+    },
     "license": "MIT",
+    "dependencies": {
+        "marked": "^4.3.0"
+    },
     "devDependencies": {
         "@types/marked": "^5.0.2",
-        "electron": "^13.0.0",
-        "marked": "^4.0.0"
+        "electron": "^32.0.1",
+        "electron-builder": "^22.14.13",
+        "marked": "^4.3.0"
+    },
+    "build": {
+        "appId": "com.smartpoi.utilities",
+        "files": [
+            "dist/",
+            "main.js",
+            "index.html",
+            "fetch_and_display.html",
+            "jimp.min.js",
+            "list.html",
+            "controls.html",
+            "readme.md",
+            "readme.html",
+            "upload_bin.html",
+            "delete.html",
+            "node_modules/**/*"
+        ],
+        "linux": {
+            "target": [
+                "AppImage"
+            ],
+            "icon": "build/icons/icon.png",
+            "category": "Utility"
+        },
+        "publish": [
+            {
+                "provider": "github",
+                "owner": "tomjuggler",
+                "repo": "SmartPoi-js-utilities"
+            }
+        ]
     }
 }
