@@ -1,12 +1,15 @@
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, screen } = require('electron'); // Updated import
 const fs = require('fs');
 const path = require('path');
 const { marked } = require('marked'); // Updated import
 
 function createWindow() {
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize; // Get screen size
+
   const win = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: width, // Set width to screen width
+    height: height, // Set height to screen height
+    resizable: true, // Make window resizable
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -39,6 +42,7 @@ function createWindow() {
               const readmeWindow = new BrowserWindow({
                 width: 800,
                 height: 600,
+                resizable: true, // Make README window resizable
                 webPreferences: {
                   nodeIntegration: true,
                   contextIsolation: false
