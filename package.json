@@ -25,13 +25,13 @@
     "devDependencies": {
         "@types/marked": "^5.0.2",
         "electron": "^32.0.1",
-        "electron-builder": "^22.14.13",
+        "electron-builder": "^24.13.3",
         "marked": "^4.3.0"
     },
     "build": {
         "appId": "com.smartpoi.utilities",
         "files": [
-            "dist/",
+            "build/**/*",
             "main.js",
             "index.html",
             "fetch_and_display.html",
@@ -50,6 +50,12 @@
             ],
             "icon": "build/icons/icon.png",
             "category": "Utility"
+        },
+        "win": {
+            "target": [
+                "nsis"
+            ],
+            "icon": "build/icons/icon.ico"
         },
         "publish": [
             {

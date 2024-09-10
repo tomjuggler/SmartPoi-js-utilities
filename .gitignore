@@ -4,3 +4,4 @@ dist/*
 package-lock.json
 a.bin
 b.bin
+.aider*
