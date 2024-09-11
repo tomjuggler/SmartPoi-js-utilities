@@ -30,10 +30,10 @@ Files on the poi can be checked by opening list.html while connected to the poi 
 - usage click on "Fetch and Display your poi images" button. Be patient while the images load. 
 - click on an image to see filename
 - drag and drop image from file manager to the specific image  to replace on the poi
-- currently set to 72px (search and change to 36 in code if needed)
+- currently set to 72px (you can change this on the top right)
 - requires latest [SmartPoi firmware](https://github.com/tomjuggler/SmartPoi-Firmware) running on the SmartPoi hardware. Older firmware versions do not work with some features
 
-### This project is now Electron capable! Turn it into a native app!!
+### This project is now Electron capable? 
 - from the root directory, run on Linux, Windows or Mac with: 
 ```
 npm install
@@ -43,4 +43,4 @@ npm start
 ``` 
 npm run dist 
 ```
-*Note: currently only Linux is available, as appimage. I will add Windows and Mac soon*
+*Note: anyone who can help me with Arch linux let me know*

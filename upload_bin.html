@@ -85,7 +85,10 @@
 
     <script src="jimp.min.js"></script>
     <script>
-        let number_of_pixels = 72; // Default value
+        let number_of_pixels = 120; // Default Number of Pixels
+        // let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
+        let poi_one_ip = "10.0.0.5" // test value STA Mode
+        let poi_two_ip = "192.168.1.78"; // Default Auxillary Poi IP (AP Mode)
 
         function updatePixelSize() {
             const pixelInput = document.getElementById('pixelInput').value;

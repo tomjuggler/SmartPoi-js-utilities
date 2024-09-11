@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,103 +12,147 @@
       flex-direction: column;
       gap: 10px;
     }
+
     button {
       padding: 10px;
       cursor: pointer;
     }
+
     .pattern-buttons button {
-      width: 40px;
+      width: auto;
       height: 40px;
       border-radius: 50%;
       margin: 5px;
       font-size: 18px;
       cursor: pointer;
     }
+
     .pattern-buttons button:nth-child(1) {
-      background-color: #ff0000; /* Red */
+      background-color: #ff0000;
+      /* Red */
     }
+
     .pattern-buttons button:nth-child(2) {
-      background-color: #00ff00; /* Green */
+      background-color: #00ff00;
+      /* Green */
     }
+
     .pattern-buttons button:nth-child(3) {
-      background-color: #0000ff; /* Blue */
+      background-color: #0000ff;
+      /* Blue */
     }
+
     .pattern-buttons button:nth-child(4) {
-      background-color: #ffff00; /* Yellow */
+      background-color: #ffff00;
+      /* Yellow */
     }
+
     .pattern-buttons button:nth-child(5) {
-      background-color: #ff00ff; /* Magenta */
+      background-color: #ff00ff;
+      /* Magenta */
     }
   </style>
 </head>
+
 <body>
 
-<h1>Poi Controls</h1>
+  <h1>Poi Controls</h1>
 
-<form id="routerForm" onsubmit="submitForm(event)">
-  <div class="pattern-buttons">
+  <form id="routerForm" onsubmit="submitForm(event)">
+    <div class="pattern-buttons">
+      <label>
+        Change Pattern:
+        <button type="button" onclick="submitPattern('1')" style="background-color: #ff0000;">Generated</button>
+        <button type="button" onclick="submitPattern('2')" style="background-color: #00ff00;">IMG 1-5</button>
+        <button type="button" onclick="submitPattern('3')" style="background-color: #0000ff;">IMG 6-10</button>
+        <button type="button" onclick="submitPattern('4')" style="background-color: #ffff00;">IMG 10-20</button>
+        <button type="button" onclick="submitPattern('5')" style="background-color: #ff00ff;">IMG 0-52</button>
+        <button type="button" onclick="submitPattern('6')" style="background-color: #00e1ff;">On/Off Switch
+          Mode*</button>
+      </label>
+      <p>
+        <i>*Now you can switch poi on/off to change modes. Make sure to restart both poi at the same time to make sure
+          modes are in sync!</i>
+      </p>
+    </div>
+
     <label>
-      Change Pattern:
-      <button type="button" onclick="submitPattern('1')" style="background-color: #ff0000;">1</button>
-      <button type="button" onclick="submitPattern('2')" style="background-color: #00ff00;">2</button>
-      <button type="button" onclick="submitPattern('3')" style="background-color: #0000ff;">3</button>
-      <button type="button" onclick="submitPattern('4')" style="background-color: #ffff00;">4</button>
-      <button type="button" onclick="submitPattern('5')" style="background-color: #ff00ff;">5</button>
+      Change Speed (seconds):
+      <input type="text" id="speedInput" placeholder="Enter speed">
+      <button type="button" onclick="submitSpeed()">Submit</button>
     </label>
-  </div>
+
+    <label>
+      Change Brightness (20-255):
+      <input type="text" id="brightnessInput" placeholder="Enter brightness">
+      <button type="button" onclick="submitBrightness()">Submit</button>
+    </label>
+
+    <br>
+    <br>
+    <br>
+
+    <h2>-------------------------------------- DANGER ZONE --------------------------------------</h2>
+
+    <label>
+      Update Router Name and Password:
+      <input type="text" id="routerInput" placeholder="Enter Router Name">
+      <input type="text" id="passwordInput" placeholder="Enter Router Password">
+      <button type="button" onclick="submitRouter()">Submit</button>
+    </label>
+
+    <label>
+      Switch for Router Mode (submit unchecked to turn off):
+      <input type="checkbox" id="routerModeCheckbox" value="0">
+      <button type="button" onclick="submitRouterMode()">Submit</button>
+    </label>
+
+    <h2>-------------- -------------- -------------- ------------- -------------- -------------- --------------</h2>
+  </form>
 
   <label>
-    Change Speed (seconds):
-    <input type="text" id="speedInput" placeholder="Enter speed">
-    <button type="button" onclick="submitSpeed()">Submit</button>
+    WiFi Poi IP Address Discovery (Router Mode):
+    <button id="discoverBtn">Discover Device</button> <span id="result"></span>
   </label>
 
-  <label>
-    Change Brightness (20-255):
-    <input type="text" id="brightnessInput" placeholder="Enter brightness">
-    <button type="button" onclick="submitBrightness()">Submit</button>
-  </label>
+  <script>
+    let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
+    // const poi_one_ip = "10.0.0.5"
+    let poi_two_ip = "192.168.1.78"; // Default Auxillary Poi IP (AP Mode)
 
-  <br>
-  <br>
-  <br>
+    // todo: get ip addresses handler here
 
-  <h2>-------------      DANGER ZONE      --------------</h2>
+    function submitRouter() {
+      const routerInput = document.getElementById('routerInput').value;
+      const passwordInput = document.getElementById('passwordInput').value;
+      sendRequest(`http://${poi_two_ip}/setting?ssid=${routerInput}&pwd=${passwordInput}`);
+      sendRequest(`http://${poi_one_ip}/setting?ssid=${routerInput}&pwd=${passwordInput}`);
+    }
 
-  <label>
-    Switch On Router Mode:
-    <input type="checkbox" id="routerModeCheckbox" value="0">
-    <button type="button" onclick="submitRouterMode()">Submit</button>
-  </label>
-
-  <h2>-------------    -------------  -------------      ------------</h2>
-</form>
-
-<script>
     function submitRouterMode() {
-      const routerMode = document.getElementById('routerModeCheckbox').checked ? '0' : '1';
-      sendRequest(`http://192.168.1.78/router?router=${routerMode}`);
-      sendRequest(`http://192.168.1.1/router?router=${routerMode}`);
+      const routerMode = document.getElementById('routerModeCheckbox').checked ? '1' : '0';
+      sendRequest(`http://${poi_two_ip}/router?router=${routerMode}`);
+      sendRequest(`http://${poi_one_ip}/router?router=${routerMode}`);
     }
 
     function submitPattern(pattern) {
-      sendRequest(`http://192.168.1.78/pattern?patternChooserChange=${pattern}`);
-      sendRequest(`http://192.168.1.1/pattern?patternChooserChange=${pattern}`);
+      sendRequest(`http://${poi_two_ip}/pattern?patternChooserChange=${pattern}`);
+      sendRequest(`http://${poi_one_ip}/pattern?patternChooserChange=${pattern}`);
     }
 
     function submitSpeed() {
       const speed = document.getElementById('speedInput').value;
       if (speed !== '') {
-        sendRequest(`http://192.168.1.78/intervalChange?interval=${speed}`);
-        sendRequest(`http://192.168.1.1/intervalChange?interval=${speed}`);
+        sendRequest(`http://${poi_two_ip}/intervalChange?interval=${speed}`);
+        sendRequest(`http://${poi_one_ip}/intervalChange?interval=${speed}`);
       }
     }
 
     function submitBrightness() {
       const brightness = document.getElementById('brightnessInput').value;
       if (brightness !== '') {
-        sendRequest(`http://192.168.1.78/brightness?brt=${brightness}`);
-        sendRequest(`http://192.168.1.1/brightness?brt=${brightness}`);
+        sendRequest(`http://${poi_two_ip}/brightness?brt=${brightness}`);
+        sendRequest(`http://${poi_one_ip}/brightness?brt=${brightness}`);
       }
     }
 
@@ -127,6 +172,58 @@
           console.error('There was a problem with the fetch operation:', error);
         });
     }
+
+    let ip = "";
+    document.getElementById('discoverBtn').addEventListener('click', async function () {
+      //   const subnets = ['192.168.1.', '10.0.0.']; // Scan two subnets: 192.168.1.x and 10.0.0.x
+      const subnets = ['10.0.0.']; // Scan one subnet: 10.0.0.x
+      const timeout = 500; // Set timeout for each request (in ms)
+      let foundDevices = 0;
+
+      for (const subnet of subnets) {
+        for (let i = 1; i <= 254; i++) {
+          ip = subnet + i;
+
+          try {
+            const controller = new AbortController();
+            const signal = controller.signal;
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+            const response = await fetch(`http://${ip}/`, { signal });
+
+            if (response.ok) {
+              if (foundDevices === 0) {
+                poi_one_ip = ip; // Assign first device's IP
+                document.getElementById('result').innerText = `First POI found at: http://${ip}/`;
+                foundDevices++;
+              } else if (foundDevices === 1) {
+                poi_two_ip = ip; // Assign second device's IP
+                document.getElementById('result').innerText += `\nSecond POI found at: http://${ip}/`;
+                foundDevices++;
+                clearTimeout(timeoutId); // Stop timeout once the second device is found
+                break; // Stop scanning when both devices are found
+              }
+            }
+          } catch (error) {
+            if (error.name === 'AbortError') {
+              console.log(`Request to ${ip} timed out`);
+            } else {
+              console.log(`Failed to connect to ${ip}: ${error.message}`);
+            }
+          }
+        }
+
+        if (foundDevices >= 2) break; // Exit the outer loop if two devices are found
+      }
+
+      if (foundDevices === 0) {
+        document.getElementById('result').innerText = 'No POI found on the subnet.';
+      } else if (foundDevices === 1) {
+        document.getElementById('result').innerText += '\nOnly one POI found.';
+      }
+    });
+
   </script>
 </body>
+
 </html>

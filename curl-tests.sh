@@ -1,13 +1,5 @@
 # Note: can also work by pasting into a browser url bar (without "curl") and pressing enter
 
-# switch on router mode: 
-curl http://192.168.1.1/router?router=0
-curl http://192.168.1.78/router?router=0
-
-# switch off router mode: 
-curl http://192.168.1.1/router?router=1
-curl http://192.168.1.78/router?router=1
-
 # change pattern: 
 # pattern options: 
 # 1. on-device computer generated patterns
@@ -50,3 +42,23 @@ curl http://192.168.1.78/edit?file=/a.bin --output a.bin
 # delete file from poi: 
 curl -X DELETE 'http://192.168.1.1/edit?path=/x.bin' -H 'Content-Type: application/json'
 curl -X DELETE 'http://192.168.1.78/edit?path=/x.bin' -H 'Content-Type: application/json' 
+
+# change the WiFi Channel for AP (1-13, depending on your country. In US don't use 12 or 13!):
+curl -X POST "http://192.168.1.1/setting" \
+-H "Content-Type: application/x-www-form-urlencoded" \
+--data-urlencode "channel=6"
+
+# update router settings: 
+curl -X POST "http://<ESP8266_IP>/setting" \
+-H "Content-Type: application/x-www-form-urlencoded" \
+--data-urlencode "ssid=<your_ssid>" \
+--data-urlencode "pwd=<your_password>" 
+
+# switch on router mode - do the Auxillary poi first! (only after setting password!): 
+curl http://192.168.1.1/router?router=1
+curl http://192.168.1.78/router?router=1
+
+# switch off router mode - need to find the poi IP address on the network first: 
+curl http://<ESP8266_IP>/router?router=0
+curl http://<ESP8266_IP>/router?router=0
+

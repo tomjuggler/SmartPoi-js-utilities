@@ -221,7 +221,10 @@
         const deleteButton = document.getElementById('deleteButton');
         // Function to create black placeholder images
 
-        let number_of_pixels = 120; // Default value
+        let number_of_pixels = 120; // Default Number of Pixels
+        // let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
+        const poi_one_ip = "10.0.0.5"
+        const poi_two_ip = "192.168.1.78"; // Default Auxillary Poi IP (AP Mode)
 
         function updatePixelSize() {
             const pixelInput = document.getElementById('pixelInput').value;
@@ -281,8 +284,8 @@
         }
 
         // Call the function to create black images:
-        createBlackImages('imageContainer', '192.168.1.1');
-        createBlackImages('imageContainertwo', '192.168.1.78');
+        createBlackImages('imageContainer', poi_one_ip);
+        createBlackImages('imageContainertwo', poi_two_ip);
 
         async function increaseBrightness(imageUrl, brightnessAmount) {
             return new Promise((resolve, reject) => {
@@ -471,7 +474,7 @@
 
                         let containerId;
 
-                        if (ip === '192.168.1.78') {
+                        if (ip === poi_two_ip) {
                             containerId = 'imageContainertwo';
                         } else {
                             containerId = 'imageContainer';
@@ -510,7 +513,7 @@
                     try {
                         let containerId_replace;
 
-                        if (ip === '192.168.1.78') {
+                        if (ip === poi_two_ip) {
                             containerId_replace = 'imageContainertwo';
                         } else {
                             containerId_replace = 'imageContainer';
@@ -626,7 +629,7 @@
 
             // Add click event listener to the delete button
             deleteButton.addEventListener('click', () => {
-                const ipAddresses = ['192.168.1.1', '192.168.1.78'];
+                const ipAddresses = [poi_one_ip, poi_two_ip];
                 ipAddresses.forEach(ip => {
                     deleteFile(ip, imageName);
                 });
@@ -725,10 +728,10 @@
             for (let i = 0; i < 52; i++) {
                 const char = getCharFromIndex(i);
                 const fileName = char + '.bin'; // Add ".bin" extension
-                const ipMain = '192.168.1.1';
-                const ipAux = '192.168.1.78';
-                await deleteFile(ipMain, fileName);
-                await deleteFile(ipAux, fileName)
+                // const ipMain = poi_one_ip;
+                // const ipAux = poi_two_ip;
+                await deleteFile(poi_one_ip, fileName);
+                await deleteFile(poi_two_ip, fileName)
             }
         }
 
@@ -763,7 +766,9 @@
                         const image = await Jimp.read(event.target.result);
 
                         const rotatedImage = image.rotate(-90);
-                        const resizedImage = rotatedImage.resize(number_of_pixels, Jimp.AUTO);
+                        const height = rotatedImage.bitmap.height / 2; // Get half of the current height
+                        const resizedImage = rotatedImage.resize(number_of_pixels, height); // Resize using new height
+                        // const resizedImage = rotatedImage.resize(number_of_pixels, Jimp.AUTO);
 
                         const binaryData = [];
 
@@ -817,10 +822,10 @@
             // Clear the contents of the image container
             // imageContainer.innerHTML = '';
 
-            const ip = '192.168.1.1'; // IP address
+            // const ip = poi_one_ip; // IP address
             try {
                 // Fetch file list from the server
-                const fileListResponse = await fetch('http://' + ip + '/list?dir=/');
+                const fileListResponse = await fetch('http://' + poi_one_ip + '/list?dir=/');
                 if (!fileListResponse.ok) {
                     throw new Error('Network response was not ok');
                 }
@@ -848,10 +853,10 @@
             // imageContainer.innerHTML = '';
 
 
-            const iptwo = '192.168.1.78'; // IP address
+            // const iptwo = poi_two_ip; // IP address
             try {
                 // Fetch file list from the server
-                const fileListResponsetwo = await fetch('http://' + iptwo + '/list?dir=/');
+                const fileListResponsetwo = await fetch('http://' + poi_two_ip + '/list?dir=/');
                 if (!fileListResponsetwo.ok) {
                     throw new Error('Network response was not ok');
                 }
