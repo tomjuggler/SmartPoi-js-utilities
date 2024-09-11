@@ -51,6 +51,31 @@
       background-color: #ff00ff;
       /* Magenta */
     }
+
+    /* Spinner styles */
+    .spinner {
+      display: none;
+      margin: 20px auto;
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #3498db;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #counter {
+      display: none;
+      font-size: 18px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
   </style>
 </head>
 
@@ -110,12 +135,20 @@
     <h2>-------------- -------------- -------------- ------------- -------------- -------------- --------------</h2>
   </form>
 
+  <!-- Spinner and counter elements -->
+  <div class="spinner" id="spinner"></div>
+  <p id="counter">Scanning IP: <span id="currentIP">0</span> for poi!</p>
+
   <label>
     WiFi Poi IP Address Discovery (Router Mode):
-    <button id="discoverBtn">Discover Device</button> <span id="result"></span>
+    <button id="discoverBtn">Discover POI</button> <span id="result"></span>
   </label>
 
   <script>
+    const spinner = document.getElementById('spinner');
+    const counter = document.getElementById('counter');
+    const currentIPSpan = document.getElementById('currentIP');
+
     let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
     // const poi_one_ip = "10.0.0.5"
     let poi_two_ip = "192.168.1.78"; // Default Auxillary Poi IP (AP Mode)
@@ -175,14 +208,19 @@
 
     let ip = "";
     document.getElementById('discoverBtn').addEventListener('click', async function () {
+      // Show the spinner and counter
+      spinner.style.display = 'block';
+      counter.style.display = 'block';
+
       //   const subnets = ['192.168.1.', '10.0.0.']; // Scan two subnets: 192.168.1.x and 10.0.0.x
       const subnets = ['10.0.0.']; // Scan one subnet: 10.0.0.x
-      const timeout = 500; // Set timeout for each request (in ms)
+      const timeout = 600; // Set timeout for each request (in ms)
       let foundDevices = 0;
 
       for (const subnet of subnets) {
         for (let i = 1; i <= 254; i++) {
           ip = subnet + i;
+          currentIPSpan.innerText = ip; // Update the counter with the current IP being scanned
 
           try {
             const controller = new AbortController();
@@ -198,7 +236,7 @@
                 foundDevices++;
               } else if (foundDevices === 1) {
                 poi_two_ip = ip; // Assign second device's IP
-                document.getElementById('result').innerText += `\nSecond POI found at: http://${ip}/`;
+                document.getElementById('result').innerText += ` | Second POI found at: http://${ip}/`;
                 foundDevices++;
                 clearTimeout(timeoutId); // Stop timeout once the second device is found
                 break; // Stop scanning when both devices are found
@@ -216,10 +254,14 @@
         if (foundDevices >= 2) break; // Exit the outer loop if two devices are found
       }
 
+      // Hide spinner and counter when done
+      spinner.style.display = 'none';
+      counter.style.display = 'none';
+
       if (foundDevices === 0) {
         document.getElementById('result').innerText = 'No POI found on the subnet.';
       } else if (foundDevices === 1) {
-        document.getElementById('result').innerText += '\nOnly one POI found.';
+        document.getElementById('result').innerText += ' | Only one POI found.';
       }
     });
 
