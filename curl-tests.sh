@@ -30,10 +30,14 @@ curl http://192.168.1.78/brightness?brt=100
 curl http://192.168.1.1/list?dir=/
 curl http://192.168.1.78/list?dir=/
 
-# list settings (for router mode and more): 
-# returns router-name, router-password, WiFi channel, ip address (on router), pattern
+# fetch the settings currently on the poi:
+# returns in format {RouterName, RouterPassword, APChannel, address1, address2, address3, address4, currentPattern}
+# address is for static IP (unused)
+# APChannel 1-13
+# CurrentPattern: 1-6 (see poi controls)
 curl http://192.168.1.1/returnsettings
-curl http://192.168.1.78/returnsettings 
+curl http://192.168.1.78/returnsettings
+
 
 # get file from poi: 
 curl http://192.168.1.1/edit?file=/a.bin --output a.bin # saves to a.bin in current directory
@@ -63,12 +67,5 @@ curl http://192.168.1.78/router?router=1
 curl http://<ESP8266_IP>/router?router=0
 curl http://<ESP8266_IP>/router?router=0
 
-# fetch the settings currently on the poi:
-# returns in format {RouterName, RouterPassword, APChannel, address1, address2, address3, address4, currentPattern}
-# address is for static IP (not used currently)
-# APChannel 1-13
-# CurrentPattern: 1-6 (see poi controls)
-curl http://192.168.1.1/returnsettings
-curl http://192.168.1.78/returnsettings
 
 

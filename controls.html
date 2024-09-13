@@ -27,6 +27,13 @@
       cursor: pointer;
     }
 
+    /* active button */
+    .pattern-buttons button.active {
+      border: 3px solid #000000;
+      /* Black border for the active pattern */
+      box-shadow: 0 0 10px #000000;
+    }
+
     .pattern-buttons button:nth-child(1) {
       background-color: #ff0000;
       /* Red */
@@ -65,8 +72,13 @@
     }
 
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
 
     #counter {
@@ -75,7 +87,6 @@
       text-align: center;
       margin-top: 10px;
     }
-
   </style>
 </head>
 
@@ -91,7 +102,7 @@
         <button type="button" onclick="submitPattern('2')" style="background-color: #00ff00;">IMG 1-5</button>
         <button type="button" onclick="submitPattern('3')" style="background-color: #0000ff;">IMG 6-10</button>
         <button type="button" onclick="submitPattern('4')" style="background-color: #ffff00;">IMG 10-20</button>
-        <button type="button" onclick="submitPattern('5')" style="background-color: #ff00ff;">IMG 0-52</button>
+        <button type="button" onclick="submitPattern('5')" style="background-color: #ff00ff;">IMG 1-52</button>
         <button type="button" onclick="submitPattern('6')" style="background-color: #00e1ff;">On/Off Switch
           Mode*</button>
       </label>
@@ -169,11 +180,54 @@
 
     // todo: get ip addresses handler here
 
+    // settings globals: 
+    let data = "";
+    let parts = "";
+
+    let router = "";
+    let password = "";
+    let channel = "";
+    let pattern = "";
+
+    let data_two = "";
+    let parts_two = "";
+
+    let router_two = "";
+    let password_two = "";
+    let channel_two = "";
+    let pattern_two = "";
+
+    // Display the values
+    document.getElementById('routerTwo').textContent = router_two;
+    document.getElementById('passwordTwo').textContent = password_two;
+    document.getElementById('channelTwo').textContent = channel_two;
+    document.getElementById('patternTwo').textContent = pattern_two;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Fetch the current settings when the page loads
+      document.getElementById('fetchBtn').click();
+
+      // Add a slight delay to ensure the fetch completes before updating the UI
+      setTimeout(() => {
+        // Highlight the button based on the fetched pattern
+        console.log(`pattern: ${pattern}`);
+        highlightActiveButton(pattern);
+      }, 6000); // Adjust the delay if necessary
+    });
+
+
     function submitRouter() {
       const routerInput = document.getElementById('routerInput').value;
       const passwordInput = document.getElementById('passwordInput').value;
       sendRequest(`http://${poi_two_ip}/setting?ssid=${routerInput}&pwd=${passwordInput}`);
       sendRequest(`http://${poi_one_ip}/setting?ssid=${routerInput}&pwd=${passwordInput}`);
+
+      // Add a slight delay to ensure the fetch completes before proceeding
+      setTimeout(() => {
+        // Trigger the fetchBtn click to update the current pattern first
+        document.getElementById('fetchBtn').click();
+      }, 2500); // Adjust the delay if necessary
+
     }
 
     function submitRouterMode() {
@@ -182,9 +236,37 @@
       sendRequest(`http://${poi_one_ip}/router?router=${routerMode}`);
     }
 
-    function submitPattern(pattern) {
-      sendRequest(`http://${poi_two_ip}/pattern?patternChooserChange=${pattern}`);
-      sendRequest(`http://${poi_one_ip}/pattern?patternChooserChange=${pattern}`);
+    function submitPattern(chosen_pattern) {
+      // Send request 
+      sendRequest(`http://${poi_two_ip}/pattern?patternChooserChange=${chosen_pattern}`);
+      sendRequest(`http://${poi_one_ip}/pattern?patternChooserChange=${chosen_pattern}`);
+
+      // Add a slight delay to ensure the fetch completes before proceeding
+      setTimeout(() => {
+        // Trigger the fetchBtn click to update the current pattern first
+        document.getElementById('fetchBtn').click();
+      }, 1500); // Adjust the delay if necessary
+
+      setTimeout(() => {
+        // Update the active button based on the selected pattern
+        highlightActiveButton(pattern);
+      }, 2500); // Adjust the delay if necessary
+    }
+
+    // Function to highlight the active pattern button
+    function highlightActiveButton(selectedPattern) {
+      // Get all the pattern buttons
+      const buttons = document.querySelectorAll('.pattern-buttons button');
+
+      // Remove the 'active' class from all buttons
+      buttons.forEach(button => {
+        button.classList.remove('active');
+      });
+
+      // Add the 'active' class to the selected button
+      if (selectedPattern >= 1 && selectedPattern <= 6) {
+        buttons[selectedPattern - 1].classList.add('active'); // Arrays are 0-indexed, hence -1
+      }
     }
 
     function submitSpeed() {
@@ -226,8 +308,8 @@
       spinner.style.display = 'block';
       counter.style.display = 'block';
 
-      //   const subnets = ['192.168.1.', '10.0.0.']; // Scan two subnets: 192.168.1.x and 10.0.0.x
-      const subnets = ['10.0.0.']; // Scan one subnet: 10.0.0.x
+      const subnets = ['10.0.0.', '192.168.1.']; // Scan two subnets: 10.0.0.x and 192.168.1.x
+      // const subnets = ['10.0.0.']; // Scan one subnet: 10.0.0.x
       const timeout = 600; // Set timeout for each request (in ms)
       let foundDevices = 0;
 
@@ -279,25 +361,30 @@
       }
     });
 
-    document.getElementById('fetchBtn').addEventListener('click', async function() {
+    document.getElementById('fetchBtn').addEventListener('click', async function () {
       try {
         const response = await fetch(`http://${poi_one_ip}/returnsettings`, { mode: 'cors' });
         if (response.ok) {
-          const data = await response.text();
-          const parts = data.split(',');
-          
-          // Assuming the format is: router, password, channel, ip1, ip2, ip3, ip4, pattern
-          const router = parts[0].trim();
-          const password = parts[1].trim();
-          const channel = parts[2].trim();
-          const pattern = parts[parts.length - 1].trim(); // The last parameter is pattern
-          
+          data = await response.text();
+          parts = data.split(',');
+
+          // format is: router, password, channel, ip1, ip2, ip3, ip4, pattern
+          router = parts[0].trim();
+          password = parts[1].trim();
+          channel = parts[2].trim();
+          pattern = parts[parts.length - 1].trim(); // The last parameter is pattern
+
           // Display the values
           document.getElementById('router').textContent = router;
           document.getElementById('password').textContent = password;
           document.getElementById('channel').textContent = channel;
           document.getElementById('pattern').textContent = pattern;
+
+          // Update the placeholders for input fields
+          document.getElementById('routerInput').placeholder = router;
+          document.getElementById('passwordInput').placeholder = password;
           
+          console.log(`got pattern in click function: ${pattern}`);
         } else {
           console.error('Fetch error:', response.statusText);
         }
@@ -308,21 +395,21 @@
       try {
         const response_two = await fetch(`http://${poi_two_ip}/returnsettings`, { mode: 'cors' });
         if (response_two.ok) {
-          const data_two = await response_two.text();
-          const parts_two = data_two.split(',');
-          
-          // Assuming the format is: router, password, channel, ip1, ip2, ip3, ip4, pattern
-          const router_two = parts_two[0].trim();
-          const password_two = parts_two[1].trim();
-          const channel_two = parts_two[2].trim();
-          const pattern_two = parts_two[parts_two.length - 1].trim(); // The last parameter is pattern
-          
+          data_two = await response_two.text();
+          parts_two = data_two.split(',');
+
+          // format is: router, password, channel, ip1, ip2, ip3, ip4, pattern
+          router_two = parts_two[0].trim();
+          password_two = parts_two[1].trim();
+          channel_two = parts_two[2].trim();
+          pattern_two = parts_two[parts_two.length - 1].trim(); // The last parameter is pattern
+
           // Display the values
           document.getElementById('routerTwo').textContent = router_two;
           document.getElementById('passwordTwo').textContent = password_two;
           document.getElementById('channelTwo').textContent = channel_two;
           document.getElementById('patternTwo').textContent = pattern_two;
-          
+
         } else {
           console.error('Fetch error:', response_two.statusText);
         }

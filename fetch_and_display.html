@@ -168,6 +168,35 @@
             color: #fff;
             margin-left: 20px;
         }
+
+        /* Spinner styles */
+        .spinner {
+            display: none;
+            margin: 20px auto;
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #counter {
+            display: none;
+            font-size: 18px;
+            text-align: center;
+            margin-top: 10px;
+        }
     </style>
 
 
@@ -183,6 +212,15 @@
         <button onclick="updatePixelSize()">Submit</button>
         <span class="current-px" id="currentPx">Current px: 120</span>
     </div>
+
+    <!-- Spinner and counter elements -->
+    <div class="spinner" id="spinner"></div>
+    <p id="counter">Scanning IP: <span id="currentIP">0</span> for poi!</p>
+
+    <label>
+        WiFi Poi IP Address Discovery (Router Mode):
+        <button class="dark-button" id="discoverBtn">Discover POI</button> <span id="result"></span>
+    </label>
 
     <div id="file-list-container">
         <h1>POI IMAGES:</h1>
@@ -219,7 +257,11 @@
 
     <script>
         const deleteButton = document.getElementById('deleteButton');
-        // Function to create black placeholder images
+        
+        //globals for ip scan:
+        const spinner = document.getElementById('spinner');
+        const counter = document.getElementById('counter');
+        const currentIPSpan = document.getElementById('currentIP');
 
         let number_of_pixels = 120; // Default Number of Pixels
         let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
@@ -233,6 +275,7 @@
             // Update the images with the new pixel size if necessary
         }
 
+        // Function to create black placeholder images
         function createBlackImages(containerId, ip) {
             const container = document.getElementById(containerId);
 
@@ -881,7 +924,64 @@
 
         // Call the processFiles function to fetch file list and process files
         // processFiles();
+        let ip = "";
+        document.getElementById('discoverBtn').addEventListener('click', async function () {
+            // Show the spinner and counter
+            spinner.style.display = 'block';
+            counter.style.display = 'block';
 
+            const subnets = ['10.0.0.', '192.168.1.']; // Scan two subnets: 10.0.0.x and 192.168.1.x
+            // const subnets = ['10.0.0.']; // Scan one subnet: 10.0.0.x
+            const timeout = 600; // Set timeout for each request (in ms)
+            let foundDevices = 0;
+
+            for (const subnet of subnets) {
+                for (let i = 1; i <= 254; i++) {
+                    ip = subnet + i;
+                    currentIPSpan.innerText = ip; // Update the counter with the current IP being scanned
+
+                    try {
+                        const controller = new AbortController();
+                        const signal = controller.signal;
+                        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+                        const response = await fetch(`http://${ip}/`, { signal });
+
+                        if (response.ok) {
+                            if (foundDevices === 0) {
+                                poi_one_ip = ip; // Assign first device's IP
+                                document.getElementById('result').innerText = `First POI found at: http://${ip}/`;
+                                foundDevices++;
+                            } else if (foundDevices === 1) {
+                                poi_two_ip = ip; // Assign second device's IP
+                                document.getElementById('result').innerText += ` | Second POI found at: http://${ip}/`;
+                                foundDevices++;
+                                clearTimeout(timeoutId); // Stop timeout once the second device is found
+                                break; // Stop scanning when both devices are found
+                            }
+                        }
+                    } catch (error) {
+                        if (error.name === 'AbortError') {
+                            console.log(`Request to ${ip} timed out`);
+                        } else {
+                            console.log(`Failed to connect to ${ip}: ${error.message}`);
+                        }
+                    }
+                }
+
+                if (foundDevices >= 2) break; // Exit the outer loop if two devices are found
+            }
+
+            // Hide spinner and counter when done
+            spinner.style.display = 'none';
+            counter.style.display = 'none';
+
+            if (foundDevices === 0) {
+                document.getElementById('result').innerText = 'No POI found on the subnet.';
+            } else if (foundDevices === 1) {
+                document.getElementById('result').innerText += ' | Only one POI found.';
+            }
+        });
     </script>
 </body>
 
