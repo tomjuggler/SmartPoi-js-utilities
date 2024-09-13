@@ -222,12 +222,17 @@
         <button class="dark-button" id="discoverBtn">Discover POI</button> <span id="result"></span>
     </label>
 
+    <label>
+        WS2812 or APA102:
+        <button class="dark-button" id="ws_apaBtn">WS2812?</button> <span id="ws_apa_indicator"></span>
+    </label>
+
     <div id="file-list-container">
         <h1>POI IMAGES:</h1>
         <p><i>Click image to see name - if no image is displayed, clicking the name will attempt to fetch from poi and
                 display</i></p>
         <p><i>Drag an image from file manager and drop onto the image (or name) you want to replace.</i></p>
-        <p><i>You can even drag images between poi *currently not working..</i></p>
+        <!-- todo: drag and share images between poi, upload to both at once? -->
         <button class="dark-button" onclick="getFilesAndDisplay()">Fetch and Display all poi images</button>
     </div>
 
@@ -256,6 +261,8 @@
     <script src="jimp.min.js"></script>
 
     <script>
+        let ws_strip = true; //using ws2812 or APA102? 
+
         const deleteButton = document.getElementById('deleteButton');
         
         //globals for ip scan:
@@ -809,7 +816,13 @@
                         const image = await Jimp.read(event.target.result);
 
                         const rotatedImage = image.rotate(-90);
-                        const height = rotatedImage.bitmap.height / 2; // Get half of the current height
+                        let height;
+                        if(ws_strip){
+                            height = rotatedImage.bitmap.height / 2; // Get half of the current height
+                        } else{
+                            height = rotatedImage.bitmap.height;
+                        }
+                        
                         const resizedImage = rotatedImage.resize(number_of_pixels, height); // Resize using new height
                         // const resizedImage = rotatedImage.resize(number_of_pixels, Jimp.AUTO);
 
@@ -982,6 +995,11 @@
                 document.getElementById('result').innerText += ' | Only one POI found.';
             }
         });
+
+        document.getElementById('ws_apaBtn').addEventListener('click', async function () {
+            ws_strip = !ws_strip;
+            document.getElementById('ws_apa_indicator').innerText = `${ws_strip}`;
+        })
     </script>
 </body>
 
