@@ -222,8 +222,8 @@
         // Function to create black placeholder images
 
         let number_of_pixels = 120; // Default Number of Pixels
-        // let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
-        const poi_one_ip = "10.0.0.5"
+        let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
+        // const poi_one_ip = "10.0.0.5"
         const poi_two_ip = "192.168.1.78"; // Default Auxillary Poi IP (AP Mode)
 
         function updatePixelSize() {
@@ -837,7 +837,7 @@
 
                 // Loop over file names and call decompressAndDisplay for each
                 for (const fileName of fileNames) {
-                    await decompressAndDisplay(ip, fileName);
+                    await decompressAndDisplay(poi_one_ip, fileName);
                 }
             } catch (error) {
                 console.error('There was a problem fetching the file list:', error);
@@ -868,7 +868,7 @@
 
                 // Loop over file names and call decompressAndDisplay for each
                 for (const fileNametwo of fileNamestwo) {
-                    await decompressAndDisplay(iptwo, fileNametwo);
+                    await decompressAndDisplay(poi_two_ip, fileNametwo);
                 }
             } catch (errortwo) {
                 console.error('There was a problem fetching the file list:', errortwo);

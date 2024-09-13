@@ -144,6 +144,20 @@
     <button id="discoverBtn">Discover POI</button> <span id="result"></span>
   </label>
 
+  <h1>Poi Settings Data: </h1>
+  <button id="fetchBtn">Fetch Settings</button>
+  <h4>Main Poi:</h4>
+  <p>Router: <span id="router">N/A</span></p>
+  <p>Password: <span id="password">N/A</span></p>
+  <p>Channel: <span id="channel">N/A</span></p>
+  <p>Pattern: <span id="pattern">N/A</span></p>
+
+  <h4>Auxillary Poi:</h4>
+  <p>Router: <span id="routerTwo">N/A</span></p>
+  <p>Password: <span id="passwordTwo">N/A</span></p>
+  <p>Channel: <span id="channelTwo">N/A</span></p>
+  <p>Pattern: <span id="patternTwo">N/A</span></p>
+
   <script>
     const spinner = document.getElementById('spinner');
     const counter = document.getElementById('counter');
@@ -263,6 +277,59 @@
       } else if (foundDevices === 1) {
         document.getElementById('result').innerText += ' | Only one POI found.';
       }
+    });
+
+    document.getElementById('fetchBtn').addEventListener('click', async function() {
+      try {
+        const response = await fetch(`http://${poi_one_ip}/returnsettings`, { mode: 'cors' });
+        if (response.ok) {
+          const data = await response.text();
+          const parts = data.split(',');
+          
+          // Assuming the format is: router, password, channel, ip1, ip2, ip3, ip4, pattern
+          const router = parts[0].trim();
+          const password = parts[1].trim();
+          const channel = parts[2].trim();
+          const pattern = parts[parts.length - 1].trim(); // The last parameter is pattern
+          
+          // Display the values
+          document.getElementById('router').textContent = router;
+          document.getElementById('password').textContent = password;
+          document.getElementById('channel').textContent = channel;
+          document.getElementById('pattern').textContent = pattern;
+          
+        } else {
+          console.error('Fetch error:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+
+      try {
+        const response_two = await fetch(`http://${poi_two_ip}/returnsettings`, { mode: 'cors' });
+        if (response_two.ok) {
+          const data_two = await response_two.text();
+          const parts_two = data_two.split(',');
+          
+          // Assuming the format is: router, password, channel, ip1, ip2, ip3, ip4, pattern
+          const router_two = parts_two[0].trim();
+          const password_two = parts_two[1].trim();
+          const channel_two = parts_two[2].trim();
+          const pattern_two = parts_two[parts_two.length - 1].trim(); // The last parameter is pattern
+          
+          // Display the values
+          document.getElementById('routerTwo').textContent = router_two;
+          document.getElementById('passwordTwo').textContent = password_two;
+          document.getElementById('channelTwo').textContent = channel_two;
+          document.getElementById('patternTwo').textContent = pattern_two;
+          
+        } else {
+          console.error('Fetch error:', response_two.statusText);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+
     });
 
   </script>

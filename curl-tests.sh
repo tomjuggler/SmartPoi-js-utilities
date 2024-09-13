@@ -44,6 +44,7 @@ curl -X DELETE 'http://192.168.1.1/edit?path=/x.bin' -H 'Content-Type: applicati
 curl -X DELETE 'http://192.168.1.78/edit?path=/x.bin' -H 'Content-Type: application/json' 
 
 # change the WiFi Channel for AP (1-13, depending on your country. In US don't use 12 or 13!):
+# todo: currently this overwrites the Router and Password! 
 curl -X POST "http://192.168.1.1/setting" \
 -H "Content-Type: application/x-www-form-urlencoded" \
 --data-urlencode "channel=6"
@@ -61,4 +62,13 @@ curl http://192.168.1.78/router?router=1
 # switch off router mode - need to find the poi IP address on the network first: 
 curl http://<ESP8266_IP>/router?router=0
 curl http://<ESP8266_IP>/router?router=0
+
+# fetch the settings currently on the poi:
+# returns in format {RouterName, RouterPassword, APChannel, address1, address2, address3, address4, currentPattern}
+# address is for static IP (not used currently)
+# APChannel 1-13
+# CurrentPattern: 1-6 (see poi controls)
+curl http://192.168.1.1/returnsettings
+curl http://192.168.1.78/returnsettings
+
 
