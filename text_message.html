@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text to Image with Custom Font</title>
+</head>
+<body>
+  <h1>Text to Image with Custom Font</h1>
+
+  <!-- Text Input Form -->
+  <input type="text" id="text-input" placeholder="Enter text" />
+  <button id="create-btn">Create Image</button>
+
+  <!-- Image Display Area -->
+  <br>
+  <canvas id="textCanvas" width="180" height="120"></canvas>
+  <br>
+  <!-- Export Button -->
+  <a id="download-link" download="text-image.png">Download Image</a>
+
+  <script>
+    document.getElementById('create-btn').addEventListener('click', function() {
+      const text = document.getElementById('text-input').value;
+      const canvas = document.getElementById('textCanvas');
+      const ctx = canvas.getContext('2d');
+
+      // Clear the canvas before drawing
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Set background color to black
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Use your OTF font (assumed to be in the same directory)
+      const font = new FontFace('CustomFont', 'url(font.otf)');
+
+      // Load the custom font
+      font.load().then(function(loadedFont) {
+        document.fonts.add(loadedFont);
+
+        // Set text color to red and font style
+        ctx.font = '60px CustomFont';  // Adjust font size based on canvas size
+        ctx.fillStyle = 'red';
+
+        // Draw the text on the canvas
+        ctx.fillText(text, 10, 70);
+
+        // Export canvas as an image
+        const imageUrl = canvas.toDataURL('image/png');
+        const downloadLink = document.getElementById('download-link');
+        downloadLink.href = imageUrl;
+      }).catch(function(err) {
+        console.error('Font loading error:', err);
+      });
+    });
+  </script>
+</body>
+</html>

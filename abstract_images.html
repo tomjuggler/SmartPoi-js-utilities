@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Abstract Image Generator</title>
+</head>
+<body>
+  <h1>Abstract Image Generator</h1>
+
+  <!-- Canvas Area -->
+  <canvas id="abstractCanvas" width="180" height="120"></canvas>
+  <br>
+  <!-- Generate Button -->
+  <button id="generate-btn">Generate Abstract Image</button>
+
+  <script>
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function drawRandomCircle(ctx) {
+      const x = getRandomInt(10, 170);
+      const y = getRandomInt(10, 110);
+      const radius = getRandomInt(5, 30);
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, 2 * Math.PI);
+      ctx.fillStyle = `rgba(${getRandomInt(0, 255)}, ${getRandomInt(0, 255)}, ${getRandomInt(0, 255)}, ${Math.random()})`;
+      ctx.fill();
+    }
+
+    function drawRandomTriangle(ctx) {
+      const x1 = getRandomInt(0, 180);
+      const y1 = getRandomInt(0, 120);
+      const x2 = getRandomInt(0, 180);
+      const y2 = getRandomInt(0, 120);
+      const x3 = getRandomInt(0, 180);
+      const y3 = getRandomInt(0, 120);
+
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.lineTo(x3, y3);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(${getRandomInt(0, 255)}, ${getRandomInt(0, 255)}, ${getRandomInt(0, 255)}, ${Math.random()})`;
+      ctx.fill();
+    }
+
+    document.getElementById('generate-btn').addEventListener('click', function() {
+      const canvas = document.getElementById('abstractCanvas');
+      const ctx = canvas.getContext('2d');
+
+      // Clear the canvas before drawing new shapes
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    //   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw random triangles and circles
+      const shapeCount = getRandomInt(5, 20); // Random number of shapes to generate
+
+      for (let i = 0; i < shapeCount; i++) {
+        const randomShape = Math.random();
+        if (randomShape < 0.5) {
+          drawRandomCircle(ctx);
+        } else {
+          drawRandomTriangle(ctx);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
