@@ -234,9 +234,12 @@
         <p><i>Drag an image from file manager and drop onto the image (or name) you want to replace.</i></p>
         <!-- todo: drag and share images between poi, upload to both at once? -->
         <button class="dark-button" onclick="getFilesAndDisplay()">Fetch and Display all poi images</button>
+        
     </div>
 
-
+    <div>
+        <button class="dark-button" onclick="refreshAll()">Refresh Page</button>
+    </div>
 
     <div id="container">
         <div>
@@ -264,7 +267,7 @@
         let ws_strip = true; //using ws2812 or APA102? 
 
         const deleteButton = document.getElementById('deleteButton');
-        
+
         //globals for ip scan:
         const spinner = document.getElementById('spinner');
         const counter = document.getElementById('counter');
@@ -317,11 +320,18 @@
                         const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';
                         const imageName = imgElement.alt;
                         try {
-                            uploadDraggedFile(draggedFileBlob, imageName, ip);
+                            // uploadDraggedFile(draggedFileBlob, imageName, ip);
+                            // imgElement.src = draggedFileBlob;
+                            uploadDraggedFile(draggedFileBlob, imageName, ip).then((success) => {
+                                if (success) {
+                                    console.log("dragging succeeded? replacing image");
+                                    imgElement.src = draggedFileBlob;
+                                }
+                            }).catch((error) => {
+                                console.error('Error uploading: ', error);
+                            });
                         } catch (error) {
                             console.error('Error uploading: ', error);
-                        } finally {
-                            imgElement.src = draggedFileBlob;
                         }
                     });
 
@@ -423,7 +433,7 @@
 
         async function fetchDataWithRetry(url) {
             console.log("fetching...");
-            const maxRetries = 5; // Maximum number of retries
+            const maxRetries = 3; // Maximum number of retries
             let retries = 0; // Initialize the number of retries
             while (retries < maxRetries) {
                 try {
@@ -448,7 +458,7 @@
 
         // DISPLAY IMAGES FROM POI CODE HERE: 
         let retryCount = 0;
-        const MAX_RETRY_COUNT = 7;
+        const MAX_RETRY_COUNT = 3;
 
         async function decompressAndDisplay(ip, fileName) {
             try {
@@ -518,8 +528,15 @@
                             const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';
                             const imageName = imgElement.alt;
                             // displayDraggedFileDetails(draggedFilePath, imageName);
-                            uploadDraggedFile(draggedFileBlob, imageName, ip);
-                            imgElement.src = draggedFileBlob;
+                            uploadDraggedFile(draggedFileBlob, imageName, ip).then((success) => {
+                                if (success) {
+                                    imgElement.src = draggedFileBlob;
+                                }
+                            }).catch((error) => {
+                                console.error('Error uploading: ', error);
+                            });
+                            // uploadDraggedFile(draggedFileBlob, imageName, ip);
+                            // imgElement.src = draggedFileBlob;
                         });
 
                         let containerId;
@@ -593,8 +610,15 @@
                             const draggedFileBlobReplacement = droppedFileReplacement ? URL.createObjectURL(droppedFileReplacement) : '';
                             const imageNameReplacement = imgElementReplacement.alt;
                             // displayDraggedFileDetails(draggedFilePath, imageName);
-                            uploadDraggedFile(draggedFileBlobReplacement, imageNameReplacement, ip);
-                            imgElementReplacement.src = draggedFileBlobReplacement;
+                            uploadDraggedFile(draggedFileBlobReplacement, imageNameReplacement, ip).then((success) => {
+                                if (success) {
+                                    imgElementReplacement.src = draggedFileBlobReplacement;
+                                }
+                            }).catch((error) => {
+                                console.error('Error uploading: ', error);
+                            });
+                            // uploadDraggedFile(draggedFileBlobReplacement, imageNameReplacement, ip);
+                            // imgElementReplacement.src = draggedFileBlobReplacement;
                         });
 
                         // Append image element to container
@@ -734,7 +758,21 @@
         }
 
         function uploadDraggedFile(file_blob, file_name, ip) {
-            send_specific_image(file_blob, file_name, ip);
+            try {
+                send_specific_image(file_blob, file_name, ip).then((success) => {
+                    if (success) {
+                        console.log("success! ");
+                        return true;
+                    }
+                }).catch((error) => {
+                    // console.error('Error uploading: ', error);
+                    return false;
+                });
+            } catch (error) {
+                // console.error('Error uploading: ', error);
+                return false;
+            }
+
         }
 
         function clearModal() {
@@ -817,12 +855,12 @@
 
                         const rotatedImage = image.rotate(-90);
                         let height;
-                        if(ws_strip){
+                        if (ws_strip) {
                             height = rotatedImage.bitmap.height / 2; // Get half of the current height
-                        } else{
+                        } else {
                             height = rotatedImage.bitmap.height;
                         }
-                        
+
                         const resizedImage = rotatedImage.resize(number_of_pixels, height); // Resize using new height
                         // const resizedImage = rotatedImage.resize(number_of_pixels, Jimp.AUTO);
 
@@ -849,19 +887,36 @@
                             body: formData,
                         };
 
-                        // Assuming 'ip' is defined somewhere in your code
-                        await fetch('http://' + ip + '/edit', requestOptions);
-                        console.log('File ' + fileName + ' uploaded to http://' + ip + '/edit');
-                        createMessage('File ' + fileName + ' uploaded to <a href="http://' + ip + '/edit">http://' + ip + '/edit</a>');
+                        await fetch('http://' + ip + '/edit', requestOptions)
+                            .then(response => {
+                                if (response.ok) {
+                                    console.log('File uploaded successfully!');
+                                    createMessage('File ' + fileName + ' uploaded to <a href="http://' + ip + '/edit">http://' + ip + '/edit</a>');
+                                    return true;
+                                } else {
+                                    console.error('Error uploading file:', response.status, response.statusText);
+                                    createMessage('Error uploading file: ' + response.statusText);
+                                    alert(response.statusText);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error uploading file:', error);
+                                createMessage('Error uploading file: ' + error.message);
+                                alert(error.message);
+                            });
                     } catch (error) {
                         console.error('Error processing image:', error);
+                        alert(error);
                     }
                 };
 
                 // Reading the Blob URL as data URL
                 reader.readAsDataURL(blob);
+                return true;
             } catch (error) {
                 console.error('Error:', error);
+                alert(error);
+                return false;
             }
         }
 
@@ -930,9 +985,14 @@
                 console.error('There was a problem fetching the file list:', errortwo);
             }
         }
+
         async function getFilesAndDisplay() {
             getFilesOne();
             getFilesTwo();
+        }
+
+        function refreshAll() {
+            window.location.reload();
         }
 
         // Call the processFiles function to fetch file list and process files
