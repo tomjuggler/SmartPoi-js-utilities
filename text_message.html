@@ -24,6 +24,10 @@
       const text = document.getElementById('text-input').value;
       const canvas = document.getElementById('textCanvas');
       const ctx = canvas.getContext('2d');
+      const maxWidth = canvas.width - 20; // Add some padding
+      const maxHeight = canvas.height - 20;
+      const minFontSize = 10; // Minimum font size
+      let fontSize = 60; // Start with a large font size
 
       // Clear the canvas before drawing
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -32,19 +36,36 @@
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Use your OTF font (assumed to be in the same directory)
+      // Load custom font
       const font = new FontFace('CustomFont', 'url(font.otf)');
 
-      // Load the custom font
       font.load().then(function(loadedFont) {
         document.fonts.add(loadedFont);
 
-        // Set text color to red and font style
-        ctx.font = '60px CustomFont';  // Adjust font size based on canvas size
+        // Function to determine if the text fits
+        function fitsInCanvas(text, fontSize) {
+          ctx.font = `${fontSize}px CustomFont`;
+          const textWidth = ctx.measureText(text).width;
+          const textHeight = fontSize; // Approximate height based on font size
+          return textWidth <= maxWidth && textHeight <= maxHeight;
+        }
+
+        // Dynamically reduce font size until text fits
+        while (!fitsInCanvas(text, fontSize) && fontSize > minFontSize) {
+          fontSize--;
+        }
+
+        // Set text color and apply the calculated font size
+        ctx.font = `${fontSize}px CustomFont`;
         ctx.fillStyle = 'red';
 
+        // Center the text horizontally and vertically
+        const textWidth = ctx.measureText(text).width;
+        const textX = (canvas.width - textWidth) / 2;
+        const textY = (canvas.height + fontSize) / 2; // Vertically center
+
         // Draw the text on the canvas
-        ctx.fillText(text, 10, 70);
+        ctx.fillText(text, textX, textY);
 
         // Export canvas as an image
         const imageUrl = canvas.toDataURL('image/png');
