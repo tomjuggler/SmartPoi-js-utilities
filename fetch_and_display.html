@@ -197,6 +197,10 @@
             text-align: center;
             margin-top: 10px;
         }
+
+        .alert-indicator {
+            color:coral;
+        }
     </style>
 
 
@@ -234,7 +238,7 @@
         <p><i>Drag an image from file manager and drop onto the image (or name) you want to replace.</i></p>
         <!-- todo: drag and share images between poi, upload to both at once? -->
         <button class="dark-button" onclick="getFilesAndDisplay()">Fetch and Display all poi images</button>
-        
+
     </div>
 
     <div>
@@ -933,6 +937,8 @@
             // Select the image container element
             const imageContainer = document.getElementById('imageContainer');
 
+            // Start indicator: 
+            document.getElementById("get-files-one-indicator").innerText = "File fetch started..";
             // Clear the contents of the image container
             // imageContainer.innerHTML = '';
 
@@ -941,7 +947,7 @@
                 // Fetch file list from the server
                 const fileListResponse = await fetch('http://' + poi_one_ip + '/list?dir=/');
                 if (!fileListResponse.ok) {
-                    throw new Error('Network response was not ok');                    
+                    throw new Error('Network response was not ok');
                 }
                 const fileListJson = await fileListResponse.json();
 
@@ -953,9 +959,15 @@
                 for (const fileName of fileNames) {
                     await decompressAndDisplay(poi_one_ip, fileName);
                 }
+
+                // End indicator
+                document.getElementById("get-files-one-indicator").innerText = "File fetch completed";
             } catch (error) {
                 console.error('There was a problem fetching the file list:', error);
-                document.getElementById("get-files-one-indicator").innerText="Unable to fetch file list from poi!";
+                document.getElementById("get-files-one-indicator").innerText = "Unable to fetch file list from poi!";
+            } finally {
+                // This will run whether the try block succeeds or catches an error                                                                                          
+                
             }
         }
 
@@ -964,6 +976,8 @@
             // Select the image container element
             const imageContainertwo = document.getElementById('imageContainertwo');
 
+            // start indicator:
+            document.getElementById("get-files-two-indicator").innerText = "File fetch started..";
             // Clear the contents of the image container
             // imageContainer.innerHTML = '';
 
@@ -973,7 +987,7 @@
                 // Fetch file list from the server
                 const fileListResponsetwo = await fetch('http://' + poi_two_ip + '/list?dir=/');
                 if (!fileListResponsetwo.ok) {
-                    throw new Error('Network response was not ok');                    
+                    throw new Error('Network response was not ok');
                 }
                 const fileListJsontwo = await fileListResponsetwo.json();
 
@@ -985,9 +999,15 @@
                 for (const fileNametwo of fileNamestwo) {
                     await decompressAndDisplay(poi_two_ip, fileNametwo);
                 }
+
+                // End indicator: 
+                document.getElementById("get-files-two-indicator").innerText = "File fetch completed";
             } catch (errortwo) {
-                document.getElementById("get-files-two-indicator").innerText="Unable to fetch file list from poi!";
+                document.getElementById("get-files-two-indicator").innerText = "Unable to fetch file list from poi!";
                 console.error('There was a problem fetching the file list:', errortwo);
+            } finally {
+                // This will run whether the try block succeeds or catches an error                                                                                          
+                
             }
         }
 
@@ -1066,34 +1086,34 @@
             document.getElementById('ws_apa_indicator').innerText = `${ws_strip}`;
         })
 
-        async function fetchNumberOfPixels(ip) {                                                                                                                     
-             try {                                                                                                                                                    
-                 const response = await fetch(`http://${ip}/get-pixels`);                                                                                             
-                 if (!response.ok) {                                                                                                                                  
-                     throw new Error(`HTTP error! status: ${response.status}`);                                                                                       
-                 }                                                                                                                                                    
-                 const pixels = await response.text();                                                                                                                
-                 return parseInt(pixels, 10);                                                                                                                         
-             } catch (error) {                                                                                                                                        
-                 console.error(`Error fetching number of pixels from ${ip}:`, error);                                                                                 
-                 return null;                                                                                                                                         
-             }                                                                                                                                                        
-         }                                                                                                                                                            
-                                                                                                                                                                      
-         async function updateNumberOfPixels(ip) {                                                                                                                    
-             const fetchedPixels = await fetchNumberOfPixels(ip);                                                                                                     
-             if (fetchedPixels !== null) {                                                                                                                            
-                 number_of_pixels = fetchedPixels;                                                                                                                    
-                 document.getElementById('currentPx').textContent = `Poi px: ${number_of_pixels}`;  
-                 // Update the input field value as well                                                                                                              
-                 document.getElementById('pixelInput').value = number_of_pixels;                                                                                                                               
-             }                                                                                                                                                        
-         }                                                                                                                                                            
-                                                                                                                                                                      
-         window.addEventListener('load', () => {                                                                                                                      
-             updateNumberOfPixels(poi_one_ip);                                                                                                                        
-             // Consider also updating for poi_two_ip if needed                                                                                                       
-         });
+        async function fetchNumberOfPixels(ip) {
+            try {
+                const response = await fetch(`http://${ip}/get-pixels`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const pixels = await response.text();
+                return parseInt(pixels, 10);
+            } catch (error) {
+                console.error(`Error fetching number of pixels from ${ip}:`, error);
+                return null;
+            }
+        }
+
+        async function updateNumberOfPixels(ip) {
+            const fetchedPixels = await fetchNumberOfPixels(ip);
+            if (fetchedPixels !== null) {
+                number_of_pixels = fetchedPixels;
+                document.getElementById('currentPx').textContent = `Poi px: ${number_of_pixels}`;
+                // Update the input field value as well                                                                                                              
+                document.getElementById('pixelInput').value = number_of_pixels;
+            }
+        }
+
+        window.addEventListener('load', () => {
+            updateNumberOfPixels(poi_one_ip);
+            // Consider also updating for poi_two_ip if needed                                                                                                       
+        });
     </script>
 </body>
 
