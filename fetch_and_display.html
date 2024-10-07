@@ -245,12 +245,14 @@
         <div>
             <h1>MAIN POI</h1>
             <button class="dark-button" onclick="getFilesOne()">Fetch and Display Main poi images</button>
+            <span class="alert-indicator" id="get-files-one-indicator"></span>
             <div id="imageContainer"
                 style="background-color: black; border: 2px solid rgb(122, 122, 122); padding: 10px;"></div>
         </div>
         <div>
             <h1>AUXILLARY POI</h1>
             <button class="dark-button" onclick="getFilesTwo()">Fetch and Display Auxillary poi images</button>
+            <span class="alert-indicator" id="get-files-two-indicator"></span>
             <div id="imageContainertwo"
                 style="background-color: black; border: 2px solid rgb(122, 122, 122); padding: 10px;"></div>
         </div>
@@ -736,6 +738,7 @@
                 .then(response => {
                     if (response.ok) {
                         console.log('File deleted successfully from', ip);
+                        decompressAndDisplay(ip, fileName);
                     } else {
                         console.error('Failed to delete file from', ip);
                     }
@@ -938,7 +941,7 @@
                 // Fetch file list from the server
                 const fileListResponse = await fetch('http://' + poi_one_ip + '/list?dir=/');
                 if (!fileListResponse.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error('Network response was not ok');                    
                 }
                 const fileListJson = await fileListResponse.json();
 
@@ -952,6 +955,7 @@
                 }
             } catch (error) {
                 console.error('There was a problem fetching the file list:', error);
+                document.getElementById("get-files-one-indicator").innerText="Unable to fetch file list from poi!";
             }
         }
 
@@ -969,7 +973,7 @@
                 // Fetch file list from the server
                 const fileListResponsetwo = await fetch('http://' + poi_two_ip + '/list?dir=/');
                 if (!fileListResponsetwo.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error('Network response was not ok');                    
                 }
                 const fileListJsontwo = await fileListResponsetwo.json();
 
@@ -982,6 +986,7 @@
                     await decompressAndDisplay(poi_two_ip, fileNametwo);
                 }
             } catch (errortwo) {
+                document.getElementById("get-files-two-indicator").innerText="Unable to fetch file list from poi!";
                 console.error('There was a problem fetching the file list:', errortwo);
             }
         }
