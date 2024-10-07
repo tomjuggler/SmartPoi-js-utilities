@@ -209,7 +209,7 @@
 
     <div class="input-container">
         <input type="number" id="pixelInput" value="120" min="1" max="1000">
-        <button onclick="updatePixelSize()">Submit</button>
+        <button onclick="updatePixelSize()">Update -></button>
         <span class="current-px" id="currentPx">Current px: 120</span>
     </div>
 
@@ -1060,6 +1060,35 @@
             ws_strip = !ws_strip;
             document.getElementById('ws_apa_indicator').innerText = `${ws_strip}`;
         })
+
+        async function fetchNumberOfPixels(ip) {                                                                                                                     
+             try {                                                                                                                                                    
+                 const response = await fetch(`http://${ip}/get-pixels`);                                                                                             
+                 if (!response.ok) {                                                                                                                                  
+                     throw new Error(`HTTP error! status: ${response.status}`);                                                                                       
+                 }                                                                                                                                                    
+                 const pixels = await response.text();                                                                                                                
+                 return parseInt(pixels, 10);                                                                                                                         
+             } catch (error) {                                                                                                                                        
+                 console.error(`Error fetching number of pixels from ${ip}:`, error);                                                                                 
+                 return null;                                                                                                                                         
+             }                                                                                                                                                        
+         }                                                                                                                                                            
+                                                                                                                                                                      
+         async function updateNumberOfPixels(ip) {                                                                                                                    
+             const fetchedPixels = await fetchNumberOfPixels(ip);                                                                                                     
+             if (fetchedPixels !== null) {                                                                                                                            
+                 number_of_pixels = fetchedPixels;                                                                                                                    
+                 document.getElementById('currentPx').textContent = `Poi px: ${number_of_pixels}`;  
+                 // Update the input field value as well                                                                                                              
+                 document.getElementById('pixelInput').value = number_of_pixels;                                                                                                                               
+             }                                                                                                                                                        
+         }                                                                                                                                                            
+                                                                                                                                                                      
+         window.addEventListener('load', () => {                                                                                                                      
+             updateNumberOfPixels(poi_one_ip);                                                                                                                        
+             // Consider also updating for poi_two_ip if needed                                                                                                       
+         });
     </script>
 </body>
 

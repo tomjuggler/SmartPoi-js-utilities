@@ -38,6 +38,9 @@ curl http://192.168.1.78/list?dir=/
 curl http://192.168.1.1/returnsettings
 curl http://192.168.1.78/returnsettings
 
+# get number of pixels (NUM_PX) from poi: 
+curl http://192.168.1.1/get-pixels
+curl http://192.168.1.78/get-pixels
 
 # get file from poi: 
 curl http://192.168.1.1/edit?file=/a.bin --output a.bin # saves to a.bin in current directory
@@ -66,6 +69,7 @@ curl http://192.168.1.78/router?router=1
 # switch off router mode - need to find the poi IP address on the network first: 
 curl http://<ESP8266_IP>/router?router=0
 curl http://<ESP8266_IP>/router?router=0
+
 
 
 
