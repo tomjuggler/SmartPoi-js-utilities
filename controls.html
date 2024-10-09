@@ -138,6 +138,9 @@
         <button type="button" onclick="submitBrightness()">Submit</button>
       </label>
 
+      <label>
+        <button type="button" onclick="sync()">Sync Poi</button>
+      </label>
       <br>
       <br>
       <br>
@@ -233,6 +236,10 @@
       }, 6000); // Adjust the delay if necessary
     });
 
+    function sync() {
+      sendRequest(`http://${poi_two_ip}/resetimagetouse`);
+      sendRequest(`http://${poi_one_ip}/resetimagetouse`);
+    }
 
     function submitRouter() {
       const routerInput = document.getElementById('routerInput').value;
@@ -328,7 +335,7 @@
 
       const subnets = ['10.0.0.', '192.168.1.']; // Scan two subnets: 10.0.0.x and 192.168.1.x
       // const subnets = ['10.0.0.']; // Scan one subnet: 10.0.0.x
-      const timeout = 600; // Set timeout for each request (in ms)
+      const timeout = 1500; // Set timeout for each request (in ms)
       let foundDevices = 0;
 
       for (const subnet of subnets) {
