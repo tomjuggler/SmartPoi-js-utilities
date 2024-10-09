@@ -6,7 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Poi Controls</title>
   <style>
-    /* Add your CSS for styling here */
+    .centered-container {
+      display: flex;
+      flex-direction: column;
+      /* This stacks the elements vertically */
+      align-items: center;
+      /* This centers the elements horizontally */
+      justify-content: center;
+      /* This centers the elements vertically */
+    }
+
     form {
       display: flex;
       flex-direction: column;
@@ -91,70 +100,73 @@
 </head>
 
 <body>
+  <div class="centered-container">
+    <img id="poiImage" class="center-image" src="smaller-logo.jpg" alt="Smaller Logo">
+  </div>
+  <div class="centered-container">
+    <h1>Poi Controls</h1>
 
-  <h1>Poi Controls</h1>
+    <form id="routerForm" onsubmit="submitForm(event)">
+      <div class="pattern-buttons">
+        <label>
+          Change Pattern:
+          <button type="button" onclick="submitPattern('1')" style="background-color: #ff0000;">Generated</button>
+          <button type="button" onclick="submitPattern('2')" style="background-color: #00ff00;">IMG 1-5</button>
+          <button type="button" onclick="submitPattern('3')" style="background-color: #0000ff;">IMG 6-10</button>
+          <button type="button" onclick="submitPattern('4')" style="background-color: #ffff00;">IMG 10-20</button>
+          <button type="button" onclick="submitPattern('5')" style="background-color: #ff00ff;">IMG 1-52</button>
+          <button type="button" onclick="submitPattern('6')" style="background-color: #00e1ff;">On/Off Switch
+            Mode*</button>
+        </label>
+        <p>
+          <i>*Now you can switch poi on/off to change modes. Make sure to restart both poi at the same time to make sure
+            modes are in sync!</i>
+        </p>
+      </div>
 
-  <form id="routerForm" onsubmit="submitForm(event)">
-    <div class="pattern-buttons">
       <label>
-        Change Pattern:
-        <button type="button" onclick="submitPattern('1')" style="background-color: #ff0000;">Generated</button>
-        <button type="button" onclick="submitPattern('2')" style="background-color: #00ff00;">IMG 1-5</button>
-        <button type="button" onclick="submitPattern('3')" style="background-color: #0000ff;">IMG 6-10</button>
-        <button type="button" onclick="submitPattern('4')" style="background-color: #ffff00;">IMG 10-20</button>
-        <button type="button" onclick="submitPattern('5')" style="background-color: #ff00ff;">IMG 1-52</button>
-        <button type="button" onclick="submitPattern('6')" style="background-color: #00e1ff;">On/Off Switch
-          Mode*</button>
+        Change Speed (seconds):
+        <input type="text" id="speedInput" placeholder="Enter speed">
+        <button type="button" onclick="submitSpeed()">Submit</button>
       </label>
-      <p>
-        <i>*Now you can switch poi on/off to change modes. Make sure to restart both poi at the same time to make sure
-          modes are in sync!</i>
-      </p>
-    </div>
+
+      <label>
+        Change Brightness (20-255):
+        <input type="text" id="brightnessInput" placeholder="Enter brightness">
+        <button type="button" onclick="submitBrightness()">Submit</button>
+      </label>
+
+      <br>
+      <br>
+      <br>
+
+      <h2>-------------------------------------- DANGER ZONE --------------------------------------</h2>
+
+      <label>
+        Update Router Name and Password:
+        <input type="text" id="routerInput" placeholder="Enter Router Name">
+        <input type="text" id="passwordInput" placeholder="Enter Router Password">
+        <button type="button" onclick="submitRouter()">Submit</button>
+      </label>
+
+      <label>
+        Switch for Router Mode (submit unchecked to turn off):
+        <input type="checkbox" id="routerModeCheckbox" value="0">
+        <button type="button" onclick="submitRouterMode()">Submit</button>
+      </label>
+
+      <h2>-------------- -------------- -------------- ------------- -------------- -------------- --------------</h2>
+    </form>
+
+    <!-- Spinner and counter elements -->
+    <div class="spinner" id="spinner"></div>
+    <p id="counter">Scanning IP: <span id="currentIP">0</span> for poi!</p>
 
     <label>
-      Change Speed (seconds):
-      <input type="text" id="speedInput" placeholder="Enter speed">
-      <button type="button" onclick="submitSpeed()">Submit</button>
+      WiFi Poi IP Address Discovery (Router Mode):
+      <button id="discoverBtn">Discover POI</button> <span id="result"></span>
     </label>
-
-    <label>
-      Change Brightness (20-255):
-      <input type="text" id="brightnessInput" placeholder="Enter brightness">
-      <button type="button" onclick="submitBrightness()">Submit</button>
-    </label>
-
-    <br>
-    <br>
-    <br>
-
-    <h2>-------------------------------------- DANGER ZONE --------------------------------------</h2>
-
-    <label>
-      Update Router Name and Password:
-      <input type="text" id="routerInput" placeholder="Enter Router Name">
-      <input type="text" id="passwordInput" placeholder="Enter Router Password">
-      <button type="button" onclick="submitRouter()">Submit</button>
-    </label>
-
-    <label>
-      Switch for Router Mode (submit unchecked to turn off):
-      <input type="checkbox" id="routerModeCheckbox" value="0">
-      <button type="button" onclick="submitRouterMode()">Submit</button>
-    </label>
-
-    <h2>-------------- -------------- -------------- ------------- -------------- -------------- --------------</h2>
-  </form>
-
-  <!-- Spinner and counter elements -->
-  <div class="spinner" id="spinner"></div>
-  <p id="counter">Scanning IP: <span id="currentIP">0</span> for poi!</p>
-
-  <label>
-    WiFi Poi IP Address Discovery (Router Mode):
-    <button id="discoverBtn">Discover POI</button> <span id="result"></span>
-  </label>
-
+  </div>
   <h1>Poi Settings Data: </h1>
   <button id="fetchBtn">Fetch Settings</button>
   <h4>Main Poi:</h4>
@@ -387,7 +399,7 @@
           // Update the placeholders for input fields
           document.getElementById('routerInput').placeholder = router;
           document.getElementById('passwordInput').placeholder = password;
-          
+
           console.log(`got pattern in click function: ${pattern}`);
         } else {
           console.error('Fetch error:', response.statusText);
@@ -423,33 +435,33 @@
 
     });
 
-    async function fetchNumberOfPixels(ip) {                                                                                                                     
-             try {                                                                                                                                                    
-                 const response = await fetch(`http://${ip}/get-pixels`);                                                                                             
-                 if (!response.ok) {                                                                                                                                  
-                     throw new Error(`HTTP error! status: ${response.status}`);                                                                                       
-                 }                                                                                                                                                    
-                 const pixels = await response.text();                                                                                                                
-                 return parseInt(pixels, 10);                                                                                                                         
-             } catch (error) {                                                                                                                                        
-                 console.error(`Error fetching number of pixels from ${ip}:`, error);                                                                                 
-                 return null;                                                                                                                                         
-             }                                                                                                                                                        
-         }                                                                                                                                                            
-                                                                                                                                                                      
-         async function updateNumberOfPixels(ip) {                                                                                                                    
-             const fetchedPixels = await fetchNumberOfPixels(ip);                                                                                                     
-             if (fetchedPixels !== null) {                                                                                                                            
-                 number_of_pixels = fetchedPixels;                                                                                                                    
-                 document.getElementById('pixels').textContent = number_of_pixels;
-                 document.getElementById('pixelsTwo').textContent = number_of_pixels;                                                                                                                              
-             }                                                                                                                                                        
-         }                                                                                                                                                            
-                                                                                                                                                                      
-         window.addEventListener('load', () => {                                                                                                                      
-             updateNumberOfPixels(poi_one_ip);                                                                                                                        
-             // Consider also updating for poi_two_ip if needed                                                                                                       
-         });
+    async function fetchNumberOfPixels(ip) {
+      try {
+        const response = await fetch(`http://${ip}/get-pixels`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const pixels = await response.text();
+        return parseInt(pixels, 10);
+      } catch (error) {
+        console.error(`Error fetching number of pixels from ${ip}:`, error);
+        return null;
+      }
+    }
+
+    async function updateNumberOfPixels(ip) {
+      const fetchedPixels = await fetchNumberOfPixels(ip);
+      if (fetchedPixels !== null) {
+        number_of_pixels = fetchedPixels;
+        document.getElementById('pixels').textContent = number_of_pixels;
+        document.getElementById('pixelsTwo').textContent = number_of_pixels;
+      }
+    }
+
+    window.addEventListener('load', () => {
+      updateNumberOfPixels(poi_one_ip);
+      // Consider also updating for poi_two_ip if needed                                                                                                       
+    });
   </script>
 </body>
 

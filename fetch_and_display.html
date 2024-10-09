@@ -216,7 +216,10 @@
 
 <body>
     <div class="centered-container">
+        <img id="poiImage" class="center-image" src="smaller-logo.jpg" alt="Smaller Logo">
+    </div>
 
+    <div class="centered-container">
         <h1>POI SETTINGS</h1>
 
         <div class="bordered-box">
@@ -233,7 +236,8 @@
         <div class="bordered-box">
             <input type="number" id="pixelInput" value="120" min="1" max="1000">
             <button onclick="updatePixelSize()">Update -></button>
-            <span class="current-px" id="currentPx">Current px: 120</span><br><span><i>- refresh page to update automatically</i></span>
+            <span class="current-px" id="currentPx">Current px: 120</span><br><span><i>- refresh page to update
+                    automatically</i></span>
         </div>
 
         <div class="bordered-box">
@@ -1163,6 +1167,8 @@
             updateNumberOfPixels(poi_one_ip);
             // Consider also updating for poi_two_ip if needed                                                                                                       
         });
+
+        
     </script>
 </body>
 

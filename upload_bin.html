@@ -41,6 +41,16 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
+        .centered-container {
+            display: flex;
+            flex-direction: column;
+            /* This stacks the elements vertically */
+            align-items: center;
+            /* This centers the elements horizontally */
+            justify-content: center;
+            /* This centers the elements vertically */
+        }
+
         /* Form Container */
         .input-container {
             display: flex;
@@ -106,7 +116,13 @@
 </head>
 
 <body>
+
+
+    <div class="centered-container">
+        <img id="poiImage" src="smaller-logo.jpg" alt="Smaller Logo">
+    </div>
     <div class="container">
+
         <h1>Upload Pics</h1>
         <div class="input-container">
             <input type="file" id="fileInput" accept="image/*" multiple>
@@ -131,6 +147,7 @@
         let ws_strip = true; //using ws2812 or APA102? 
         let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
         let poi_two_ip = "192.168.1.78"; // Default Auxiliary Poi IP (AP Mode)
+        let originalPattern; // Variable to store the original pattern
 
         function updatePixelSize() {
             const pixelInput = document.getElementById('pixelInput').value;
@@ -255,13 +272,29 @@
                 createMessage('Beginning Processing and Upload');
 
                 try {
+                    await fetchOriginalPattern(); // Fetch the original pattern before uploading
+                    await setPatternOnPoi("7", poi_one_ip); // Set pattern to 7 before upload
+                    await setPatternOnPoi("7", poi_two_ip); // Set pattern to 7 before upload
                     // Compress and send to auxiliary POI (poi_two_ip) first
-                    await compressImagesAndSend(files, poi_two_ip);
-
+                    const success_two = await compressImagesAndSend(files, poi_two_ip);
+                    if (success_two) {
+                        console.log("poi two upload success! ");
+                        await setPatternOnPoi(originalPattern, poi_two_ip); // Restore original pattern after upload
+                        createMessage('Processing and upload complete auxillary poi');
+                    } else {
+                        createMessage('ERROR with Processing and upload for auxillary poi');
+                    }
                     // Once that's done, compress and send to main POI (poi_one_ip)
-                    await compressImagesAndSend(files, poi_one_ip);
+                    const success_one = await compressImagesAndSend(files, poi_one_ip);
+                    if (success_one) {
+                        console.log("poi one upload success! ");
+                        await setPatternOnPoi(originalPattern, poi_one_ip); // Restore original pattern after upload
+                        createMessage('Processing and upload complete main poi');
+                    } else {
+                        createMessage('ERROR with Processing and upload for main poi');
+                    }
 
-                    createMessage('Processing and upload complete for both POIs');
+
                 } catch (error) {
                     createErrorMessage(`Error uploading image: ${error}`);
                     console.error('Error during upload process:', error);
@@ -272,36 +305,70 @@
             }
         }
 
-        async function fetchNumberOfPixels(ip) {                                                                                                                     
-             try {                                                                                                                                                    
-                 const response = await fetch(`http://${ip}/get-pixels`);                                                                                             
-                 if (!response.ok) {                                                                                                                                  
-                     throw new Error(`HTTP error! status: ${response.status}`);                                                                                       
-                 }                                                                                                                                                    
-                 const pixels = await response.text();  
-                 createMessage(`Got Number of Pixels from poi: ${pixels}.`);   
-                 return parseInt(pixels, 10);                                                                                                                         
-             } catch (error) { 
-                 createErrorMessage(`Unable to connect to poi at ${ip}. Error: ${error}`);                                                                                                                                       
-                 console.error(`Error fetching number of pixels from ${ip}:`, error);                                                                                 
-                 return null;                                                                                                                                         
-             }                                                                                                                                                        
-         }                                                                                                                                                            
-                                                                                                                                                                      
-         async function updateNumberOfPixels(ip) {                                                                                                                    
-             const fetchedPixels = await fetchNumberOfPixels(ip);                                                                                                     
-             if (fetchedPixels !== null) {                                                                                                                            
-                 number_of_pixels = fetchedPixels;                                                                                                                    
-                 document.getElementById('currentPx').textContent = `Poi px: ${number_of_pixels}`;  
-                 // Update the input field value as well                                                                                                              
-                 document.getElementById('pixelInput').value = number_of_pixels;                                                                                                                             
-             }                                                                                                                                                        
-         }                                                                                                                                                            
-                                                                                                                                                                      
-         window.addEventListener('load', () => {                                                                                                                      
-             updateNumberOfPixels(poi_one_ip);                                                                                                                        
-             // Consider also updating for poi_two_ip if needed                                                                                                       
-         });
+        async function fetchOriginalPattern() {
+            console.log("Attempting fetchOriginalPattern");
+            try {
+                const response = await fetch(`http://${poi_one_ip}/returnsettings`);
+                if (response.ok) {
+                    const data = await response.text();
+                    const parts = data.split(',');
+                    originalPattern = parts[parts.length - 1].trim(); // Extract the pattern
+                    console.log("Original pattern:", originalPattern);
+                } else {
+                    originalPattern = 1;
+                    console.error('Fetch error:', response.statusText);
+                }
+            } catch (error) {
+                originalPattern = 1;
+                console.error('Error:', error);
+            }
+        }
+
+        async function setPatternOnPoi(pattern, ip) {
+            console.log("Attempting setPatternOnPoi");
+            if (pattern > 7 || pattern < 1) {
+                console.error('Error:', "Invalid pattern to send, changed to 1");
+                pattern = 1;
+            }
+            try {
+                await fetch(`http://${ip}/pattern?patternChooserChange=${pattern}`);
+                // await fetch(`http://${poi_two_ip}/pattern?patternChooserChange=${pattern}`);
+                console.log(`Pattern set to ${pattern} on POI ${ip}`);
+            } catch (error) {
+                console.error('Error setting pattern:', error);
+            }
+        }
+
+        async function fetchNumberOfPixels(ip) {
+            try {
+                const response = await fetch(`http://${ip}/get-pixels`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const pixels = await response.text();
+                createMessage(`Got Number of Pixels from poi: ${pixels}.`);
+                return parseInt(pixels, 10);
+            } catch (error) {
+                createErrorMessage(`Unable to connect to poi at ${ip}. Error: ${error}`);
+                console.error(`Error fetching number of pixels from ${ip}:`, error);
+                return null;
+            }
+        }
+
+        async function updateNumberOfPixels(ip) {
+            const fetchedPixels = await fetchNumberOfPixels(ip);
+            if (fetchedPixels !== null) {
+                number_of_pixels = fetchedPixels;
+                document.getElementById('currentPx').textContent = `Poi px: ${number_of_pixels}`;
+                // Update the input field value as well                                                                                                              
+                document.getElementById('pixelInput').value = number_of_pixels;
+            }
+        }
+
+        window.addEventListener('load', () => {
+            updateNumberOfPixels(poi_one_ip);
+            // Consider also updating for poi_two_ip if needed                                                                                                       
+        });
     </script>
 </body>
 
