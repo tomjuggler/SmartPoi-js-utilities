@@ -270,7 +270,8 @@
     <script src="jimp.min.js"></script>
 
     <script>
-        let ws_strip = true; //using ws2812 or APA102? 
+        let ws_strip = true; //using ws2812 or APA102?
+        let originalPattern; // Variable to store the original pattern
 
         const deleteButton = document.getElementById('deleteButton');
 
@@ -764,22 +765,21 @@
             alert("File path of the dragged image: " + filePath + "\nFilename of the image it was dragged onto: " + imageName);
         }
 
-        function uploadDraggedFile(file_blob, file_name, ip) {
+        async function uploadDraggedFile(file_blob, file_name, ip) {
+            // ... (rest of your uploadDraggedFile function)
+
             try {
-                send_specific_image(file_blob, file_name, ip).then((success) => {
-                    if (success) {
-                        console.log("success! ");
-                        return true;
-                    }
-                }).catch((error) => {
-                    // console.error('Error uploading: ', error);
-                    return false;
-                });
+                await setPatternOnBothPois("7"); // Set pattern to 7 before upload
+                const success = await send_specific_image(file_blob, file_name, ip);
+                if (success) {
+                    console.log("success! ");
+                    await setPatternOnBothPois(originalPattern); // Restore original pattern after upload
+                    return true;
+                }
             } catch (error) {
-                // console.error('Error uploading: ', error);
+                console.error('Error uploading: ', error);
                 return false;
             }
-
         }
 
         function clearModal() {
@@ -1012,8 +1012,35 @@
         }
 
         async function getFilesAndDisplay() {
+            await fetchOriginalPattern(); // Fetch the original pattern before uploading
             getFilesOne();
             getFilesTwo();
+        }
+
+        async function fetchOriginalPattern() {
+            try {
+                const response = await fetch(`http://${poi_one_ip}/returnsettings`);
+                if (response.ok) {
+                    const data = await response.text();
+                    const parts = data.split(',');
+                    originalPattern = parts[parts.length - 1].trim(); // Extract the pattern
+                    console.log("Original pattern:", originalPattern);
+                } else {
+                    console.error('Fetch error:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function setPatternOnBothPois(pattern) {
+            try {
+                await fetch(`http://${poi_one_ip}/pattern?patternChooserChange=${pattern}`);
+                await fetch(`http://${poi_two_ip}/pattern?patternChooserChange=${pattern}`);
+                console.log(`Pattern set to ${pattern} on both POIs`);
+            } catch (error) {
+                console.error('Error setting pattern:', error);
+            }
         }
 
         function refreshAll() {
