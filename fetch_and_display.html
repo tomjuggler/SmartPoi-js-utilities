@@ -60,6 +60,11 @@
             /* This centers the elements vertically */
         }
 
+        .bordered-box {
+            margin: 20px auto;
+            border: 1px solid #5e5858;
+        }
+
         .image-container {
             background-color: black;
             border: 2px solid white;
@@ -199,7 +204,7 @@
         }
 
         .alert-indicator {
-            color:coral;
+            color: coral;
         }
     </style>
 
@@ -210,26 +215,35 @@
 </head>
 
 <body>
+    <div class="centered-container">
 
-    <div class="input-container">
-        <input type="number" id="pixelInput" value="120" min="1" max="1000">
-        <button onclick="updatePixelSize()">Update -></button>
-        <span class="current-px" id="currentPx">Current px: 120</span>
+        <h1>POI SETTINGS</h1>
+
+        <div class="bordered-box">
+            <!-- Spinner and counter elements -->
+            <div class="spinner" id="spinner"></div>
+            <p id="counter">Scanning IP: <span id="currentIP">0</span> for poi!</p>
+
+            <label>
+                WiFi Poi IP Address Discovery (Router Mode Only):
+                <button class="dark-button" id="discoverBtn">Discover POI</button> <span id="result"></span>
+            </label>
+        </div>
+
+        <div class="bordered-box">
+            <input type="number" id="pixelInput" value="120" min="1" max="1000">
+            <button onclick="updatePixelSize()">Update -></button>
+            <span class="current-px" id="currentPx">Current px: 120</span><br><span><i>- refresh page to update automatically</i></span>
+        </div>
+
+        <div class="bordered-box">
+            <label>
+                WS2812 or APA102:
+                <button class="dark-button" id="ws_apaBtn">WS2812?</button> <span id="ws_apa_indicator"></span>
+                <br><span><i>- default is WS2812, click to change</i></span>
+            </label>
+        </div>
     </div>
-
-    <!-- Spinner and counter elements -->
-    <div class="spinner" id="spinner"></div>
-    <p id="counter">Scanning IP: <span id="currentIP">0</span> for poi!</p>
-
-    <label>
-        WiFi Poi IP Address Discovery (Router Mode):
-        <button class="dark-button" id="discoverBtn">Discover POI</button> <span id="result"></span>
-    </label>
-
-    <label>
-        WS2812 or APA102:
-        <button class="dark-button" id="ws_apaBtn">WS2812?</button> <span id="ws_apa_indicator"></span>
-    </label>
 
     <div id="file-list-container">
         <h1>POI IMAGES:</h1>
@@ -766,14 +780,15 @@
         }
 
         async function uploadDraggedFile(file_blob, file_name, ip) {
-            // ... (rest of your uploadDraggedFile function)
+            // ... (rest of your uploadDraggedFile function) todo: ??
 
             try {
-                await setPatternOnBothPois("7"); // Set pattern to 7 before upload
+                await fetchOriginalPattern(); // Fetch the original pattern before uploading
+                await setPatternOnPoi("7", ip); // Set pattern to 7 before upload
                 const success = await send_specific_image(file_blob, file_name, ip);
                 if (success) {
                     console.log("success! ");
-                    await setPatternOnBothPois(originalPattern); // Restore original pattern after upload
+                    await setPatternOnPoi(originalPattern, ip); // Restore original pattern after upload
                     return true;
                 }
             } catch (error) {
@@ -967,7 +982,7 @@
                 document.getElementById("get-files-one-indicator").innerText = "Unable to fetch file list from poi!";
             } finally {
                 // This will run whether the try block succeeds or catches an error                                                                                          
-                
+
             }
         }
 
@@ -1007,17 +1022,17 @@
                 console.error('There was a problem fetching the file list:', errortwo);
             } finally {
                 // This will run whether the try block succeeds or catches an error                                                                                          
-                
+
             }
         }
 
         async function getFilesAndDisplay() {
-            await fetchOriginalPattern(); // Fetch the original pattern before uploading
             getFilesOne();
             getFilesTwo();
         }
 
         async function fetchOriginalPattern() {
+            console.log("Attempting fetchOriginalPattern");
             try {
                 const response = await fetch(`http://${poi_one_ip}/returnsettings`);
                 if (response.ok) {
@@ -1026,18 +1041,25 @@
                     originalPattern = parts[parts.length - 1].trim(); // Extract the pattern
                     console.log("Original pattern:", originalPattern);
                 } else {
+                    originalPattern = 1;
                     console.error('Fetch error:', response.statusText);
                 }
             } catch (error) {
+                originalPattern = 1;
                 console.error('Error:', error);
             }
         }
 
-        async function setPatternOnBothPois(pattern) {
+        async function setPatternOnPoi(pattern, ip) {
+            console.log("Attempting setPatternOnPoi");
+            if (pattern > 7 || pattern < 1) {
+                console.error('Error:', "Invalid pattern to send, changed to 1");
+                pattern = 1;
+            }
             try {
-                await fetch(`http://${poi_one_ip}/pattern?patternChooserChange=${pattern}`);
-                await fetch(`http://${poi_two_ip}/pattern?patternChooserChange=${pattern}`);
-                console.log(`Pattern set to ${pattern} on both POIs`);
+                await fetch(`http://${ip}/pattern?patternChooserChange=${pattern}`);
+                // await fetch(`http://${poi_two_ip}/pattern?patternChooserChange=${pattern}`);
+                console.log(`Pattern set to ${pattern} on POI ${ip}`);
             } catch (error) {
                 console.error('Error setting pattern:', error);
             }
