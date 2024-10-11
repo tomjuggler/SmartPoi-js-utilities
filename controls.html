@@ -236,9 +236,16 @@
       }, 6000); // Adjust the delay if necessary
     });
 
-    function sync() {
-      sendRequest(`http://${poi_two_ip}/resetimagetouse`);
-      sendRequest(`http://${poi_one_ip}/resetimagetouse`);
+    async function sync() {
+      try {
+        await Promise.all([
+          sendRequest(`http://${poi_two_ip}/resetimagetouse`),
+          sendRequest(`http://${poi_one_ip}/resetimagetouse`)
+        ]);
+        console.log('Both requests completed!');
+      } catch (error) {
+        console.error('Error syncing Poi:', error);
+      }
     }
 
     function submitRouter() {
