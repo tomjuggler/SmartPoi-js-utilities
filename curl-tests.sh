@@ -6,7 +6,9 @@
 # 2. images 1-5
 # 3. images 1-10
 # 4. images 11-20
-# 5. images 1-50 (52?)
+# 5. images 1-62 
+# 6. on/off switch
+# 7. black (no LED ouput)
 curl http://192.168.1.1/pattern?patternChooserChange=1
 curl http://192.168.1.78/pattern?patternChooserChange=1
 
@@ -69,6 +71,11 @@ curl http://192.168.1.78/router?router=1
 # switch off router mode - need to find the poi IP address on the network first: 
 curl http://<ESP8266_IP>/router?router=0
 curl http://<ESP8266_IP>/router?router=0
+
+# sync poi (re-set imageToUse to 1)
+curl http://192.168.1.1/resetimagetouse
+curl http://192.168.1.78/resetimagetouse
+
 
 
 
