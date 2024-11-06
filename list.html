@@ -105,6 +105,12 @@
           document.getElementById('fileListTextAreatwo').value = data;
         })
         .catch(error => {
+          /**
+           * Logs any errors that occur during the fetch process.
+           * 
+           * @param {Error} error - The error object.
+           * @returns {void}
+           */
           console.error('There was a problem fetching the file list:', error);
         });
     }
