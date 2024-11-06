@@ -288,21 +288,60 @@
     <script src="jimp.min.js"></script>
 
     <script>
+        /**
+         * Determines if the strip is using WS2812 or APA102.
+         * @type {boolean}
+         */
         let ws_strip = true; //using ws2812 or APA102?
+        /**
+         * Variable to store the original pattern.
+         * @type {string|number}
+         */
         let originalPattern; // Variable to store the original pattern
 
+        /**
+         * Reference to the delete button element.
+         * @type {HTMLElement}
+         */
         const deleteButton = document.getElementById('deleteButton');
 
         //globals for ip scan:
+        /**
+         * Reference to the spinner element.
+         * @type {HTMLElement}
+         */
         const spinner = document.getElementById('spinner');
+        /**
+         * Reference to the counter element.
+         * @type {HTMLElement}
+         */
         const counter = document.getElementById('counter');
+        /**
+         * Reference to the current IP span element.
+         * @type {HTMLElement}
+         */
         const currentIPSpan = document.getElementById('currentIP');
 
+        /**
+         * Default number of pixels.
+         * @type {number}
+         */
         let number_of_pixels = 120; // Default Number of Pixels
+        /**
+         * Default Main Poi IP (AP Mode).
+         * @type {string}
+         */
         let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
         // const poi_one_ip = "10.0.0.5"
+        /**
+         * Default Auxillary Poi IP (AP Mode).
+         * @type {string}
+         */
         const poi_two_ip = "192.168.1.78"; // Default Auxillary Poi IP (AP Mode)
 
+        /**
+         * Updates the pixel size based on the input value.
+         */
         function updatePixelSize() {
             const pixelInput = document.getElementById('pixelInput').value;
             number_of_pixels = parseInt(pixelInput, 10);
@@ -311,6 +350,11 @@
         }
 
         // Function to create black placeholder images
+        /**
+         * Creates black placeholder images in the specified container.
+         * @param {string} containerId - The ID of the container to append images to.
+         * @param {string} ip - The IP address of the POI.
+         */
         function createBlackImages(containerId, ip) {
             const container = document.getElementById(containerId);
 
@@ -372,6 +416,12 @@
         createBlackImages('imageContainer', poi_one_ip);
         createBlackImages('imageContainertwo', poi_two_ip);
 
+        /**
+         * Increases the brightness of the image.
+         * @param {string} imageUrl - The URL of the image to modify.
+         * @param {number} brightnessAmount - The amount to increase the brightness by.
+         * @returns {Promise<string>} - The URL of the modified image.
+         */
         async function increaseBrightness(imageUrl, brightnessAmount) {
             return new Promise((resolve, reject) => {
                 Jimp.read(imageUrl, (err, image) => {
@@ -395,6 +445,11 @@
         }
 
 
+        /**
+         * Rotates the image by 90 degrees.
+         * @param {string} imageUrl - The URL of the image to rotate.
+         * @returns {Promise<string>} - The URL of the rotated image.
+         */
         async function rotateImage90(imageUrl) {
             return new Promise((resolve, reject) => {
                 Jimp.read(imageUrl, (err, image) => {
@@ -414,6 +469,11 @@
             });
         }
 
+        /**
+         * Decompresses the binary data into an image.
+         * @param {Uint8Array} binaryData - The binary data to decompress.
+         * @returns {Promise<string>} - The URL of the decompressed image.
+         */
         async function decompress(binaryData) {
             console.log("Decompress started");
             const width = number_of_pixels;
@@ -456,6 +516,11 @@
 
 
 
+        /**
+         * Fetches data from the specified URL with retries.
+         * @param {string} url - The URL to fetch data from.
+         * @returns {Promise<Response>} - The response object.
+         */
         async function fetchDataWithRetry(url) {
             console.log("fetching...");
             const maxRetries = 3; // Maximum number of retries
@@ -485,6 +550,11 @@
         let retryCount = 0;
         const MAX_RETRY_COUNT = 3;
 
+        /**
+         * Decompresses and displays the image from the specified IP and file name.
+         * @param {string} ip - The IP address of the POI.
+         * @param {string} fileName - The name of the file to decompress and display.
+         */
         async function decompressAndDisplay(ip, fileName) {
             try {
                 let response;
@@ -702,6 +772,11 @@
 
         // }
 
+        /**
+         * Displays the image in a modal.
+         * @param {string} imageSrc - The URL of the image to display.
+         * @param {string} imageName - The name of the image.
+         */
         function displayImageInModal(imageSrc, imageName) {
             // Clear existing modal if any
             clearModal();
@@ -751,6 +826,11 @@
             });
         }
 
+        /**
+         * Deletes the specified file from the POI.
+         * @param {string} ip - The IP address of the POI.
+         * @param {string} filename - The name of the file to delete.
+         */
         function deleteFile(ip, filename) {
             fetch(ip + '/edit?path=/' + filename + '.bin', {
                 method: 'DELETE',
@@ -772,6 +852,9 @@
         }
 
 
+        /**
+         * Clears the modal overlay.
+         */
         function clearModal() {
             const modalOverlay = document.querySelector('.modal-overlay');
             if (modalOverlay) {
@@ -779,10 +862,22 @@
             }
         }
 
+        /**
+         * Displays details of the dragged file.
+         * @param {string} filePath - The path of the dragged file.
+         * @param {string} imageName - The name of the image.
+         */
         function displayDraggedFileDetails(filePath, imageName) {
             alert("File path of the dragged image: " + filePath + "\nFilename of the image it was dragged onto: " + imageName);
         }
 
+        /**
+         * Uploads the dragged file to the specified IP.
+         * @param {string} file_blob - The blob URL of the file to upload.
+         * @param {string} file_name - The name of the file to upload.
+         * @param {string} ip - The IP address of the POI.
+         * @returns {Promise<boolean>} - True if the upload was successful, false otherwise.
+         */
         async function uploadDraggedFile(file_blob, file_name, ip) {
             // ... (rest of your uploadDraggedFile function) todo: ??
 
@@ -810,11 +905,20 @@
 
 
 
+        /**
+         * Gets the character from the index.
+         * @param {number} index - The index to get the character from.
+         * @returns {string} - The character at the specified index.
+         */
         function getCharFromIndex(index) {
             const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             return characters.charAt(index);
         }
 
+        /**
+         * Creates a message element and appends it to the body.
+         * @param {string} message - The message to display.
+         */
         function createMessage(message) {
             const messagesDiv = document.createElement('div');
             messagesDiv.textContent = message;
@@ -837,6 +941,9 @@
             }, 10000);
         }
 
+        /**
+         * Deletes all files from both POIs.
+         */
         async function deleteAll() {
             // Loop through characters and create image elements
             for (let i = 0; i < 62; i++) {
@@ -868,6 +975,13 @@
                 });
         }
 
+        /**
+         * Sends a specific image to the specified IP.
+         * @param {string} image_blob - The blob URL of the image to send.
+         * @param {string} replace_filename - The name of the file to replace.
+         * @param {string} ip - The IP address of the POI.
+         * @returns {Promise<boolean>} - True if the upload was successful, false otherwise.
+         */
         async function send_specific_image(image_blob, replace_filename, ip) {
             try {
                 // Reading the Blob URL
@@ -952,6 +1066,9 @@
 
         // Function to fetch file list and process files
 
+        /**
+         * Fetches and displays files from the main POI.
+         */
         async function getFilesOne() {
             // Select the image container element
             const imageContainer = document.getElementById('imageContainer');
@@ -990,6 +1107,9 @@
             }
         }
 
+        /**
+         * Fetches and displays files from the auxiliary POI.
+         */
         async function getFilesTwo() {
             // All again for 2nd poi: 
             // Select the image container element
@@ -1030,11 +1150,17 @@
             }
         }
 
+        /**
+         * Fetches and displays files from both POIs.
+         */
         async function getFilesAndDisplay() {
             getFilesOne();
             getFilesTwo();
         }
 
+        /**
+         * Fetches the original pattern from the POI.
+         */
         async function fetchOriginalPattern() {
             console.log("Attempting fetchOriginalPattern");
             try {
@@ -1054,6 +1180,11 @@
             }
         }
 
+        /**
+         * Sets the pattern on the specified POI.
+         * @param {string|number} pattern - The pattern to set.
+         * @param {string} ip - The IP address of the POI.
+         */
         async function setPatternOnPoi(pattern, ip) {
             console.log("Attempting setPatternOnPoi");
             if (pattern > 7 || pattern < 1) {
@@ -1069,6 +1200,9 @@
             }
         }
 
+        /**
+         * Refreshes the page.
+         */
         function refreshAll() {
             window.location.reload();
         }
@@ -1139,6 +1273,11 @@
             document.getElementById('ws_apa_indicator').innerText = `${ws_strip}`;
         })
 
+        /**
+         * Fetches the number of pixels from the specified IP.
+         * @param {string} ip - The IP address of the POI.
+         * @returns {Promise<number|null>} - The number of pixels or null if an error occurs.
+         */
         async function fetchNumberOfPixels(ip) {
             try {
                 const response = await fetch(`http://${ip}/get-pixels`);
@@ -1153,6 +1292,10 @@
             }
         }
 
+        /**
+         * Updates the number of pixels based on the fetched value.
+         * @param {string} ip - The IP address of the POI.
+         */
         async function updateNumberOfPixels(ip) {
             const fetchedPixels = await fetchNumberOfPixels(ip);
             if (fetchedPixels !== null) {
