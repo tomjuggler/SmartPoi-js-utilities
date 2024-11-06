@@ -22,30 +22,86 @@
   <textarea id="fileListTextAreatwo" placeholder="Auxillary Poi Files will appear here"></textarea>
 
   <script>
+    /**
+     * Fetches the main file list from the server and displays it in the textarea.
+     * 
+     * @returns {void}
+     */
     function getFileList() {
+      /**
+       * Fetches the main file list from the server.
+       * 
+       * @param {Response} response - The response object from the fetch call.
+       * @returns {Promise<string>} - The text data from the response.
+       * @throws {Error} - Throws an error if the network response is not ok.
+       */
       fetch('http://192.168.1.1/list?dir=/')
         .then(response => {
+          /**
+           * Checks if the response is ok and returns the text data.
+           * 
+           * @param {Response} response - The response object from the fetch call.
+           * @returns {Promise<string>} - The text data from the response.
+           * @throws {Error} - Throws an error if the network response is not ok.
+           */
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
           return response.text();
         })
         .then(data => {
+          /**
+           * Sets the fetched data to the textarea.
+           * 
+           * @param {string} data - The text data fetched from the server.
+           * @returns {void}
+           */
           document.getElementById('fileListTextArea').value = data;
         })
         .catch(error => {
+          /**
+           * Logs any errors that occur during the fetch process.
+           * 
+           * @param {Error} error - The error object.
+           * @returns {void}
+           */
           console.error('There was a problem fetching the file list:', error);
         });
     }
+    /**
+     * Fetches the auxiliary file list from the server and displays it in the textarea.
+     * 
+     * @returns {void}
+     */
     function getFileListTwo() {
+      /**
+       * Fetches the auxiliary file list from the server.
+       * 
+       * @param {Response} response - The response object from the fetch call.
+       * @returns {Promise<string>} - The text data from the response.
+       * @throws {Error} - Throws an error if the network response is not ok.
+       */
       fetch('http://192.168.1.78/list?dir=/')
         .then(response => {
+          /**
+           * Checks if the response is ok and returns the text data.
+           * 
+           * @param {Response} response - The response object from the fetch call.
+           * @returns {Promise<string>} - The text data from the response.
+           * @throws {Error} - Throws an error if the network response is not ok.
+           */
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
           return response.text();
         })
         .then(data => {
+          /**
+           * Sets the fetched data to the textarea.
+           * 
+           * @param {string} data - The text data fetched from the server.
+           * @returns {void}
+           */
           document.getElementById('fileListTextAreatwo').value = data;
         })
         .catch(error => {
