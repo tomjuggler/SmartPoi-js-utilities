@@ -143,18 +143,45 @@
 
     <script src="jimp.min.js"></script>
     <script>
+        /**
+         * Default number of pixels.
+         * @type {number}
+         */
         let number_of_pixels = 120; // Default Number of Pixels
+        /**
+         * Flag indicating whether to use ws2812 or APA102.
+         * @type {boolean}
+         */
         let ws_strip = true; //using ws2812 or APA102? 
+        /**
+         * Default Main Poi IP (AP Mode).
+         * @type {string}
+         */
         let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
+        /**
+         * Default Auxiliary Poi IP (AP Mode).
+         * @type {string}
+         */
         let poi_two_ip = "192.168.1.78"; // Default Auxiliary Poi IP (AP Mode)
+        /**
+         * Variable to store the original pattern.
+         * @type {string|number}
+         */
         let originalPattern; // Variable to store the original pattern
 
+        /**
+         * Updates the pixel size based on the input value.
+         */
         function updatePixelSize() {
             const pixelInput = document.getElementById('pixelInput').value;
             number_of_pixels = parseInt(pixelInput, 10);
             document.getElementById('currentPx').textContent = `Current px: ${number_of_pixels}`;
         }
 
+        /**
+         * Creates a message element and appends it to the body.
+         * @param {string} message - The message to display.
+         */
         function createMessage(message) {
             const messagesDiv = document.createElement('div');
             messagesDiv.textContent = message;
@@ -174,6 +201,10 @@
             }, 5000);
         }
 
+        /**
+         * Creates an error message element and appends it to the body.
+         * @param {string} message - The error message to display.
+         */
         function createErrorMessage(message) {
             const messagesDiv = document.createElement('div');
             messagesDiv.textContent = message;
@@ -193,11 +224,21 @@
             }, 5000);
         }
 
+        /**
+         * Returns a character from a predefined set based on the index.
+         * @param {number} index - The index to get the character from.
+         * @returns {string} The character at the given index.
+         */
         function getCharFromIndex(index) {
             const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             return characters.charAt(index);
         }
 
+        /**
+         * Compresses images and sends them to the specified IP.
+         * @param {FileList} files - The list of files to process.
+         * @param {string} ip - The IP address to send the files to.
+         */
         async function compressImagesAndSend(files, ip) {
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
@@ -259,11 +300,19 @@
         }
 
         // Helper function to create a delay
+        /**
+         * Creates a delay for the specified number of milliseconds.
+         * @param {number} ms - The number of milliseconds to delay.
+         * @returns {Promise} A promise that resolves after the delay.
+         */
         function delay(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
 
+        /**
+         * Handles the file upload process.
+         */
         async function handleUpload() {
             const fileInput = document.getElementById('fileInput');
             const files = fileInput.files;
@@ -305,6 +354,9 @@
             }
         }
 
+        /**
+         * Fetches the original pattern from the POI.
+         */
         async function fetchOriginalPattern() {
             console.log("Attempting fetchOriginalPattern");
             try {
@@ -324,6 +376,11 @@
             }
         }
 
+        /**
+         * Sets the pattern on the specified POI.
+         * @param {string|number} pattern - The pattern to set.
+         * @param {string} ip - The IP address of the POI.
+         */
         async function setPatternOnPoi(pattern, ip) {
             console.log("Attempting setPatternOnPoi");
             if (pattern > 7 || pattern < 1) {
@@ -339,6 +396,11 @@
             }
         }
 
+        /**
+         * Fetches the number of pixels from the specified POI.
+         * @param {string} ip - The IP address of the POI.
+         * @returns {Promise<number|null>} The number of pixels or null if an error occurs.
+         */
         async function fetchNumberOfPixels(ip) {
             try {
                 const response = await fetch(`http://${ip}/get-pixels`);
@@ -355,6 +417,10 @@
             }
         }
 
+        /**
+         * Updates the number of pixels based on the fetched value from the specified POI.
+         * @param {string} ip - The IP address of the POI.
+         */
         async function updateNumberOfPixels(ip) {
             const fetchedPixels = await fetchNumberOfPixels(ip);
             if (fetchedPixels !== null) {
