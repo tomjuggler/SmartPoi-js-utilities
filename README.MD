@@ -1,4 +1,6 @@
 # JavaScript and html Utilities for SmartPoi 
+### quick start: 
+- open index.html and choose one of the options
 
 ### upload_bin.html usage: 
 - for uploading multiple backup images to SmartPoi for offline display
@@ -44,3 +46,6 @@ npm start
 npm run dist 
 ```
 *Note: anyone who can help me with Arch linux let me know*
+
+### documentation
+- available for selected functions in documentation folder, can be opened as links in the main index.html
