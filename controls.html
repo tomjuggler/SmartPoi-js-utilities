@@ -189,33 +189,105 @@
   <p>Pixels: <span id="pixelsTwo">?</span></p>
 
   <script>
+    /**
+     * The spinner element used to indicate loading state.
+     * @type {HTMLElement}
+     */
     const spinner = document.getElementById('spinner');
+    /**
+     * The counter element used to display the current IP being scanned.
+     * @type {HTMLElement}
+     */
     const counter = document.getElementById('counter');
+    /**
+     * The span element used to display the current IP address during discovery.
+     * @type {HTMLElement}
+     */
     const currentIPSpan = document.getElementById('currentIP');
 
+    /**
+     * The IP address of the main Poi device.
+     * @type {string}
+     */
     let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
     // const poi_one_ip = "10.0.0.5"
+    /**
+     * The IP address of the auxiliary Poi device.
+     * @type {string}
+     */
     let poi_two_ip = "192.168.1.78"; // Default Auxillary Poi IP (AP Mode)
 
+    /**
+     * The number of pixels in the Poi device.
+     * @type {number}
+     */
     let number_of_pixels = 120;
 
     // todo: get ip addresses handler here
 
     // settings globals: 
+    /**
+     * The data fetched from the main Poi device.
+     * @type {string}
+     */
     let data = "";
+    /**
+     * The parts of the data fetched from the main Poi device.
+     * @type {Array<string>}
+     */
     let parts = "";
 
+    /**
+     * The router name fetched from the main Poi device.
+     * @type {string}
+     */
     let router = "";
+    /**
+     * The password fetched from the main Poi device.
+     * @type {string}
+     */
     let password = "";
+    /**
+     * The channel fetched from the main Poi device.
+     * @type {string}
+     */
     let channel = "";
+    /**
+     * The pattern fetched from the main Poi device.
+     * @type {string}
+     */
     let pattern = "";
 
+    /**
+     * The data fetched from the auxiliary Poi device.
+     * @type {string}
+     */
     let data_two = "";
+    /**
+     * The parts of the data fetched from the auxiliary Poi device.
+     * @type {Array<string>}
+     */
     let parts_two = "";
 
+    /**
+     * The router name fetched from the auxiliary Poi device.
+     * @type {string}
+     */
     let router_two = "";
+    /**
+     * The password fetched from the auxiliary Poi device.
+     * @type {string}
+     */
     let password_two = "";
+    /**
+     * The channel fetched from the auxiliary Poi device.
+     * @type {string}
+     */
     let channel_two = "";
+    /**
+     * The pattern fetched from the auxiliary Poi device.
+     * @type {string}
+     */
     let pattern_two = "";
 
     // Display the values
@@ -224,6 +296,10 @@
     document.getElementById('channelTwo').textContent = channel_two;
     document.getElementById('patternTwo').textContent = pattern_two;
 
+    /**
+     * Event listener for when the DOM content is fully loaded.
+     * Fetches the current settings and highlights the active pattern button.
+     */
     document.addEventListener('DOMContentLoaded', () => {
       // Fetch the current settings when the page loads
       document.getElementById('fetchBtn').click();
@@ -236,6 +312,10 @@
       }, 6000); // Adjust the delay if necessary
     });
 
+    /**
+     * Synchronizes the Poi devices by sending a reset request to both.
+     * @returns {Promise<void>}
+     */
     async function sync() {
       try {
         await Promise.all([
@@ -248,6 +328,10 @@
       }
     }
 
+    /**
+     * Submits the router name and password to both Poi devices.
+     * @returns {void}
+     */
     function submitRouter() {
       const routerInput = document.getElementById('routerInput').value;
       const passwordInput = document.getElementById('passwordInput').value;
@@ -262,12 +346,21 @@
 
     }
 
+    /**
+     * Submits the router mode to both Poi devices.
+     * @returns {void}
+     */
     function submitRouterMode() {
       const routerMode = document.getElementById('routerModeCheckbox').checked ? '1' : '0';
       sendRequest(`http://${poi_two_ip}/router?router=${routerMode}`);
       sendRequest(`http://${poi_one_ip}/router?router=${routerMode}`);
     }
 
+    /**
+     * Submits the chosen pattern to both Poi devices.
+     * @param {string} chosen_pattern - The pattern to be set.
+     * @returns {void}
+     */
     function submitPattern(chosen_pattern) {
       // Send request 
       sendRequest(`http://${poi_two_ip}/pattern?patternChooserChange=${chosen_pattern}`);
@@ -286,6 +379,11 @@
     }
 
     // Function to highlight the active pattern button
+    /**
+     * Highlights the active pattern button based on the selected pattern.
+     * @param {string} selectedPattern - The pattern to highlight.
+     * @returns {void}
+     */
     function highlightActiveButton(selectedPattern) {
       // Get all the pattern buttons
       const buttons = document.querySelectorAll('.pattern-buttons button');
@@ -301,6 +399,10 @@
       }
     }
 
+    /**
+     * Submits the speed setting to both Poi devices.
+     * @returns {void}
+     */
     function submitSpeed() {
       const speed = document.getElementById('speedInput').value;
       if (speed !== '') {
@@ -309,6 +411,10 @@
       }
     }
 
+    /**
+     * Submits the brightness setting to both Poi devices.
+     * @returns {void}
+     */
     function submitBrightness() {
       const brightness = document.getElementById('brightnessInput').value;
       if (brightness !== '') {
@@ -317,6 +423,11 @@
       }
     }
 
+    /**
+     * Sends a request to the specified URL and handles the response.
+     * @param {string} url - The URL to send the request to.
+     * @returns {void}
+     */
     function sendRequest(url) {
       fetch(url)
         .then(response => {
@@ -335,6 +446,11 @@
     }
 
     let ip = "";
+    /**
+     * Event listener for the discover button click.
+     * Discovers the Poi devices on the network.
+     * @returns {Promise<void>}
+     */
     document.getElementById('discoverBtn').addEventListener('click', async function () {
       // Show the spinner and counter
       spinner.style.display = 'block';
@@ -393,6 +509,11 @@
       }
     });
 
+    /**
+     * Event listener for the fetch button click.
+     * Fetches the settings from both Poi devices.
+     * @returns {Promise<void>}
+     */
     document.getElementById('fetchBtn').addEventListener('click', async function () {
       try {
         const response = await fetch(`http://${poi_one_ip}/returnsettings`, { mode: 'cors' });
@@ -451,6 +572,11 @@
 
     });
 
+    /**
+     * Fetches the number of pixels from the specified Poi device.
+     * @param {string} ip - The IP address of the Poi device.
+     * @returns {Promise<number|null>} - The number of pixels or null if the fetch fails.
+     */
     async function fetchNumberOfPixels(ip) {
       try {
         const response = await fetch(`http://${ip}/get-pixels`);
@@ -465,6 +591,11 @@
       }
     }
 
+    /**
+     * Updates the number of pixels displayed based on the fetched value.
+     * @param {string} ip - The IP address of the Poi device.
+     * @returns {Promise<void>}
+     */
     async function updateNumberOfPixels(ip) {
       const fetchedPixels = await fetchNumberOfPixels(ip);
       if (fetchedPixels !== null) {
@@ -474,6 +605,11 @@
       }
     }
 
+    /**
+     * Event listener for when the window is fully loaded.
+     * Updates the number of pixels for the main Poi device.
+     * @returns {void}
+     */
     window.addEventListener('load', () => {
       updateNumberOfPixels(poi_one_ip);
       // Consider also updating for poi_two_ip if needed                                                                                                       
