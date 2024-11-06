@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: extracted_scripts.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: extracted_scripts.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>
+// Extracted from upload_bin.html
+
+        /**
+         * Default number of pixels.
+         * @type {number}
+         */
+        let number_of_pixels = 120; // Default Number of Pixels
+        /**
+         * Flag indicating whether to use ws2812 or APA102.
+         * @type {boolean}
+         */
+        let ws_strip = true; //using ws2812 or APA102? 
+        /**
+         * Default Main Poi IP (AP Mode).
+         * @type {string}
+         */
+        let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
+        /**
+         * Default Auxiliary Poi IP (AP Mode).
+         * @type {string}
+         */
+        let poi_two_ip = "192.168.1.78"; // Default Auxiliary Poi IP (AP Mode)
+        /**
+         * Variable to store the original pattern.
+         * @type {string|number}
+         */
+        let originalPattern; // Variable to store the original pattern
+
+        /**
+         * Updates the pixel size based on the input value.
+         */
+        function updatePixelSize() {
+            const pixelInput = document.getElementById('pixelInput').value;
+            number_of_pixels = parseInt(pixelInput, 10);
+            document.getElementById('currentPx').textContent = `Current px: ${number_of_pixels}`;
+        }
+
+        /**
+         * Creates a message element and appends it to the body.
+         * @param {string} message - The message to display.
+         */
+        function createMessage(message) {
+            const messagesDiv = document.createElement('div');
+            messagesDiv.textContent = message;
+            messagesDiv.style.backgroundColor = '#DFF0D8';
+            messagesDiv.style.padding = '10px';
+            messagesDiv.style.border = '1px solid #007bff';
+            messagesDiv.style.borderRadius = '4px';
+            messagesDiv.style.marginBottom = '10px';
+            messagesDiv.style.transition = 'opacity 0.5s';
+
+            const body = document.getElementsByTagName('body')[0];
+            body.insertBefore(messagesDiv, body.firstChild);
+
+            setTimeout(() => {
+                messagesDiv.style.opacity = 0;
+                setTimeout(() => messagesDiv.remove(), 500);
+            }, 5000);
+        }
+
+        /**
+         * Creates an error message element and appends it to the body.
+         * @param {string} message - The error message to display.
+         */
+        function createErrorMessage(message) {
+            const messagesDiv = document.createElement('div');
+            messagesDiv.textContent = message;
+            messagesDiv.style.backgroundColor = '#d34c4c';
+            messagesDiv.style.padding = '10px';
+            messagesDiv.style.border = '1px solid #007bff';
+            messagesDiv.style.borderRadius = '4px';
+            messagesDiv.style.marginBottom = '10px';
+            messagesDiv.style.transition = 'opacity 0.5s';
+
+            const body = document.getElementsByTagName('body')[0];
+            body.insertBefore(messagesDiv, body.firstChild);
+
+            setTimeout(() => {
+                messagesDiv.style.opacity = 0;
+                setTimeout(() => messagesDiv.remove(), 500);
+            }, 5000);
+        }
+
+        /**
+         * Returns a character from a predefined set based on the index.
+         * @param {number} index - The index to get the character from.
+         * @returns {string} The character at the given index.
+         */
+        function getCharFromIndex(index) {
+            const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            return characters.charAt(index);
+        }
+
+        /**
+         * Compresses images and sends them to the specified IP.
+         * @param {FileList} files - The list of files to process.
+         * @param {string} ip - The IP address to send the files to.
+         */
+        async function compressImagesAndSend(files, ip) {
+            for (let i = 0; i &lt; files.length; i++) {
+                const file = files[i];
+                const charAtIndex = getCharFromIndex(i);
+                try {
+                    createMessage("Processing " + file.name);
+                    const reader = new FileReader();
+
+                    reader.onload = async function (event) {
+                        try {
+                            const image = await Jimp.read(event.target.result);
+                            const rotatedImage = image.rotate(-90);
+                            let height;
+                            if (ws_strip) {
+                                height = rotatedImage.bitmap.height / 2; // Get half of the current height
+                            } else {
+                                height = rotatedImage.bitmap.height;
+                            }
+                            const resizedImage = rotatedImage.resize(number_of_pixels, height);
+
+                            const binaryData = [];
+                            resizedImage.scan(0, 0, resizedImage.bitmap.width, resizedImage.bitmap.height, function (x, y, idx) {
+                                const r = this.bitmap.data[idx + 0];
+                                const g = this.bitmap.data[idx + 1];
+                                const b = this.bitmap.data[idx + 2];
+                                const encoded = ((r &amp; 0xE0) | ((g &amp; 0xE0) >> 3) | (b >> 6));
+                                binaryData.push(encoded);
+                            });
+
+                            const fileName = charAtIndex + '.bin';
+
+                            const formData = new FormData();
+                            formData.append('file', new Blob([Buffer.from(binaryData)], { type: 'application/octet-stream' }), fileName);
+
+                            const requestOptions = {
+                                method: 'POST',
+                                body: formData,
+                            };
+
+                            await fetch('http://' + ip + '/edit', requestOptions);
+                            createMessage('File ' + file.name + ' uploaded to http://' + ip + '/edit');
+
+                        } catch (error) {
+                            createErrorMessage(`Error processing image: ${error}`);
+                            console.error('Error processing image:', error);
+                        }
+                    };
+
+                    reader.readAsDataURL(file);
+
+                    // Introduce delay before moving to the next file
+                    await delay(1500); // Adjust the delay as needed (e.g., 2000ms = 2 seconds)
+
+                } catch (error) {
+                    createErrorMessage(`Error: ${error}`);
+                    console.error('Error:', error);
+                }
+            }
+        }
+
+        // Helper function to create a delay
+        /**
+         * Creates a delay for the specified number of milliseconds.
+         * @param {number} ms - The number of milliseconds to delay.
+         * @returns {Promise} A promise that resolves after the delay.
+         */
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+
+        /**
+         * Handles the file upload process.
+         */
+        async function handleUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+
+            if (files.length > 0) {
+                createMessage('Beginning Processing and Upload');
+
+                try {
+                    await fetchOriginalPattern(); // Fetch the original pattern before uploading
+                    await setPatternOnPoi("7", poi_one_ip); // Set pattern to 7 before upload
+                    await setPatternOnPoi("7", poi_two_ip); // Set pattern to 7 before upload
+                    // Compress and send to auxiliary POI (poi_two_ip) first
+                    const success_two = await compressImagesAndSend(files, poi_two_ip);
+                    if (success_two) {
+                        console.log("poi two upload success! ");
+                        await setPatternOnPoi(originalPattern, poi_two_ip); // Restore original pattern after upload
+                        createMessage('Processing and upload complete auxillary poi');
+                    } else {
+                        createMessage('ERROR with Processing and upload for auxillary poi');
+                    }
+                    // Once that's done, compress and send to main POI (poi_one_ip)
+                    const success_one = await compressImagesAndSend(files, poi_one_ip);
+                    if (success_one) {
+                        console.log("poi one upload success! ");
+                        await setPatternOnPoi(originalPattern, poi_one_ip); // Restore original pattern after upload
+                        createMessage('Processing and upload complete main poi');
+                    } else {
+                        createMessage('ERROR with Processing and upload for main poi');
+                    }
+
+
+                } catch (error) {
+                    createErrorMessage(`Error uploading image: ${error}`);
+                    console.error('Error during upload process:', error);
+                }
+
+            } else {
+                alert("Please select at least one file.");
+            }
+        }
+
+        /**
+         * Fetches the original pattern from the POI.
+         */
+        async function fetchOriginalPattern() {
+            console.log("Attempting fetchOriginalPattern");
+            try {
+                const response = await fetch(`http://${poi_one_ip}/returnsettings`);
+                if (response.ok) {
+                    const data = await response.text();
+                    const parts = data.split(',');
+                    originalPattern = parts[parts.length - 1].trim(); // Extract the pattern
+                    console.log("Original pattern:", originalPattern);
+                } else {
+                    originalPattern = 1;
+                    console.error('Fetch error:', response.statusText);
+                }
+            } catch (error) {
+                originalPattern = 1;
+                console.error('Error:', error);
+            }
+        }
+
+        /**
+         * Sets the pattern on the specified POI.
+         * @param {string|number} pattern - The pattern to set.
+         * @param {string} ip - The IP address of the POI.
+         */
+        async function setPatternOnPoi(pattern, ip) {
+            console.log("Attempting setPatternOnPoi");
+            if (pattern > 7 || pattern &lt; 1) {
+                console.error('Error:', "Invalid pattern to send, changed to 1");
+                pattern = 1;
+            }
+            try {
+                await fetch(`http://${ip}/pattern?patternChooserChange=${pattern}`);
+                // await fetch(`http://${poi_two_ip}/pattern?patternChooserChange=${pattern}`);
+                console.log(`Pattern set to ${pattern} on POI ${ip}`);
+            } catch (error) {
+                console.error('Error setting pattern:', error);
+            }
+        }
+
+        /**
+         * Fetches the number of pixels from the specified POI.
+         * @param {string} ip - The IP address of the POI.
+         * @returns {Promise&lt;number|null>} The number of pixels or null if an error occurs.
+         */
+        async function fetchNumberOfPixels(ip) {
+            try {
+                const response = await fetch(`http://${ip}/get-pixels`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const pixels = await response.text();
+                createMessage(`Got Number of Pixels from poi: ${pixels}.`);
+                return parseInt(pixels, 10);
+            } catch (error) {
+                createErrorMessage(`Unable to connect to poi at ${ip}. Error: ${error}`);
+                console.error(`Error fetching number of pixels from ${ip}:`, error);
+                return null;
+            }
+        }
+
+        /**
+         * Updates the number of pixels based on the fetched value from the specified POI.
+         * @param {string} ip - The IP address of the POI.
+         */
+        async function updateNumberOfPixels(ip) {
+            const fetchedPixels = await fetchNumberOfPixels(ip);
+            if (fetchedPixels !== null) {
+                number_of_pixels = fetchedPixels;
+                document.getElementById('currentPx').textContent = `Poi px: ${number_of_pixels}`;
+                // Update the input field value as well                                                                                                              
+                document.getElementById('pixelInput').value = number_of_pixels;
+            }
+        }
+
+        window.addEventListener('load', () => {
+            updateNumberOfPixels(poi_one_ip);
+            // Consider also updating for poi_two_ip if needed                                                                                                       
+        });
+    
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#compressImagesAndSend">compressImagesAndSend</a></li><li><a href="global.html#createErrorMessage">createErrorMessage</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#delay">delay</a></li><li><a href="global.html#fetchNumberOfPixels">fetchNumberOfPixels</a></li><li><a href="global.html#fetchOriginalPattern">fetchOriginalPattern</a></li><li><a href="global.html#getCharFromIndex">getCharFromIndex</a></li><li><a href="global.html#handleUpload">handleUpload</a></li><li><a href="global.html#number_of_pixels">number_of_pixels</a></li><li><a href="global.html#originalPattern">originalPattern</a></li><li><a href="global.html#poi_one_ip">poi_one_ip</a></li><li><a href="global.html#poi_two_ip">poi_two_ip</a></li><li><a href="global.html#setPatternOnPoi">setPatternOnPoi</a></li><li><a href="global.html#updateNumberOfPixels">updateNumberOfPixels</a></li><li><a href="global.html#updatePixelSize">updatePixelSize</a></li><li><a href="global.html#ws_strip">ws_strip</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Wed Nov 06 2024 12:21:24 GMT+0200 (South Africa Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
