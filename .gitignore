@@ -6,3 +6,5 @@ a.bin
 b.bin
 .aider*
 .env
+extract_js.py
+extracted_scripts.js
