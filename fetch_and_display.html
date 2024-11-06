@@ -805,7 +805,7 @@
             deleteButton.addEventListener('click', () => {
                 const ipAddresses = [poi_one_ip, poi_two_ip];
                 ipAddresses.forEach(ip => {
-                    deleteFile(ip, imageName);
+                    deleteFileSync(ip, imageName);
                 });
             });
 
@@ -831,7 +831,7 @@
          * @param {string} ip - The IP address of the POI.
          * @param {string} filename - The name of the file to delete.
          */
-        function deleteFile(ip, filename) {
+        function deleteFileSync(ip, filename) {
             fetch(ip + '/edit?path=/' + filename + '.bin', {
                 method: 'DELETE',
                 headers: {
@@ -896,12 +896,7 @@
             }
         }
 
-        function clearModal() {
-            const modalOverlay = document.querySelector('.modal-overlay');
-            if (modalOverlay) {
-                modalOverlay.remove();
-            }
-        }
+        
 
 
 
@@ -951,12 +946,12 @@
                 const fileName = char + '.bin'; // Add ".bin" extension
                 // const ipMain = poi_one_ip;
                 // const ipAux = poi_two_ip;
-                await deleteFile(poi_one_ip, fileName);
-                await deleteFile(poi_two_ip, fileName)
+                await deleteFileAsync(poi_one_ip, fileName);
+                await deleteFileAsync(poi_two_ip, fileName)
             }
         }
 
-        async function deleteFile(ip, fileName) {
+        async function deleteFileAsync(ip, fileName) {
             fetch('http://' + ip + '/edit?path=/' + fileName, {
                 method: 'DELETE',
                 headers: {
