@@ -278,8 +278,15 @@
                                 body: formData,
                             };
 
+                            let counter = i+1;
                             await fetch('http://' + ip + '/edit', requestOptions);
-                            createMessage('File ' + file.name + ' uploaded to http://' + ip + '/edit');
+                            if (ip === poi_one_ip) {
+                                createMessage(counter + '. ' + file.name + ' uploaded to Main Poi');
+                            } else if (ip === poi_two_ip) {
+                                createMessage(counter + '. ' + file.name + ' uploaded to Auxiliary Poi');
+                            } else {
+                                createMessage(counter + '. ' + file.name + ' uploaded to http://' + ip + '/edit');
+                            }
 
                         } catch (error) {
                             createErrorMessage(`Error processing image: ${error}`);
@@ -328,25 +335,25 @@
                     const success_two = await compressImagesAndSend(files, poi_two_ip);
                     if (success_two) {
                         console.log("poi two upload success! ");
-                        await setPatternOnPoi(originalPattern, poi_two_ip); // Restore original pattern after upload
-                        createMessage('Processing and upload complete auxillary poi');
+                        await setPatternOnPoi(originalPattern, poi_two_ip); // Restore original pattern after upload - todo: not working
+                        createMessage('Processing and Upload complete Auxillary poi');
                     } else {
-                        createMessage('ERROR with Processing and upload for auxillary poi');
+                        createMessage('Possible ERROR during Processing and Upload for Auxillary poi - check files?');
                     }
                     // Once that's done, compress and send to main POI (poi_one_ip)
                     const success_one = await compressImagesAndSend(files, poi_one_ip);
                     if (success_one) {
                         console.log("poi one upload success! ");
-                        await setPatternOnPoi(originalPattern, poi_one_ip); // Restore original pattern after upload
-                        createMessage('Processing and upload complete main poi');
+                        await setPatternOnPoi(originalPattern, poi_one_ip); // Restore original pattern after upload - todo: not working
+                        createMessage('Processing and Upload complete Main poi');
                     } else {
-                        createMessage('ERROR with Processing and upload for main poi');
+                        createMessage('Possible ERROR during Processing and Upload for Main poi - check files?');
                     }
 
 
                 } catch (error) {
-                    createErrorMessage(`Error uploading image: ${error}`);
-                    console.error('Error during upload process:', error);
+                    createErrorMessage(`Error Uploading image: ${error}`);
+                    console.error('Error during Upload process:', error);
                 }
 
             } else {
