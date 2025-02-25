@@ -269,7 +269,7 @@
 
         <div class="bordered-box">
             <input type="number" id="pixelInput" value="120" min="1" max="1000">
-            <button onclick="updatePixelSize()">Update -></button>
+            <button id="updatePixelButton">Update -></button>
             <span class="current-px" id="currentPx">Current px: 120</span><br><span><i>- refresh page to update
                     automatically</i></span>
         </div>
@@ -1336,7 +1336,8 @@
             // Consider also updating for poi_two_ip if needed                                                                                                       
         });
 
-        
+        // Initialize event listeners
+        document.getElementById('updatePixelButton').addEventListener('click', updatePixelSize);
     </script>
 </body>
 
