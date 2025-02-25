@@ -143,31 +143,22 @@
 
     <script src="jimp.min.js"></script>
     <script>
-        /**
-         * Default number of pixels.
-         * @type {number}
-         */
+        // Configuration Constants (Adjust based on testing)
+        const UPLOAD_CONFIG = {
+          BATCH_SIZE: 2,            // Files per batch (keep ≤2 for ESP8266)
+          INTER_FILE_DELAY: 750,    // ms between files in batch
+          INTER_BATCH_DELAY: 1500,  // ms between batches
+          INTER_POI_DELAY: 3000,    // ms between POI processing
+          MAX_RETRIES: 3,           // Per-file retry attempts
+          RETRY_BACKOFF: [500, 1500, 3000] // Retry delays in ms
+        };
+
+        // Application State
         let number_of_pixels = 120; // Default Number of Pixels
-        /**
-         * Flag indicating whether to use ws2812 or APA102.
-         * @type {boolean}
-         */
-        let ws_strip = true; //using ws2812 or APA102? 
-        /**
-         * Default Main Poi IP (AP Mode).
-         * @type {string}
-         */
+        let ws_strip = true;        // Using ws2812 or APA102?
         let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
-        /**
-         * Default Auxiliary Poi IP (AP Mode).
-         * @type {string}
-         */
         let poi_two_ip = "192.168.1.78"; // Default Auxiliary Poi IP (AP Mode)
-        /**
-         * Variable to store the original pattern.
-         * @type {string|number}
-         */
-        let originalPattern; // Variable to store the original pattern
+        let originalPattern;        // Variable to store the original pattern
 
         /**
          * Updates the pixel size based on the input value.
@@ -235,130 +226,183 @@
         }
 
         /**
-         * Compresses images and sends them to the specified IP.
-         * @param {FileList} files - The list of files to process.
-         * @param {string} ip - The IP address to send the files to.
+         * Optimized single-file processing with resource cleanup
          */
-        async function compressImagesAndSend(files, ip) {
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const charAtIndex = getCharFromIndex(i);
-                try {
-                    createMessage("Processing " + file.name);
-                    const reader = new FileReader();
+        async function processSingleFile(file, ip) {
+          let reader = null;
+          
+          try {
+            reader = new FileReader();
+            const fileData = await new Promise((resolve, reject) => {
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            });
 
-                    reader.onload = async function (event) {
-                        try {
-                            const image = await Jimp.read(event.target.result);
-                            const rotatedImage = image.rotate(-90);
-                            let height;
-                            if (ws_strip) {
-                                height = rotatedImage.bitmap.height / 2; // Get half of the current height
-                            } else {
-                                height = rotatedImage.bitmap.height;
-                            }
-                            const resizedImage = rotatedImage.resize(number_of_pixels, height);
+            const image = await Jimp.read(fileData);
+            const rotatedImage = image.rotate(-90);
+            const height = ws_strip ? rotatedImage.bitmap.height / 2 : rotatedImage.bitmap.height;
+            const resizedImage = rotatedImage.resize(number_of_pixels, height);
 
-                            const binaryData = [];
-                            resizedImage.scan(0, 0, resizedImage.bitmap.width, resizedImage.bitmap.height, function (x, y, idx) {
-                                const r = this.bitmap.data[idx + 0];
-                                const g = this.bitmap.data[idx + 1];
-                                const b = this.bitmap.data[idx + 2];
-                                const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6));
-                                binaryData.push(encoded);
-                            });
+            const binaryData = [];
+            resizedImage.scan(0, 0, resizedImage.bitmap.width, resizedImage.bitmap.height, function (x, y, idx) {
+              const r = this.bitmap.data[idx + 0];
+              const g = this.bitmap.data[idx + 1];
+              const b = this.bitmap.data[idx + 2];
+              const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6);
+              binaryData.push(encoded);
+            });
 
-                            const fileName = charAtIndex + '.bin';
+            const charAtIndex = getCharFromIndex(Array.from(document.getElementById('fileInput').files).indexOf(file));
+            const fileName = charAtIndex + '.bin';
+            const formData = new FormData();
+            formData.append('file', new Blob([Buffer.from(binaryData)], { type: 'application/octet-stream' }), fileName);
 
-                            const formData = new FormData();
-                            formData.append('file', new Blob([Buffer.from(binaryData)], { type: 'application/octet-stream' }), fileName);
+            const response = await fetch(`http://${ip}/edit`, {
+              method: 'POST',
+              body: formData,
+              headers: { 'Connection': 'close' },
+              keepalive: false
+            });
 
-                            const requestOptions = {
-                                method: 'POST',
-                                body: formData,
-                            };
-
-                            let counter = i+1;
-                            await fetch('http://' + ip + '/edit', requestOptions);
-                            if (ip === poi_one_ip) {
-                                createMessage(counter + '. ' + file.name + ' uploaded to Main Poi');
-                            } else if (ip === poi_two_ip) {
-                                createMessage(counter + '. ' + file.name + ' uploaded to Auxiliary Poi');
-                            } else {
-                                createMessage(counter + '. ' + file.name + ' uploaded to http://' + ip + '/edit');
-                            }
-
-                        } catch (error) {
-                            createErrorMessage(`Error processing image: ${error}`);
-                            console.error('Error processing image:', error);
-                        }
-                    };
-
-                    reader.readAsDataURL(file);
-
-                    // Introduce delay before moving to the next file
-                    await delay(2500); // Adjust the delay as needed (e.g., 2000ms = 2 seconds)
-
-                } catch (error) {
-                    createErrorMessage(`Error: ${error}`);
-                    console.error('Error:', error);
-                }
+            if(!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+          } finally {
+            if(reader) {
+              URL.revokeObjectURL(reader.result);
+              reader = null;
             }
+            if(window.Jimp) Jimp._deconstructor();
+          }
         }
 
-        // Helper function to create a delay
-        /**
-         * Creates a delay for the specified number of milliseconds.
-         * @param {number} ms - The number of milliseconds to delay.
-         * @returns {Promise} A promise that resolves after the delay.
-         */
+        // Helper functions
         function delay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
+          return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function logBatchCompletion(batchNumber, totalBatches, label) {
+          const progress = `${batchNumber}/${totalBatches} batches`;
+          createMessage(`${label}: Completed ${progress}`);
+        }
+
+        async function setPatternSafe(pattern, ip) {
+          await fetchWithTimeout(`http://${ip}/pattern?patternChooserChange=${pattern}`, 5000);
+          await delay(500); // Allow flash write cycle
+        }
+
+        async function restoreOriginalPatterns() {
+          await Promise.all([
+            setPatternSafe(originalPattern, poi_one_ip),
+            setPatternSafe(originalPattern, poi_two_ip)
+          ]);
+          await delay(1000); // Final safety delay
+        }
+
+        async function fetchWithTimeout(resource, timeout=5000) {
+          const controller = new AbortController();
+          const id = setTimeout(() => controller.abort(), timeout);
+          
+          const response = await fetch(resource, {
+            signal: controller.signal
+          });
+          
+          clearTimeout(id);
+          return response;
+        }
+
+        function handleCriticalError(error) {
+          console.error('Critical Error:', error);
+          createErrorMessage(`Upload failed: ${error.message}`);
+          // Attempt to restore original patterns even on failure
+          restoreOriginalPatterns().catch(err => {
+            console.error('Failed to restore patterns:', err);
+          });
         }
 
 
         /**
-         * Handles the file upload process.
+         * Handles the file upload process with optimized timing and retries
          */
         async function handleUpload() {
-            const fileInput = document.getElementById('fileInput');
-            const files = fileInput.files;
+          const files = Array.from(document.getElementById('fileInput').files);
+          
+          if (!files.length) {
+            alert("Please select at least one file.");
+            return;
+          }
 
-            if (files.length > 0) {
-                createMessage('Beginning Processing and Upload');
+          try {
+            createMessage('Starting optimized upload process');
+            
+            // 1. Store original patterns
+            await fetchOriginalPattern();
+            
+            // 2. Set upload mode patterns with safety delays
+            await setPatternSafe(7, poi_one_ip);
+            await setPatternSafe(7, poi_two_ip);
+            await delay(UPLOAD_CONFIG.INTER_POI_DELAY);
 
-                try {
-                    await fetchOriginalPattern(); // Fetch the original pattern before uploading
-                    await setPatternOnPoi("7", poi_one_ip); // Set pattern to 7 before upload
-                    await setPatternOnPoi("7", poi_two_ip); // Set pattern to 7 before upload
-                    // Compress and send to auxiliary POI (poi_two_ip) first
-                    const success_two = await compressImagesAndSend(files, poi_two_ip);
-                    if (success_two) {
-                        console.log("poi two upload success! ");
-                        await setPatternOnPoi(originalPattern, poi_two_ip); // Restore original pattern after upload - todo: not working
-                        createMessage('Processing and Upload complete Auxillary poi');
-                    } else {
-                        createMessage('Possible ERROR during Processing and Upload for Auxillary poi - check files?');
-                    }
-                    // Once that's done, compress and send to main POI (poi_one_ip)
-                    const success_one = await compressImagesAndSend(files, poi_one_ip);
-                    if (success_one) {
-                        console.log("poi one upload success! ");
-                        await setPatternOnPoi(originalPattern, poi_one_ip); // Restore original pattern after upload - todo: not working
-                        createMessage('Processing and Upload complete Main poi');
-                    } else {
-                        createMessage('Possible ERROR during Processing and Upload for Main poi - check files?');
-                    }
+            // 3. Process POIs sequentially with controlled timing
+            await processPoiWithBackoff(files, poi_one_ip, "Main Poi");
+            await delay(UPLOAD_CONFIG.INTER_POI_DELAY);
+            await processPoiWithBackoff(files, poi_two_ip, "Aux Poi");
 
+            // 4. Restore patterns with confirmation
+            await restoreOriginalPatterns();
+            
+            createMessage('All uploads completed successfully');
+          } catch(error) {
+            handleCriticalError(error);
+          }
+        }
 
-                } catch (error) {
-                    createErrorMessage(`Error Uploading image: ${error}`);
-                    console.error('Error during Upload process:', error);
-                }
-
-            } else {
-                alert("Please select at least one file.");
+        /**
+         * Processes files for a single POI with retry and batch control
+         */
+        async function processPoiWithBackoff(files, ip, label) {
+          const batchCount = Math.ceil(files.length / UPLOAD_CONFIG.BATCH_SIZE);
+          
+          for(let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
+            const batchStart = batchIndex * UPLOAD_CONFIG.BATCH_SIZE;
+            const batchFiles = files.slice(batchStart, batchStart + UPLOAD_CONFIG.BATCH_SIZE);
+            
+            await processBatch(batchFiles, ip, label, batchIndex+1, batchCount);
+            
+            if(batchIndex < batchCount - 1) {
+              await delay(UPLOAD_CONFIG.INTER_BATCH_DELAY);
             }
+          }
+        }
+
+        /**
+         * Processes a batch of files with individual retry logic
+         */
+        async function processBatch(batchFiles, ip, label, batchNumber, totalBatches) {
+          const batchPromises = batchFiles.map(async (file, fileIndex) => {
+            await processFileWithRetry(file, ip, label);
+            await delay(UPLOAD_CONFIG.INTER_FILE_DELAY);
+          });
+          
+          await Promise.allSettled(batchPromises);
+          logBatchCompletion(batchNumber, totalBatches, label);
+        }
+
+        /**
+         * Processes a single file with retry logic
+         */
+        async function processFileWithRetry(file, ip, label) {
+          for(let attempt = 1; attempt <= UPLOAD_CONFIG.MAX_RETRIES; attempt++) {
+            try {
+              await processSingleFile(file, ip);
+              return; // Success - exit retry loop
+            } catch(error) {
+              if(attempt === UPLOAD_CONFIG.MAX_RETRIES) {
+                throw new Error(`Failed after ${attempt} attempts: ${error.message}`);
+              }
+              await delay(UPLOAD_CONFIG.RETRY_BACKOFF[attempt-1]);
+            }
+          }
         }
 
         /**
