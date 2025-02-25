@@ -97,6 +97,25 @@
             text-align: center;
         }
 
+        /* POI Status Indicators */
+        .poi-status {
+          padding: 8px;
+          margin: 5px 0;
+          border-radius: 4px;
+          font-size: 0.9rem;
+          text-align: center;
+        }
+        .poi-status.online { 
+          background: #dff0d8; 
+          border: 1px solid #3c763d;
+          color: #3c763d;
+        }
+        .poi-status.offline { 
+          background: #f2dede; 
+          border: 1px solid #a94442;
+          color: #a94442;
+        }
+
         /* Responsive Media Queries */
         @media (max-width: 600px) {
             .container {
@@ -150,7 +169,9 @@
           INTER_BATCH_DELAY: 1500,  // ms between batches
           INTER_POI_DELAY: 3000,    // ms between POI processing
           MAX_RETRIES: 3,           // Per-file retry attempts
-          RETRY_BACKOFF: [500, 1500, 3000] // Retry delays in ms
+          RETRY_BACKOFF: [500, 1500, 3000], // Retry delays in ms
+          POI_CHECK_RETRIES: 2,     // Number of connection check attempts
+          POI_CHECK_TIMEOUT: 3000   // Timeout for connection checks
         };
 
         // Application State
@@ -291,11 +312,12 @@
           await delay(500); // Allow flash write cycle
         }
 
-        async function restoreOriginalPatterns() {
-          await Promise.all([
-            setPatternSafe(originalPattern, poi_one_ip),
-            setPatternSafe(originalPattern, poi_two_ip)
-          ]);
+        async function restoreOriginalPatterns(mainAvailable = true, auxAvailable = true) {
+          const restoreTasks = [];
+          if(mainAvailable) restoreTasks.push(setPatternSafe(originalPattern, poi_one_ip));
+          if(auxAvailable) restoreTasks.push(setPatternSafe(originalPattern, poi_two_ip));
+          
+          await Promise.allSettled(restoreTasks);
           await delay(1000); // Final safety delay
         }
 
@@ -309,6 +331,38 @@
           
           clearTimeout(id);
           return response;
+        }
+
+        // Add new status display function
+        function updatePoiStatus(ip, available) {
+          const statusDiv = document.createElement('div');
+          statusDiv.className = `poi-status ${available ? 'online' : 'offline'}`;
+          statusDiv.textContent = `${ip}: ${available ? 'Online' : 'Offline'}`;
+          document.body.insertBefore(statusDiv, document.body.firstChild);
+        }
+
+        // Add enhanced connectivity check
+        async function verifyPoiConnection(ip) {
+          for(let attempt = 1; attempt <= UPLOAD_CONFIG.POI_CHECK_RETRIES; attempt++) {
+            try {
+              const response = await fetchWithTimeout(
+                `http://${ip}/get-pixels`,
+                UPLOAD_CONFIG.POI_CHECK_TIMEOUT
+              );
+              
+              if(response.ok) {
+                updatePoiStatus(ip, true);
+                return true;
+              }
+            } catch(error) {
+              if(attempt === UPLOAD_CONFIG.POI_CHECK_RETRIES) {
+                updatePoiStatus(ip, false);
+                return false;
+              }
+              await delay(UPLOAD_CONFIG.RETRY_BACKOFF[attempt-1]);
+            }
+          }
+          return false;
         }
 
         function handleCriticalError(error) {
@@ -333,25 +387,50 @@
           }
 
           try {
-            createMessage('Starting optimized upload process');
+            createMessage('Starting connectivity checks...');
             
-            // 1. Store original patterns
+            // 1. Check POI availability
+            const [mainAvailable, auxAvailable] = await Promise.all([
+              verifyPoiConnection(poi_one_ip),
+              verifyPoiConnection(poi_two_ip)
+            ]);
+
+            if(!mainAvailable) {
+              throw new Error("Main POI unavailable - upload cannot proceed");
+            }
+
+            // 2. Store original patterns only on available POIs
             await fetchOriginalPattern();
             
-            // 2. Set upload mode patterns with safety delays
-            await setPatternSafe(7, poi_one_ip);
-            await setPatternSafe(7, poi_two_ip);
+            // 3. Set upload patterns conditionally
+            const patternTasks = [];
+            if(mainAvailable) patternTasks.push(setPatternSafe(7, poi_one_ip));
+            if(auxAvailable) patternTasks.push(setPatternSafe(7, poi_two_ip));
+            await Promise.all(patternTasks);
             await delay(UPLOAD_CONFIG.INTER_POI_DELAY);
 
-            // 3. Process POIs sequentially with controlled timing
-            await processPoiWithBackoff(files, poi_one_ip, "Main Poi");
-            await delay(UPLOAD_CONFIG.INTER_POI_DELAY);
-            await processPoiWithBackoff(files, poi_two_ip, "Aux Poi");
+            // 4. Process available POIs
+            const uploadTasks = [];
+            if(mainAvailable) {
+              uploadTasks.push(
+                processPoiWithBackoff(files, poi_one_ip, "Main Poi")
+                  .then(() => createMessage("Main POI upload complete"))
+              );
+            }
+            if(auxAvailable) {
+              uploadTasks.push(
+                processPoiWithBackoff(files, poi_two_ip, "Aux Poi")
+                  .then(() => createMessage("Aux POI upload complete"))
+              );
+            }
 
-            // 4. Restore patterns with confirmation
-            await restoreOriginalPatterns();
+            await Promise.all(uploadTasks);
             
-            createMessage('All uploads completed successfully');
+            // 5. Restore patterns only where needed
+            await restoreOriginalPatterns(mainAvailable, auxAvailable);
+            
+            createMessage(`Successfully updated ${mainAvailable ? 'Main POI' : ''}${auxAvailable ? ' and Aux POI' : ''}`);
+
           } catch(error) {
             handleCriticalError(error);
           }
