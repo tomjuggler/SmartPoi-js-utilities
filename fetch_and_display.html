@@ -206,6 +206,33 @@
         .alert-indicator {
             color: coral;
         }
+        
+        .status-indicator {
+          padding: 8px;
+          margin: 5px 0;
+          border-radius: 4px;
+          font-size: 0.9rem;
+          text-align: center;
+        }
+        .status-indicator.online { 
+          background: #dff0d8; 
+          border: 1px solid #3c763d;
+        }
+        .status-indicator.offline { 
+          background: #f2dede; 
+          border: 1px solid #a94442;
+        }
+        .progress-bar {
+          width: 100%;
+          height: 20px;
+          background-color: #f3f3f3;
+          margin: 10px 0;
+        }
+        .progress-fill {
+          height: 100%;
+          background-color: #4caf50;
+          transition: width 0.3s ease;
+        }
     </style>
 
 
@@ -217,6 +244,13 @@
 <body>
     <div class="centered-container">
         <img id="poiImage" class="center-image" src="smaller-logo.jpg" alt="Smaller Logo">
+    </div>
+    
+    <!-- Status indicators -->
+    <div class="status-indicator" id="mainPoiStatus">Main POI: Checking...</div>
+    <div class="status-indicator" id="auxPoiStatus">Aux POI: Checking...</div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
     </div>
 
     <div class="centered-container">
@@ -288,10 +322,6 @@
     <script src="jimp.min.js"></script>
 
     <script>
-        /**
-         * Determines if the strip is using WS2812 or APA102.
-         * @type {boolean}
-         */
         let ws_strip = true; //using ws2812 or APA102?
         /**
          * Variable to store the original pattern.
