@@ -8,3 +8,4 @@ b.bin
 .env
 extract_js.py
 extracted_scripts.js
+context.txt
