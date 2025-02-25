@@ -1331,6 +1331,22 @@
             }
         }
 
+        /**
+         * Updates the POI status indicator
+         * @param {string} ip - The IP address of the POI
+         * @param {boolean} available - Whether the POI is online
+         */
+        function updatePoiStatus(ip, available) {
+          const statusElement = ip === poi_one_ip 
+            ? document.getElementById('mainPoiStatus')
+            : document.getElementById('auxPoiStatus');
+          
+          if (statusElement) {
+            statusElement.textContent = `${ip}: ${available ? 'Online' : 'Offline'}`;
+            statusElement.className = `status-indicator ${available ? 'online' : 'offline'}`;
+          }
+        }
+
         window.addEventListener('load', async () => {
           // Initial status
           updatePoiStatus(poi_one_ip, false);
