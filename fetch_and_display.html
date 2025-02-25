@@ -1347,6 +1347,29 @@
           }
         }
 
+        async function checkPoiHealth(ip, isMain=true) {
+          const retries = isMain ? 3 : 2;
+          const timeout = 3000;
+          
+          for(let attempt=1; attempt<=retries; attempt++) {
+            try {
+              const response = await fetch(`http://${ip}/get-pixels`, {
+                timeout: timeout,
+                headers: { 'Connection': 'close' }
+              });
+              
+              if(response.ok) {
+                const pixels = await response.text();
+                return { online: true, pixels: parseInt(pixels, 10) };
+              }
+            } catch(error) {
+              if(attempt === retries) return { online: false };
+              await delay(1000 * attempt);
+            }
+          }
+          return { online: false };
+        }
+
         window.addEventListener('load', async () => {
           // Initial status
           updatePoiStatus(poi_one_ip, false);
