@@ -864,6 +864,8 @@
          * @param {string} filename - The name of the file to delete.
          */
         function deleteFileSync(ip, filename) {
+            const label = ip === poi_one_ip ? 'Main Poi' : 'Aux Poi';
+            console.log(`Deleting from ${label}`);
             fetch(ip + '/edit?path=/' + filename + '.bin', {
                 method: 'DELETE',
                 headers: {
@@ -1312,6 +1314,8 @@
          */
         async function fetchNumberOfPixels(ip) {
             try {
+                const label = ip === poi_one_ip ? 'Main Poi' : 'Aux Poi';
+                createMessage(`Getting pixels from ${label}`);
                 const response = await fetch(`http://${ip}/get-pixels`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -1349,7 +1353,8 @@
             : document.getElementById('auxPoiStatus');
           
           if (statusElement) {
-            statusElement.textContent = `${ip}: ${available ? 'Online' : 'Offline'}`;
+            const label = ip === poi_one_ip ? 'Main Poi' : 'Aux Poi';
+            statusElement.textContent = `${label}: ${available ? 'Online' : 'Offline'}`;
             statusElement.className = `status-indicator ${available ? 'online' : 'offline'}`;
           }
         }
@@ -1367,6 +1372,8 @@
               
               if(response.ok) {
                 const pixels = await response.text();
+                const label = isMain ? 'Main Poi' : 'Aux Poi';
+                createMessage(`${label} online with ${pixels} pixels`);
                 return { online: true, pixels: parseInt(pixels, 10) };
               }
             } catch(error) {
