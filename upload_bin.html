@@ -150,7 +150,7 @@
         <div class="input-container">
             <h4>Number of Pixels</h4>
             <input type="number" id="pixelInput" value="120" min="1" max="1000">
-            <button onclick="updatePixelSize()">Update</button>
+            <button id="updatePixelButton">Update</button>
             <span class="current-px" id="currentPx">Current px: 120</span>
         </div>
         <div class="input-container">
@@ -270,7 +270,7 @@
               const r = this.bitmap.data[idx + 0];
               const g = this.bitmap.data[idx + 1];
               const b = this.bitmap.data[idx + 2];
-              const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6);
+              const encoded = (r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6);
               binaryData.push(encoded);
             });
 
@@ -565,6 +565,9 @@
             updateNumberOfPixels(poi_one_ip);
             // Consider also updating for poi_two_ip if needed                                                                                                       
         });
+
+        // Initialize event listeners
+        document.getElementById('updatePixelButton').addEventListener('click', updatePixelSize);
     </script>
 </body>
 
