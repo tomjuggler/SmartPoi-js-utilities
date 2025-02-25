@@ -1298,6 +1298,11 @@
             document.getElementById('ws_apa_indicator').innerText = `${ws_strip}`;
         })
 
+        // Helper function for delays
+        function delay(ms) {
+          return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
         /**
          * Fetches the number of pixels from the specified IP.
          * @param {string} ip - The IP address of the POI.
