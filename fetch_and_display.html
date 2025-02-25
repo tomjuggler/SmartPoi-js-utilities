@@ -1331,9 +1331,22 @@
             }
         }
 
-        window.addEventListener('load', () => {
-            updateNumberOfPixels(poi_one_ip);
-            // Consider also updating for poi_two_ip if needed                                                                                                       
+        window.addEventListener('load', async () => {
+          // Initial status
+          updatePoiStatus(poi_one_ip, false);
+          updatePoiStatus(poi_two_ip, false);
+          
+          // Check POI status on startup
+          const [mainStatus, auxStatus] = await Promise.all([
+            checkPoiHealth(poi_one_ip),
+            checkPoiHealth(poi_two_ip, false)
+          ]);
+          
+          updatePoiStatus(poi_one_ip, mainStatus.online);
+          updatePoiStatus(poi_two_ip, auxStatus.online);
+
+          // Update pixel count
+          updateNumberOfPixels(poi_one_ip);
         });
 
         // Initialize event listeners

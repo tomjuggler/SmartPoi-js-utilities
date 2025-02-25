@@ -333,12 +333,16 @@
           return response;
         }
 
-        // Add new status display function
+        // Update existing status display function
         function updatePoiStatus(ip, available) {
-          const statusDiv = document.createElement('div');
-          statusDiv.className = `poi-status ${available ? 'online' : 'offline'}`;
-          statusDiv.textContent = `${ip}: ${available ? 'Online' : 'Offline'}`;
-          document.body.insertBefore(statusDiv, document.body.firstChild);
+          const statusElement = ip === poi_one_ip 
+            ? document.getElementById('mainPoiStatus')
+            : document.getElementById('auxPoiStatus');
+          
+          if (statusElement) {
+            statusElement.textContent = `${ip}: ${available ? 'Online' : 'Offline'}`;
+            statusElement.className = `status-indicator ${available ? 'online' : 'offline'}`;
+          }
         }
 
         // Add enhanced connectivity check
