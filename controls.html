@@ -103,6 +103,19 @@
       margin: 20px 0;
     }
 
+    .slider-container::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 5px;
+      transform: translateY(-50%);
+      background: linear-gradient(to right, #4CAF50, #FF5722);
+      border-radius: 5px;
+      z-index: 0;
+    }
+
     .tooltip {
       position: absolute;
       bottom: 120%;
@@ -119,6 +132,8 @@
     }
 
     input[type="range"] {
+      position: relative;
+      z-index: 1;
       width: 100%;
       height: 5px;
       background: #ddd;
@@ -433,20 +448,20 @@
     // Add these conversion functions
     function sliderToValue(sliderPercent) {
       if (sliderPercent <= 50) {
-        // Linear mapping for first half: 0-50% => 0.5-30
-        return 0.5 + (sliderPercent / 50) * 29.5;
+        // Exact 0.5 increments for first half: 0-50% => 0.5-30
+        return 0.5 + Math.floor((sliderPercent / 50) * 60) * 0.5;
       }
-      // Exponential mapping for second half: 50-100% => 30-1800
+      // Exponential mapping remains the same
       return 30 * Math.pow(1800 / 30, (sliderPercent - 50) / 50);
     }
 
     function valueToSlider(value) {
       if (value <= 30) {
-        // Linear mapping for values <=30
-        return ((value - 0.5) / 29.5) * 50;
+        // Reverse calculation for 0.5 increments
+        return ((value - 0.5) / 29.5) * 50 * (30 / 29.5);
       }
-      // Exponential mapping for values >30
-        return 50 + (Math.log(value / 30) / Math.log(60)) * 50;
+      // Keep existing exponential calculation
+      return 50 + (Math.log(value / 30) / Math.log(60)) * 50;
     }
 
     // Update slider initialization
