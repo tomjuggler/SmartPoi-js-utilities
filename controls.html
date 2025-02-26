@@ -387,8 +387,8 @@
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                const pixels = await response.text();
-                return parseInt(pixels, 10);
+                const pixels_tmp = await response.text();
+                return parseInt(pixels_tmp, 10);
             } catch (error) {
                 console.error(`Error fetching number of pixels from ${ip}:`, error);
                 return null;
