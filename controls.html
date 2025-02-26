@@ -305,6 +305,11 @@
      */
     let channel = "";
     /**
+     * The number of pixels fetched from the main Poi device.
+     * @type {string}
+     */
+     let pixels = "";
+    /**
      * The pattern fetched from the main Poi device.
      * @type {string}
      */
@@ -337,6 +342,11 @@
      */
     let channel_two = "";
     /**
+     * The number of pixels fetched from the auxiliary Poi device.
+     * @type {string}
+     */
+     let pixels_two = "";
+    /**
      * The pattern fetched from the auxiliary Poi device.
      * @type {string}
      */
@@ -363,6 +373,27 @@
         highlightActiveButton(pattern);
       }, 6000); // Adjust the delay if necessary
     });
+
+    /**
+         * Fetches the number of pixels from the specified IP.
+         * @param {string} ip - The IP address of the POI.
+         * @returns {Promise<number|null>} - The number of pixels or null if an error occurs.
+         */
+         async function fetchNumberOfPixels(ip) {
+            try {
+                const label = ip === poi_one_ip ? 'Main Poi' : 'Aux Poi';
+                createMessage(`Getting pixels from ${label}`);
+                const response = await fetch(`http://${ip}/get-pixels`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const pixels = await response.text();
+                return parseInt(pixels, 10);
+            } catch (error) {
+                console.error(`Error fetching number of pixels from ${ip}:`, error);
+                return null;
+            }
+        }
 
     /**
      * Synchronizes the Poi devices by sending a reset request to both.
@@ -632,7 +663,7 @@
           router = parts[0].trim();
           password = parts[1].trim();
           channel = parts[2].trim();
-          const pixels = parts[3].trim(); // Get pixels from 4th position
+          pixels = parts[3].trim(); // Get pixels from 4th position
           pattern = parts[parts.length - 1].trim();
 
           // Update pixels display
@@ -676,11 +707,11 @@
           router_two = parts_two[0].trim();
           password_two = parts_two[1].trim();
           channel_two = parts_two[2].trim();
-          const pixelsTwo = parts_two[3].trim(); // Get pixels from 4th position
+          pixels_two = parts_two[3].trim(); // Get pixels from 4th position
           pattern_two = parts_two[parts_two.length - 1].trim();
 
           // Update pixels display
-          document.getElementById('pixelsTwo').textContent = pixelsTwo;
+          document.getElementById('pixelsTwo').textContent = pixels_two;
 
           // Display the values
           document.getElementById('routerTwo').textContent = router_two;
