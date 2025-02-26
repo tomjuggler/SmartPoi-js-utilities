@@ -663,11 +663,11 @@
           router = parts[0].trim();
           password = parts[1].trim();
           channel = parts[2].trim();
-          pixels = parts[3].trim(); // Get pixels from 4th position
+          pixels = await fetchNumberOfPixels(poi_one_ip);
           pattern = parts[parts.length - 1].trim();
 
-          // Update pixels display
-          document.getElementById('pixels').textContent = pixels;
+          // Update pixels display with fresh data
+          document.getElementById('pixels').textContent = pixels || '?';
 
           // Display the values
           document.getElementById('router').textContent = router;
@@ -707,11 +707,11 @@
           router_two = parts_two[0].trim();
           password_two = parts_two[1].trim();
           channel_two = parts_two[2].trim();
-          pixels_two = parts_two[3].trim(); // Get pixels from 4th position
+          pixels_two = await fetchNumberOfPixels(poi_two_ip);
           pattern_two = parts_two[parts_two.length - 1].trim();
 
-          // Update pixels display
-          document.getElementById('pixelsTwo').textContent = pixels_two;
+          // Update pixels display with fresh data
+          document.getElementById('pixelsTwo').textContent = pixels_two || '?';
 
           // Display the values
           document.getElementById('routerTwo').textContent = router_two;
