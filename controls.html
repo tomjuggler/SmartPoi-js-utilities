@@ -659,10 +659,11 @@
           data = await response.text();
           parts = data.split(',');
 
-          // format is: router, password, channel, pixels, ip1, ip2, ip3, ip4, pattern
+          // format is: router, password, channel, ip1, ip2, ip3, ip4, pattern
           router = parts[0].trim();
           password = parts[1].trim();
           channel = parts[2].trim();
+          // Get fresh pixel count from dedicated endpoint
           pixels = await fetchNumberOfPixels(poi_one_ip);
           pattern = parts[parts.length - 1].trim();
 
