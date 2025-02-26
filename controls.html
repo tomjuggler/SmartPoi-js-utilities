@@ -116,6 +116,10 @@
       z-index: 0;
     }
 
+    .brightness-slider-container::before {
+      background: linear-gradient(to right, #2196F3, #9C27B0);
+    }
+
     .tooltip {
       position: absolute;
       bottom: 120%;
@@ -180,8 +184,10 @@
 
       <label>
         Change Brightness (20-255):
-        <input type="text" id="brightnessInput" placeholder="Enter brightness">
-        <button type="button" onclick="submitBrightness()">Submit</button>
+        <div class="slider-container brightness-slider-container">
+          <input type="range" id="brightnessSlider" min="20" max="255" value="20">
+          <div id="brightnessTooltip" class="tooltip"></div>
+        </div>
       </label>
 
       <label>
@@ -496,16 +502,32 @@
       sendRequest(`http://${poi_one_ip}/intervalChange?interval=${value}`);
     }
 
-    /**
-     * Submits the brightness setting to both Poi devices.
-     * @returns {void}
-     */
-    function submitBrightness() {
-      const brightness = document.getElementById('brightnessInput').value;
-      if (brightness !== '') {
-        sendRequest(`http://${poi_two_ip}/brightness?brt=${brightness}`);
-        sendRequest(`http://${poi_one_ip}/brightness?brt=${brightness}`);
-      }
+    // Brightness slider logic
+    const brightnessSlider = document.getElementById('brightnessSlider');
+    const brightnessTooltip = document.getElementById('brightnessTooltip');
+    let brightnessTimeout;
+
+    brightnessSlider.addEventListener('input', (e) => {
+      const value = parseInt(e.target.value);
+      brightnessTooltip.textContent = value;
+      brightnessTooltip.style.opacity = '1';
+      
+      const percent = ((value - 20) / (255 - 20)) * 100;
+      brightnessTooltip.style.left = `calc(${percent}% - ${percent * 0.2}px)`;
+      
+      clearTimeout(brightnessTimeout);
+      brightnessTimeout = setTimeout(() => {
+        submitBrightness(value);
+      }, 500);
+    });
+
+    brightnessSlider.addEventListener('change', () => {
+      brightnessTooltip.style.opacity = '0';
+    });
+
+    function submitBrightness(value) {
+      sendRequest(`http://${poi_two_ip}/brightness?brt=${value}`);
+      sendRequest(`http://${poi_one_ip}/brightness?brt=${value}`);
     }
 
     /**
@@ -624,10 +646,14 @@
 
           console.log(`got pattern in click function: ${pattern}`);
           
-          // Initialize slider position
+          // Initialize slider positions
           if (parts.length > 0) {
             const currentSpeed = parseFloat(parts[3]); // Adjust index if needed
             speedSlider.value = valueToSlider(currentSpeed);
+          }
+          if (parts.length > 3) {
+            const currentBrightness = parseInt(parts[3]); // Adjust index if needed
+            brightnessSlider.value = currentBrightness;
           }
         } else {
           console.error('Fetch error:', response.statusText);
