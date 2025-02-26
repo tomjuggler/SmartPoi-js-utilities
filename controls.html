@@ -382,7 +382,7 @@
          async function fetchNumberOfPixels(ip) {
             try {
                 const label = ip === poi_one_ip ? 'Main Poi' : 'Aux Poi';
-                createMessage(`Getting pixels from ${label}`);
+                // createMessage(`Getting pixels from ${label}`);
                 const response = await fetch(`http://${ip}/get-pixels`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -682,15 +682,15 @@
 
           console.log(`got pattern in click function: ${pattern}`);
           
-          // Initialize slider positions
-          if (parts.length > 0) {
-            const currentSpeed = parseFloat(parts[3]); // Adjust index if needed
-            speedSlider.value = valueToSlider(currentSpeed);
-          }
-          if (parts.length > 3) {
-            const currentBrightness = parseInt(parts[3]); // Adjust index if needed
-            brightnessSlider.value = currentBrightness;
-          }
+          // // Initialize slider positions
+          // if (parts.length > 0) {
+          //   const currentSpeed = parseFloat(parts[3]); // Adjust index if needed
+          //   speedSlider.value = valueToSlider(currentSpeed);
+          // }
+          // if (parts.length > 3) {
+          //   const currentBrightness = parseInt(parts[3]); // Adjust index if needed
+          //   brightnessSlider.value = currentBrightness;
+          // }
         } else {
           console.error('Fetch error:', response.statusText);
         }
