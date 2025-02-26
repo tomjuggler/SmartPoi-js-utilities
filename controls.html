@@ -6,14 +6,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Poi Controls</title>
   <style>
+    /* Add these new styles */
+    .control-block {
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 15px 0;
+      background: #f8f9fa;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .danger-zone {
+      border: 3px solid #dc3545;
+      background: #fff5f5;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .section-title {
+      color: #2c3e50;
+      font-size: 1.4em;
+      margin-bottom: 15px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #eee;
+    }
+
+    .danger-title {
+      color: #dc3545;
+      font-weight: bold;
+      font-size: 1.3em;
+      margin-bottom: 15px;
+    }
+
+    .status-section {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border: 1px solid #eee;
+    }
+
+    /* Update existing centered-container */
     .centered-container {
       display: flex;
       flex-direction: column;
-      /* This stacks the elements vertically */
       align-items: center;
-      /* This centers the elements horizontally */
       justify-content: center;
-      /* This centers the elements vertically */
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
     }
 
     form {
@@ -163,11 +205,13 @@
 <body>
   <div class="centered-container">
     <img id="poiImage" class="center-image" src="smaller-logo.jpg" alt="Smaller Logo">
-  </div>
-  <div class="centered-container">
-    <h1>Poi Controls</h1>
+    
+    <div class="control-block">
+      <h2 class="section-title">Poi Controls</h2>
 
-    <form id="routerForm" onsubmit="submitForm(event)">
+    <div class="control-block">
+      <h3 class="section-title">Pattern Selection</h3>
+      <form id="routerForm" onsubmit="submitForm(event)">
       <div class="pattern-buttons">
         <label>
           Change Pattern:
@@ -203,14 +247,16 @@
         </div>
       </label>
 
-      <label>
-        <button type="button" onclick="sync()">Sync Poi</button>
-      </label>
-      <br>
-      <br>
-      <br>
+      </form>
+    </div>
 
-      <h2>-------------------------------------- DANGER ZONE --------------------------------------</h2>
+    <div class="control-block">
+      <h3 class="section-title">Synchronization</h3>
+      <button type="button" onclick="sync()">Sync Poi</button>
+    </div>
+
+    <div class="danger-zone">
+      <h3 class="danger-title">DANGER ZONE</h3>
 
       <label>
         Update Router Name and Password:
@@ -232,9 +278,11 @@
       </label>
 
       <h2>-------------- -------------- -------------- ------------- -------------- -------------- --------------</h2>
-    </form>
+    </div>
 
-    <!-- Spinner and counter elements -->
+    <div class="control-block">
+      <h3 class="section-title">Network Discovery</h3>
+      <!-- Spinner and counter elements -->
     <div class="spinner" id="spinner"></div>
     <p id="counter">Scanning IP: <span id="currentIP">0</span> for poi!</p>
 
@@ -246,7 +294,8 @@
       <span id="result"></span>
     </label>
   </div>
-  <h1>Poi Settings Data: </h1>
+  <div class="status-section">
+    <h3 class="section-title">Poi Status</h3>
   <button id="fetchBtn">Fetch Settings</button>
   <h4>Main Poi:</h4>
   <p>Router: <span id="router">N/A</span></p>
@@ -261,6 +310,7 @@
   <p>Channel: <span id="channelTwo">N/A</span></p>
   <p>Pattern: <span id="patternTwo">N/A</span></p>
   <p>Pixels: <span id="pixelsTwo">?</span></p>
+    </div>
 
   <script>
     /**
