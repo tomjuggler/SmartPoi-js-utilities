@@ -212,6 +212,12 @@
         <button type="button" onclick="submitRouterMode()">Submit</button>
       </label>
 
+      <label>
+        Update WiFi Channel (1-13):
+        <input type="number" id="channelInput" min="1" max="13" placeholder="1-13">
+        <button type="button" onclick="submitChannel()">Update Channel</button>
+      </label>
+
       <h2>-------------- -------------- -------------- ------------- -------------- -------------- --------------</h2>
     </form>
 
@@ -433,6 +439,27 @@
      * Submits the router mode to both Poi devices.
      * @returns {void}
      */
+    function submitChannel() {
+      const channelInput = document.getElementById('channelInput');
+      const channelValue = parseInt(channelInput.value);
+
+      if (isNaN(channelValue) || channelValue < 1 || channelValue > 13) {
+        alert("Invalid channel! WiFi channels must be between 1-13");
+        channelInput.value = ""; // Clear invalid input
+        return;
+      }
+
+      // Send to both POIs like other settings
+      sendRequest(`http://${poi_one_ip}/setting?channel=${channelValue}`);
+      sendRequest(`http://${poi_two_ip}/setting?channel=${channelValue}`);
+
+      // Update UI after short delay
+      setTimeout(() => {
+        document.getElementById('fetchBtn').click();
+        channelInput.value = ""; // Clear input after submission
+      }, 2000);
+    }
+
     function submitRouterMode() {
       const routerMode = document.getElementById('routerModeCheckbox').checked ? '1' : '0';
       sendRequest(`http://${poi_two_ip}/router?router=${routerMode}`);
