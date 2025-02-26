@@ -96,6 +96,35 @@
       text-align: center;
       margin-top: 10px;
     }
+
+    .slider-container {
+      position: relative;
+      width: 80%;
+      margin: 20px 0;
+    }
+
+    .tooltip {
+      position: absolute;
+      bottom: 120%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 5px;
+      background: #ddd;
+      border-radius: 5px;
+      outline: none;
+    }
   </style>
 </head>
 
@@ -127,9 +156,11 @@
       </div>
 
       <label>
-        Change Speed (seconds):
-        <input type="text" id="speedInput" placeholder="Enter speed">
-        <button type="button" onclick="submitSpeed()">Submit</button>
+        Change Speed (0.5-1800s):
+        <div class="slider-container">
+          <input type="range" id="speedSlider" min="0" max="100" step="1" value="0">
+          <div id="speedTooltip" class="tooltip"></div>
+        </div>
       </label>
 
       <label>
@@ -399,16 +430,55 @@
       }
     }
 
-    /**
-     * Submits the speed setting to both Poi devices.
-     * @returns {void}
-     */
-    function submitSpeed() {
-      const speed = document.getElementById('speedInput').value;
-      if (speed !== '') {
-        sendRequest(`http://${poi_two_ip}/intervalChange?interval=${speed}`);
-        sendRequest(`http://${poi_one_ip}/intervalChange?interval=${speed}`);
+    // Add these conversion functions
+    function sliderToValue(sliderPercent) {
+      if (sliderPercent <= 50) {
+        // Linear mapping for first half: 0-50% => 0.5-30
+        return 0.5 + (sliderPercent / 50) * 29.5;
       }
+      // Exponential mapping for second half: 50-100% => 30-1800
+      return 30 * Math.pow(1800 / 30, (sliderPercent - 50) / 50);
+    }
+
+    function valueToSlider(value) {
+      if (value <= 30) {
+        // Linear mapping for values <=30
+        return ((value - 0.5) / 29.5) * 50;
+      }
+      // Exponential mapping for values >30
+        return 50 + (Math.log(value / 30) / Math.log(60)) * 50;
+    }
+
+    // Update slider initialization
+    const speedSlider = document.getElementById('speedSlider');
+    const speedTooltip = document.getElementById('speedTooltip');
+    let submitTimeout;
+
+    // Add these event listeners
+    speedSlider.addEventListener('input', (e) => {
+      const value = sliderToValue(e.target.value);
+      speedTooltip.textContent = value.toFixed(1) + 's';
+      speedTooltip.style.opacity = '1';
+      
+      // Update tooltip position
+      const percent = (e.target.value / 100);
+      speedTooltip.style.left = `calc(${percent * 100}% - ${percent * 20}px)`;
+      
+      // Debounce submission
+      clearTimeout(submitTimeout);
+      submitTimeout = setTimeout(() => {
+        submitSpeed(value);
+      }, 500);
+    });
+
+    speedSlider.addEventListener('change', () => {
+      speedTooltip.style.opacity = '0';
+    });
+
+    // Modified submitSpeed function
+    function submitSpeed(value) {
+      sendRequest(`http://${poi_two_ip}/intervalChange?interval=${value}`);
+      sendRequest(`http://${poi_one_ip}/intervalChange?interval=${value}`);
     }
 
     /**
@@ -538,6 +608,12 @@
           document.getElementById('passwordInput').placeholder = password;
 
           console.log(`got pattern in click function: ${pattern}`);
+          
+          // Initialize slider position
+          if (parts.length > 0) {
+            const currentSpeed = parseFloat(parts[3]); // Adjust index if needed
+            speedSlider.value = valueToSlider(currentSpeed);
+          }
         } else {
           console.error('Fetch error:', response.statusText);
         }
