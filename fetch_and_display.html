@@ -267,8 +267,13 @@
             <p id="counter">Scanning IP: <span id="currentIP">0</span> for poi!</p>
 
             <label>
-                WiFi Poi IP Address Discovery (Router Mode Only):
-                <button class="dark-button" id="discoverBtn">Discover POI</button> <span id="result"></span>
+                WiFi Poi IP Address Discovery (Router Mode):
+                <input type="text" id="routerIpInput" placeholder="192.168.1.1" 
+                       pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
+                       style="margin-right: 10px; padding: 5px;">
+                <button class="dark-button" id="discoverBtn">Discover POI</button>
+                <span id="ipError" style="color: red; display: none;">Invalid IP address format!</span>
+                <span id="result"></span>
             </label>
         </div>
 
@@ -1239,62 +1244,84 @@
         // processFiles();
         let ip = "";
         document.getElementById('discoverBtn').addEventListener('click', async function () {
-            // Show the spinner and counter
+            const routerIp = document.getElementById('routerIpInput').value;
+            const ipError = document.getElementById('ipError');
+            
+            // Reset error state
+            ipError.style.display = 'none';
+            
+            // Validate IP format
+            if (!isValidIP(routerIp)) {
+                ipError.style.display = 'inline';
+                return;
+            }
+
+            // Extract subnet from first 3 octets
+            const octets = routerIp.split('.').slice(0, 3);
+            if (octets.length !== 3) {
+                ipError.style.display = 'inline';
+                return;
+            }
+            
+            const subnet = octets.join('.') + '.';
+            
+            // Show loading state
             spinner.style.display = 'block';
             counter.style.display = 'block';
 
-            const subnets = ['10.0.0.', '192.168.1.']; // Scan two subnets: 10.0.0.x and 192.168.1.x
-            // const subnets = ['10.0.0.']; // Scan one subnet: 10.0.0.x
-            const timeout = 600; // Set timeout for each request (in ms)
+            const timeout = 1500;
             let foundDevices = 0;
 
-            for (const subnet of subnets) {
+            try {
                 for (let i = 1; i <= 254; i++) {
-                    ip = subnet + i;
-                    currentIPSpan.innerText = ip; // Update the counter with the current IP being scanned
+                    const ip = subnet + i;
+                    currentIPSpan.innerText = ip;
 
                     try {
                         const controller = new AbortController();
-                        const signal = controller.signal;
                         const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-                        const response = await fetch(`http://${ip}/`, { signal });
+                        
+                        const response = await fetch(`http://${ip}/`, { signal: controller.signal });
+                        clearTimeout(timeoutId);
 
                         if (response.ok) {
                             if (foundDevices === 0) {
-                                poi_one_ip = ip; // Assign first device's IP
-                                document.getElementById('result').innerText = `First POI found at: http://${ip}/`;
+                                poi_one_ip = ip;
+                                document.getElementById('result').innerText = `First POI: ${ip}`;
                                 foundDevices++;
-                            } else if (foundDevices === 1) {
-                                poi_two_ip = ip; // Assign second device's IP
-                                document.getElementById('result').innerText += ` | Second POI found at: http://${ip}/`;
+                            } else {
+                                poi_two_ip = ip;
+                                document.getElementById('result').innerText += ` | Second POI: ${ip}`;
                                 foundDevices++;
-                                clearTimeout(timeoutId); // Stop timeout once the second device is found
-                                break; // Stop scanning when both devices are found
+                                break;
                             }
                         }
                     } catch (error) {
-                        if (error.name === 'AbortError') {
-                            console.log(`Request to ${ip} timed out`);
-                        } else {
-                            console.log(`Failed to connect to ${ip}: ${error.message}`);
-                        }
+                        // Expected timeout, continue scanning
                     }
                 }
-
-                if (foundDevices >= 2) break; // Exit the outer loop if two devices are found
-            }
-
-            // Hide spinner and counter when done
-            spinner.style.display = 'none';
-            counter.style.display = 'none';
-
-            if (foundDevices === 0) {
-                document.getElementById('result').innerText = 'No POI found on the subnet.';
-            } else if (foundDevices === 1) {
-                document.getElementById('result').innerText += ' | Only one POI found.';
+            } finally {
+                spinner.style.display = 'none';
+                counter.style.display = 'none';
+                
+                if (foundDevices === 0) {
+                    document.getElementById('result').innerText = 'No POI found on this subnet';
+                }
+                
+                // Update status indicators after discovery
+                const [mainStatus, auxStatus] = await Promise.all([
+                    checkPoiHealth(poi_one_ip),
+                    checkPoiHealth(poi_two_ip, false)
+                ]);
+                updatePoiStatus(poi_one_ip, mainStatus.online);
+                updatePoiStatus(poi_two_ip, auxStatus.online);
             }
         });
+
+        // Add validation function
+        function isValidIP(ip) {
+            return /^(?!0)(?!.*\.$)((25[0-5]|2[0-4][0-9]|[01]?[0-9]{1,3})(\.|$)){4}/.test(ip);
+        }
 
         document.getElementById('ws_apaBtn').addEventListener('click', async function () {
             ws_strip = !ws_strip;
