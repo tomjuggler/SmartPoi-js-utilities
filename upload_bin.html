@@ -261,11 +261,26 @@
             });
 
             const image = await Jimp.read(fileData);
+            console.log('Original dimensions:', 
+              `W:${image.bitmap.width} H:${image.bitmap.height}`,
+              `File: ${file.name}`);
+
             const rotatedImage = image.rotate(-90);
-            const height = ws_strip ? rotatedImage.bitmap.height / 2 : rotatedImage.bitmap.height;
+            console.log('Post-rotation dimensions:',
+              `W:${rotatedImage.bitmap.width} H:${rotatedImage.bitmap.height}`);
+
+            const rawHeight = ws_strip ? rotatedImage.bitmap.height / 2 : rotatedImage.bitmap.height;
+            console.log('Calculated height:', rawHeight, 
+              `(ws_strip: ${ws_strip})`);
+            
+            const height = Math.floor(rawHeight); // Ensure integer value
             const resizedImage = rotatedImage.resize(number_of_pixels, height);
+            console.log('Resized dimensions:',
+              `W:${resizedImage.bitmap.width} H:${resizedImage.bitmap.height}`,
+              `Target: ${number_of_pixels}x${height}`);
 
             const binaryData = [];
+            // Validate pixel count matches expectations
             resizedImage.scan(0, 0, resizedImage.bitmap.width, resizedImage.bitmap.height, function (x, y, idx) {
               const r = this.bitmap.data[idx + 0];
               const g = this.bitmap.data[idx + 1];
@@ -273,6 +288,13 @@
               const encoded = (r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6);
               binaryData.push(encoded);
             });
+
+            const expectedPixels = resizedImage.bitmap.width * resizedImage.bitmap.height;
+            if(binaryData.length !== expectedPixels) {
+              console.error('Pixel count mismatch:', 
+                `Expected ${expectedPixels} pixels, Got ${binaryData.length}`);
+              throw new Error('Pixel encoding failed - dimension mismatch');
+            }
 
             const charAtIndex = getCharFromIndex(Array.from(document.getElementById('fileInput').files).indexOf(file));
             const fileName = charAtIndex + '.bin';
