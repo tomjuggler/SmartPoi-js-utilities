@@ -269,15 +269,20 @@
             console.log('Post-rotation dimensions:',
               `W:${rotatedImage.bitmap.width} H:${rotatedImage.bitmap.height}`);
 
-            const rawHeight = ws_strip ? rotatedImage.bitmap.height / 2 : rotatedImage.bitmap.height;
-            console.log('Calculated height:', rawHeight, 
+            // Calculate proportional height based on rotated dimensions and ws_strip
+            const rotatedWidth = rotatedImage.bitmap.width;
+            const rotatedHeight = rotatedImage.bitmap.height;
+            const aspectRatio = rotatedWidth / (ws_strip ? rotatedHeight/2 : rotatedHeight);
+            const targetHeight = Math.floor(number_of_pixels / aspectRatio);
+            
+            console.log('Calculated dimensions:',
+              `Aspect: ${aspectRatio.toFixed(2)}:1`,
+              `Target: ${number_of_pixels}x${targetHeight}`,
               `(ws_strip: ${ws_strip})`);
             
-            const height = Math.floor(rawHeight); // Ensure integer value
-            const resizedImage = rotatedImage.resize(number_of_pixels, height);
+            const resizedImage = rotatedImage.resize(number_of_pixels, targetHeight);
             console.log('Resized dimensions:',
-              `W:${resizedImage.bitmap.width} H:${resizedImage.bitmap.height}`,
-              `Target: ${number_of_pixels}x${height}`);
+              `W:${resizedImage.bitmap.width} H:${resizedImage.bitmap.height}`);
 
             const binaryData = [];
             // Validate pixel count matches expectations
