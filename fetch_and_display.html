@@ -1321,10 +1321,13 @@
             return /^(?!0)(?!.*\.$)((25[0-5]|2[0-4][0-9]|[01]?[0-9]{1,3})(\.|$)){4}/.test(ip);
         }
 
-        document.getElementById('ws_apaBtn').addEventListener('click', async function () {
+        // Add WS2812/APA102 toggle handler
+        document.getElementById('ws_apaBtn').addEventListener('click', function() {
             ws_strip = !ws_strip;
-            document.getElementById('ws_apa_indicator').innerText = `${ws_strip}`;
-        })
+            const indicator = document.getElementById('ws_apa_indicator');
+            indicator.textContent = `Current: ${ws_strip ? 'WS2812' : 'APA102'}`;
+            createMessage(`Switched to ${ws_strip ? 'WS2812 (compressed)' : 'APA102 (raw)'} mode`);
+        });
 
         // Helper function for delays
         function delay(ms) {
