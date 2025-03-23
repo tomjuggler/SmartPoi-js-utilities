@@ -1027,14 +1027,12 @@
                         const image = await Jimp.read(event.target.result);
 
                         const rotatedImage = image.rotate(-90);
-                        let height;
-                        if (ws_strip) {
-                            height = rotatedImage.bitmap.height / 2; // Get half of the current height
-                        } else {
-                            height = rotatedImage.bitmap.height;
-                        }
+                        const rotatedWidth = rotatedImage.bitmap.width;
+                        const rotatedHeight = rotatedImage.bitmap.height;
+                        const aspectRatio = rotatedWidth / (ws_strip ? rotatedHeight/2 : rotatedHeight);
+                        const targetHeight = Math.floor(number_of_pixels / aspectRatio);
 
-                        const resizedImage = rotatedImage.resize(number_of_pixels, height); // Resize using new height
+                        const resizedImage = rotatedImage.resize(number_of_pixels, targetHeight);
                         // const resizedImage = rotatedImage.resize(number_of_pixels, Jimp.AUTO);
 
                         const binaryData = [];
