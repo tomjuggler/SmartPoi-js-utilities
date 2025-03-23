@@ -148,6 +148,11 @@
             <button id="uploadButton" onclick="handleUpload()">Upload and convert</button>
         </div>
         <div class="input-container">
+            <h4>LED Strip Type</h4>
+            <button id="ws_apaBtn">Toggle WS2812/APA102</button>
+            <span id="ws_apa_indicator" class="current-px">Current: WS2812</span>
+        </div>
+        <div class="input-container">
             <h4>Number of Pixels</h4>
             <input type="number" id="pixelInput" value="120" min="1" max="1000">
             <button id="updatePixelButton">Update</button>
@@ -602,6 +607,14 @@
 
         // Initialize event listeners
         document.getElementById('updatePixelButton').addEventListener('click', updatePixelSize);
+        
+        // Add WS2812/APA102 toggle handler
+        document.getElementById('ws_apaBtn').addEventListener('click', function() {
+            ws_strip = !ws_strip;
+            const indicator = document.getElementById('ws_apa_indicator');
+            indicator.textContent = `Current: ${ws_strip ? 'WS2812' : 'APA102'}`;
+            createMessage(`Switched to ${ws_strip ? 'WS2812 (compressed)' : 'APA102 (raw)'} mode`);
+        });
     </script>
 </body>
 
