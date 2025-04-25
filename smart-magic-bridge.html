@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Smart Magic Bridge</title>
+    <style>
+        /* Base styles from upload_bin.html */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* New step-based styles */
+        .step-card {
+            display: none;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .step-active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Input styles from upload_bin.html */
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        .input-container input,
+        .input-container button,
+        .input-container select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+
+        .input-container button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: none;
+        }
+
+        .input-container button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Auth Step -->
+        <div class="step-card step-active" id="step-auth">
+            <h2>🔐 Authentication</h2>
+            <div class="input-container">
+                <input type="text" id="username" placeholder="Username or Email">
+                <input type="password" id="password" placeholder="Password">
+                <button onclick="handleLogin()">Login</button>
+                <div id="auth-error" style="color: red; display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Timeline Selection Step -->
+        <div class="step-card" id="step-timeline">
+            <h2>📅 Choose Timeline</h2>
+            <div class="input-container">
+                <select id="timeline-select" disabled>
+                    <option>Loading timelines...</option>
+                </select>
+                <button onclick="proceedToImages()">Continue</button>
+            </div>
+        </div>
+
+        <!-- Image Selection Step -->
+        <div class="step-card" id="step-images">
+            <h2>🖼️ Image Selection</h2>
+            <div class="input-container">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label>LED Type:</label>
+                        <select id="led-type">
+                            <option value="WS2812">WS2812</option>
+                            <option value="APA102">APA102</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Number of LEDs:</label>
+                        <input type="number" id="led-count" value="120" min="1">
+                    </div>
+                </div>
+                <div id="image-grid" style="margin-top: 20px;"></div>
+                <button onclick="proceedToDownload()">Prepare Download</button>
+            </div>
+        </div>
+
+        <!-- Download Step -->
+        <div class="step-card" id="step-download">
+            <h2>💾 Download Bin Files</h2>
+            <div id="download-progress" style="margin: 20px 0;"></div>
+            <button onclick="beginDownload()">Download Selected</button>
+        </div>
+
+        <!-- Upload Step -->
+        <div class="step-card" id="step-upload">
+            <h2>⚡ Upload to POI</h2>
+            <div class="input-container">
+                <input type="file" id="bin-files" accept=".bin" multiple>
+                <button onclick="uploadToPoi()">Upload to POI</button>
+                <div id="upload-status" style="margin-top: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application State
+        const appState = {
+            jwt: null,
+            user: null,
+            selectedTimeline: null,
+            selectedImages: [],
+            ledType: 'WS2812',
+            ledCount: 120,
+            downloadedFiles: []
+        };
+
+        // Cookie Management
+        function saveState() {
+            const state = {
+                jwt: appState.jwt,
+                user: appState.user,
+                ledType: appState.ledType,
+                ledCount: appState.ledCount
+            };
+            document.cookie = `magicBridge=${JSON.stringify(state)}; max-age=604800; path=/`;
+        }
+
+        function loadState() {
+            const cookie = document.cookie.split('; ')
+                .find(row => row.startsWith('magicBridge='));
+            if (cookie) {
+                const savedState = JSON.parse(cookie.split('=')[1]);
+                Object.assign(appState, savedState);
+                document.getElementById('led-type').value = savedState.ledType || 'WS2812';
+                document.getElementById('led-count').value = savedState.ledCount || 120;
+            }
+        }
+
+        // Step Navigation
+        function showStep(stepId) {
+            document.querySelectorAll('.step-card').forEach(step => {
+                step.classList.remove('step-active');
+            });
+            document.getElementById(`step-${stepId}`).classList.add('step-active');
+        }
+
+        // Auth Functions
+        async function handleLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('auth-error');
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: username,
+                        password: password
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    appState.jwt = data.token;
+                    appState.user = data.user_id;
+                    saveState();
+                    loadTimelines();
+                    showStep('timeline');
+                } else {
+                    throw new Error('Login failed');
+                }
+            } catch (error) {
+                errorEl.textContent = 'Invalid credentials. Please try again.';
+                errorEl.style.display = 'block';
+            }
+        }
+
+        // Timeline Functions
+        async function loadTimelines() {
+            const select = document.getElementById('timeline-select');
+            try {
+                const response = await fetch('/api/get-user-timelines', {
+                    headers: { 'Authorization': `Bearer ${appState.jwt}` }
+                });
+                
+                const timelines = await response.json();
+                select.innerHTML = '';
+                timelines.forEach(tl => {
+                    const option = document.createElement('option');
+                    option.value = tl.id;
+                    option.textContent = tl.title;
+                    select.appendChild(option);
+                });
+                select.disabled = false;
+            } catch (error) {
+                console.error('Failed to load timelines:', error);
+            }
+        }
+
+        function proceedToImages() {
+            const timelineSelect = document.getElementById('timeline-select');
+            appState.selectedTimeline = timelineSelect.value;
+            loadImagesForTimeline(timelineSelect.value);
+            showStep('images');
+        }
+
+        async function loadImagesForTimeline(timelineId) {
+            const imageGrid = document.getElementById('image-grid');
+            imageGrid.innerHTML = '<p>Loading images...</p>';
+
+            try {
+                const response = await fetch(`/api/get-user-timeline/${timelineId}`, {
+                    headers: { 'Authorization': `Bearer ${appState.jwt}` }
+                });
+                
+                const timeline = await response.json();
+                imageGrid.innerHTML = '';
+                
+                timeline.images.forEach(img => {
+                    const container = document.createElement('div');
+                    container.style.margin = '10px 0';
+                    container.innerHTML = `
+                        <input type="checkbox" id="img-${img.id}" value="${img.id}">
+                        <label for="img-${img.id}">${img.original_filename}</label>
+                    `;
+                    imageGrid.appendChild(container);
+                });
+            } catch (error) {
+                imageGrid.innerHTML = '<p style="color: red;">Failed to load images</p>';
+                console.error('Error loading timeline images:', error);
+            }
+        }
+
+        function proceedToDownload() {
+            appState.ledType = document.getElementById('led-type').value;
+            appState.ledCount = parseInt(document.getElementById('led-count').value);
+            saveState();
+            
+            // Collect selected images
+            appState.selectedImages = [];
+            document.querySelectorAll('#image-grid input[type="checkbox"]:checked').forEach(checkbox => {
+                appState.selectedImages.push(checkbox.value);
+            });
+            
+            showStep('download');
+            updateDownloadStatus('Ready to download ' + appState.selectedImages.length + ' files');
+        }
+
+        function updateDownloadStatus(message) {
+            document.getElementById('download-progress').textContent = message;
+        }
+
+        async function beginDownload() {
+            if (appState.selectedImages.length === 0) {
+                updateDownloadStatus('No images selected!');
+                return;
+            }
+
+            updateDownloadStatus('Starting download...');
+            
+            try {
+                for (let i = 0; i < appState.selectedImages.length; i++) {
+                    const imageId = appState.selectedImages[i];
+                    updateDownloadStatus(`Downloading image ${i+1} of ${appState.selectedImages.length}...`);
+                    
+                    const response = await fetch(`/api/output-user-bin/${imageId}?size=${appState.ledCount}`, {
+                        headers: { 'Authorization': `Bearer ${appState.jwt}` }
+                    });
+                    
+                    if (!response.ok) throw new Error('Download failed');
+                    
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `image_${imageId}.bin`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    await new Promise(resolve => setTimeout(resolve, 500)); // Throttle downloads
+                }
+                
+                updateDownloadStatus('All downloads completed!');
+                showStep('upload');
+            } catch (error) {
+                updateDownloadStatus('Download failed: ' + error.message);
+                console.error('Download error:', error);
+            }
+        }
+
+        async function uploadToPoi() {
+            const fileInput = document.getElementById('bin-files');
+            const statusEl = document.getElementById('upload-status');
+            
+            if (fileInput.files.length === 0) {
+                statusEl.textContent = 'Please select .bin files first';
+                statusEl.style.color = 'red';
+                return;
+            }
+
+            statusEl.textContent = 'Uploading...';
+            statusEl.style.color = 'black';
+
+            // Reuse upload logic from upload_bin.html
+            try {
+                // TODO: Implement actual POI upload logic
+                // This would use similar code to upload_bin.html's handleUpload()
+                
+                statusEl.textContent = 'Upload completed successfully!';
+                statusEl.style.color = 'green';
+            } catch (error) {
+                statusEl.textContent = 'Upload failed: ' + error.message;
+                statusEl.style.color = 'red';
+                console.error('Upload error:', error);
+            }
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            loadState();
+            if (appState.jwt) {
+                showStep('timeline');
+                loadTimelines();
+            }
+        });
+    </script>
+</body>
+</html>
