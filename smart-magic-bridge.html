@@ -201,6 +201,16 @@
             'Accept': 'application/json'
         };
 
+        // Upload Configuration
+        const UPLOAD_CONFIG = {
+          BATCH_SIZE: 2,
+          INTER_FILE_DELAY: 750,
+          INTER_BATCH_DELAY: 1500,
+          MAX_RETRIES: 3,
+          RETRY_BACKOFF: [500, 1500, 3000],
+          POI_CHECK_TIMEOUT: 3000
+        };
+
         // Application State
         const appState = {
             jwt: null,
@@ -513,76 +523,89 @@
         }
 
         async function verifyPoiConnection(ip) {
+          for (let attempt = 1; attempt <= UPLOAD_CONFIG.POI_CHECK_RETRIES; attempt++) {
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 3000);
-                
-                const response = await fetch(`http://${ip}/get-pixels`, {
-                    method: 'GET',
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-                return response.ok;
+              const response = await fetch(`http://${ip}/get-pixels`, {
+                method: 'GET',
+                mode: 'no-cors' // Critical for ESP8266
+              });
+              return true; // Consider any response as success
             } catch (error) {
-                console.error(`POI ${ip} connection check failed:`, error);
-                return false;
+              if (attempt === UPLOAD_CONFIG.POI_CHECK_RETRIES) return false;
+              await delay(UPLOAD_CONFIG.RETRY_BACKOFF[attempt-1]);
             }
+          }
+          return false;
         }
 
         async function uploadToPoiWithProgress(files, ip, label) {
-            const statusEl = document.getElementById('upload-status');
-            let currentIndex = 0; // Track current file index
+          const statusEl = document.getElementById('upload-status');
+          
+          const processFile = async (file, index) => {
+            const charAtIndex = String.fromCharCode(97 + index);
+            const fileName = `${charAtIndex}.bin`;
+            
+            for (let attempt = 1; attempt <= UPLOAD_CONFIG.MAX_RETRIES; attempt++) {
+              try {
+                const arrayBuffer = await file.arrayBuffer();
+                const formData = new FormData();
+                formData.append('file', new Blob([new Uint8Array(arrayBuffer)], {
+                  type: 'application/octet-stream'
+                }), fileName);
 
-            const processFile = async (file, index) => {
-                const charAtIndex = String.fromCharCode(97 + index);
-                const fileName = `${charAtIndex}.bin`;
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const response = await fetch(`http://${ip}/edit`, {
+                  method: 'POST',
+                  body: formData,
+                  headers: {
+                    'Connection': 'close',
+                    'Content-Type': 'application/octet-stream'
+                  }
+                });
 
-                try {
-                    const arrayBuffer = await file.arrayBuffer();
-                    const formData = new FormData();
-                    formData.append('file', new Blob([new Uint8Array(arrayBuffer)], { 
-                        type: 'application/octet-stream' 
-                    }), fileName);
-
-                    const response = await fetch(`http://${ip}/edit`, {
-                        method: 'POST',
-                        body: formData,
-                        signal: controller.signal,
-                        headers: {
-                            'Connection': 'close',
-                            'Content-Type': 'application/octet-stream'
-                        }
-                    });
-
-                    clearTimeout(timeoutId);
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status} - ${await response.text()}`);
-                    }
-                } catch (error) {
-                    console.error('Upload failure details:', {
-                        ip,
-                        fileName,
-                        error: error.message
-                    });
-                    throw error;
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return; // Success - exit retry loop
+                
+              } catch (error) {
+                if (attempt === UPLOAD_CONFIG.MAX_RETRIES) {
+                  throw new Error(`Failed after ${attempt} attempts: ${error.message}`);
                 }
-            };
-
-            try {
-                for (currentIndex = 0; currentIndex < files.length; currentIndex++) {
-                    statusEl.textContent = `Uploading to ${label}: ${currentIndex+1}/${files.length}`;
-                    await processFile(files[currentIndex], currentIndex);
-                    await new Promise(resolve => setTimeout(resolve, 1000)); // Increased delay
-                }
-                return true;
-            } catch (error) {
-                const failedFile = files[currentIndex]?.name || 'unknown';
-                throw new Error(`Failed to upload ${failedFile}: ${error.message}`);
+                await delay(UPLOAD_CONFIG.RETRY_BACKOFF[attempt-1]);
+              }
             }
+          };
+
+          try {
+            const batchCount = Math.ceil(files.length / UPLOAD_CONFIG.BATCH_SIZE);
+            
+            for (let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
+              const batchStart = batchIndex * UPLOAD_CONFIG.BATCH_SIZE;
+              const batchFiles = Array.from(files).slice(batchStart, batchStart + UPLOAD_CONFIG.BATCH_SIZE);
+              
+              statusEl.textContent = `Uploading to ${label}: Batch ${batchIndex+1}/${batchCount}`;
+              
+              // Process batch with individual retries
+              await Promise.all(batchFiles.map((file, fileIndex) => 
+                processFile(file, batchStart + fileIndex)
+              ));
+              
+              if (batchIndex < batchCount - 1) {
+                await delay(UPLOAD_CONFIG.INTER_BATCH_DELAY);
+              }
+            }
+            
+            return true;
+          } catch (error) {
+            console.error('POI Upload Failure:', {
+              ip,
+              error: error.message,
+              stack: error.stack
+            });
+            throw error;
+          }
+        }
+
+        function delay(ms) {
+          return new Promise(resolve => setTimeout(resolve, ms));
         }
 
         // Initialize
