@@ -206,14 +206,14 @@
             'Accept': 'application/json'
         };
 
-        // Upload Configuration
+        // Upload Configuration - optimized for ESP8266 stability
         const UPLOAD_CONFIG = {
-          BATCH_SIZE: 2,
-          INTER_FILE_DELAY: 750,
-          INTER_BATCH_DELAY: 1500,
-          MAX_RETRIES: 3,
-          RETRY_BACKOFF: [500, 1500, 3000],
-          POI_CHECK_TIMEOUT: 3000
+          BATCH_SIZE: 1,            // Reduced from 2 to 1 for ESP8266 stability
+          INTER_FILE_DELAY: 1500,    // Increased from 750ms
+          INTER_BATCH_DELAY: 3000,   // Increased from 1500ms
+          MAX_RETRIES: 5,            // Increased retry attempts
+          RETRY_BACKOFF: [1000, 3000, 5000, 7000, 10000], // Longer delays
+          POI_CHECK_TIMEOUT: 5000
         };
 
         // Application State
@@ -578,35 +578,46 @@
           const statusEl = document.getElementById('upload-status');
           
           const processFile = async (file, index) => {
-            const charAtIndex = String.fromCharCode(97 + index);
-            const fileName = `${charAtIndex}.bin`;
-            
-            for (let attempt = 1; attempt <= UPLOAD_CONFIG.MAX_RETRIES; attempt++) {
-              try {
-                const arrayBuffer = await file.arrayBuffer();
-                const formData = new FormData();
-                formData.append('file', new Blob([new Uint8Array(arrayBuffer)], {
-                  type: 'application/octet-stream'
-                }), fileName);
+            let controller;
+            try {
+              const charAtIndex = String.fromCharCode(97 + index);
+              const fileName = `${charAtIndex}.bin`;
+              
+              for (let attempt = 1; attempt <= UPLOAD_CONFIG.MAX_RETRIES; attempt++) {
+                try {
+                  const arrayBuffer = await file.arrayBuffer();
+                  const formData = new FormData();
+                  formData.append('file', new Blob([new Uint8Array(arrayBuffer)], {
+                    type: 'application/octet-stream'
+                  }), fileName);
 
-                const response = await fetch(`http://${ip}/edit`, {
-                  method: 'POST',
-                  body: formData,
-                  headers: {
-                    'Connection': 'close',
-                    'Content-Type': 'application/octet-stream'
+                  controller = new AbortController();
+                  const response = await fetch(`http://${ip}/edit`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 
+                      'Connection': 'close'
+                    },
+                    keepalive: false,
+                    signal: controller.signal
+                  });
+
+                  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                  
+                  // Add success delay
+                  await delay(500);
+                  return; // Success - exit retry loop
+                  
+                } catch (error) {
+                  if (attempt === UPLOAD_CONFIG.MAX_RETRIES) {
+                    throw new Error(`Failed after ${attempt} attempts: ${error.message}`);
                   }
-                });
-
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                return; // Success - exit retry loop
-                
-              } catch (error) {
-                if (attempt === UPLOAD_CONFIG.MAX_RETRIES) {
-                  throw new Error(`Failed after ${attempt} attempts: ${error.message}`);
+                  await delay(UPLOAD_CONFIG.RETRY_BACKOFF[attempt-1]);
                 }
-                await delay(UPLOAD_CONFIG.RETRY_BACKOFF[attempt-1]);
               }
+            } finally {
+              if (controller) controller.abort();
+              await forceGC();
             }
           };
 
@@ -619,10 +630,11 @@
               
               statusEl.textContent = `Uploading to ${label}: Batch ${batchIndex+1}/${batchCount}`;
               
-              // Process batch with individual retries
-              await Promise.all(batchFiles.map((file, fileIndex) => 
-                processFile(file, batchStart + fileIndex)
-              ));
+              // Process files SEQUENTIALLY within batch
+              for (let fileIndex = 0; fileIndex < batchFiles.length; fileIndex++) {
+                await processFile(batchFiles[fileIndex], batchStart + fileIndex);
+                await delay(UPLOAD_CONFIG.INTER_FILE_DELAY); // Add delay between files
+              }
               
               if (batchIndex < batchCount - 1) {
                 await delay(UPLOAD_CONFIG.INTER_BATCH_DELAY);
@@ -642,6 +654,28 @@
 
         function delay(ms) {
           return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function forceGC() {
+          return new Promise(resolve => {
+            if (window.gc) {
+              window.gc();
+            }
+            setTimeout(resolve, 100);
+          });
+        }
+
+        function abortableFetch(url, options) {
+          const controller = new AbortController();
+          const config = {
+            ...options,
+            signal: controller.signal,
+            cache: 'no-store'
+          };
+          return {
+            promise: fetch(url, config),
+            controller
+          };
         }
 
         // Initialize
