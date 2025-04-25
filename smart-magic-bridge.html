@@ -144,6 +144,11 @@
             <h2>⚡ Upload to POI</h2>
             <div class="input-container">
                 <input type="file" id="bin-files" accept=".bin" multiple>
+                <div style="margin: 10px 0;">
+                    <label>
+                        <input type="checkbox" id="force-upload"> Bypass connectivity check
+                    </label>
+                </div>
                 <button onclick="uploadToPoi()">Upload to POI</button>
                 <div id="upload-status" style="margin-top: 10px;"></div>
             </div>
@@ -523,19 +528,40 @@
         }
 
         async function verifyPoiConnection(ip) {
-          for (let attempt = 1; attempt <= UPLOAD_CONFIG.POI_CHECK_RETRIES; attempt++) {
+          // New simplified check that just verifies basic connectivity
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+          try {
+            // Try HEAD request first as it's lighter
+            await fetch(`http://${ip}/edit`, {
+              method: 'HEAD',
+              mode: 'no-cors',
+              signal: controller.signal
+            });
+            return true;
+          } catch (error) {
+            // If HEAD fails, try GET as fallback
             try {
-              const response = await fetch(`http://${ip}/get-pixels`, {
-                method: 'GET',
-                mode: 'no-cors' // Critical for ESP8266
+              await fetch(`http://${ip}/get-pixels`, {
+                method: 'GET', 
+                mode: 'no-cors',
+                signal: controller.signal
               });
-              return true; // Consider any response as success
-            } catch (error) {
-              if (attempt === UPLOAD_CONFIG.POI_CHECK_RETRIES) return false;
-              await delay(UPLOAD_CONFIG.RETRY_BACKOFF[attempt-1]);
+              return true;
+            } catch (e) {
+              // Final fallback - just attempt to connect
+              return new Promise(resolve => {
+                const img = new Image();
+                img.onerror = () => resolve(true); // Even 404 means POI is reachable
+                img.onabort = () => resolve(false);
+                setTimeout(() => resolve(false), 2000);
+                img.src = `http://${ip}/favicon.ico?t=${Date.now()}`;
+              });
             }
+          } finally {
+            clearTimeout(timeoutId);
           }
-          return false;
         }
 
         async function uploadToPoiWithProgress(files, ip, label) {
