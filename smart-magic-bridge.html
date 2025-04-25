@@ -86,7 +86,7 @@
         <div class="step-card step-active" id="step-auth">
             <h2>🔐 Authentication</h2>
             <div class="input-container">
-                <input type="text" id="username" placeholder="Username or Email">
+                <input type="text" id="email" placeholder="Email">
                 <input type="password" id="password" placeholder="Password">
                 <button onclick="handleLogin()">Login</button>
                 <div id="auth-error" style="color: red; display: none;"></div>
@@ -145,6 +145,9 @@
     </div>
 
     <script>
+        // Configuration
+        const API_BASE_URL = 'http://alpha.circusscientist.com/api';
+
         // Application State
         const appState = {
             jwt: null,
@@ -188,7 +191,7 @@
 
         // Auth Functions
         async function handleLogin() {
-            const username = document.getElementById('username').value;
+            const username = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorEl = document.getElementById('auth-error');
             const loginBtn = document.querySelector('#step-auth button');
@@ -203,7 +206,7 @@
             loginBtn.textContent = 'Logging in...';
 
             try {
-                const response = await fetch('/api/login', {
+                const response = await fetch(`${API_BASE_URL}/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: username, password })
@@ -248,7 +251,7 @@
             continueBtn.disabled = true;
 
             try {
-                const response = await fetch('/api/get-user-timelines', {
+                const response = await fetch(`${API_BASE_URL}/get-user-timelines`, {
                     headers: { 'Authorization': `Bearer ${appState.jwt}` }
                 });
 
@@ -291,7 +294,7 @@
             imageGrid.innerHTML = '<p>Loading images...</p>';
 
             try {
-                const response = await fetch(`/api/get-user-timeline/${timelineId}`, {
+                const response = await fetch(`${API_BASE_URL}/get-user-timeline/${timelineId}`, {
                     headers: { 'Authorization': `Bearer ${appState.jwt}` }
                 });
                 
@@ -345,7 +348,7 @@
                     const imageId = appState.selectedImages[i];
                     updateDownloadStatus(`Downloading image ${i+1} of ${appState.selectedImages.length}...`);
                     
-                    const response = await fetch(`/api/output-user-bin/${imageId}?size=${appState.ledCount}`, {
+                    const response = await fetch(`${API_BASE_URL}/output-user-bin/${imageId}?size=${appState.ledCount}`, {
                         headers: { 'Authorization': `Bearer ${appState.jwt}` }
                     });
                     
@@ -429,6 +432,7 @@
             try {
                 const response = await fetch(`http://${ip}/get-pixels`, {
                     method: 'GET',
+                    mode: 'no-cors',
                     timeout: 3000
                 });
                 return response.ok;
