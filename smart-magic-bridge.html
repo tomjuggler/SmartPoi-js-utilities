@@ -147,6 +147,10 @@
     <script>
         // Configuration
         const API_BASE_URL = 'http://alpha.circusscientist.com/api';
+        const DEFAULT_HEADERS = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
 
         // Application State
         const appState = {
@@ -208,8 +212,9 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/login`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: username, password })
+                    headers: DEFAULT_HEADERS,
+                    body: JSON.stringify({ email: username, password }),
+                    credentials: 'include'
                 });
 
                 if (!response.ok) {
@@ -252,7 +257,11 @@
 
             try {
                 const response = await fetch(`${API_BASE_URL}/get-user-timelines`, {
-                    headers: { 'Authorization': `Bearer ${appState.jwt}` }
+                    headers: {
+                        ...DEFAULT_HEADERS,
+                        'Authorization': `Bearer ${appState.jwt}`
+                    },
+                    credentials: 'include'
                 });
 
                 if (!response.ok) {
@@ -295,7 +304,11 @@
 
             try {
                 const response = await fetch(`${API_BASE_URL}/get-user-timeline/${timelineId}`, {
-                    headers: { 'Authorization': `Bearer ${appState.jwt}` }
+                    headers: {
+                        ...DEFAULT_HEADERS,
+                        'Authorization': `Bearer ${appState.jwt}`
+                    },
+                    credentials: 'include'
                 });
                 
                 const timeline = await response.json();
@@ -349,7 +362,11 @@
                     updateDownloadStatus(`Downloading image ${i+1} of ${appState.selectedImages.length}...`);
                     
                     const response = await fetch(`${API_BASE_URL}/output-user-bin/${imageId}?size=${appState.ledCount}`, {
-                        headers: { 'Authorization': `Bearer ${appState.jwt}` }
+                        headers: {
+                            ...DEFAULT_HEADERS,
+                            'Authorization': `Bearer ${appState.jwt}`
+                        },
+                        credentials: 'include'
                     });
                     
                     if (!response.ok) throw new Error('Download failed');
@@ -435,7 +452,7 @@
                     mode: 'no-cors',
                     timeout: 3000
                 });
-                return response.ok;
+                return true; // Assume success if no network error
             } catch (error) {
                 return false;
             }
