@@ -314,12 +314,25 @@
                 const timeline = await response.json();
                 imageGrid.innerHTML = '';
                 
-                timeline.images.forEach(img => {
+                // Get image details for each ID
+                const imageDetails = await Promise.all(
+                    timeline.images.map(imageId => 
+                        fetch(`${API_BASE_URL}/output-user-bin/${imageId}`, {
+                            headers: {
+                                'Authorization': `Bearer ${appState.jwt}`
+                            }
+                        }).then(r => r.json())
+                    )
+                );
+
+                // Create checkboxes with filenames
+                imageDetails.forEach((imgDetail, index) => {
+                    const imageId = timeline.images[index];
                     const container = document.createElement('div');
                     container.style.margin = '10px 0';
                     container.innerHTML = `
-                        <input type="checkbox" id="img-${img.id}" value="${img.id}">
-                        <label for="img-${img.id}">${img.original_filename}</label>
+                        <input type="checkbox" id="img-${imageId}" value="${imageId}">
+                        <label for="img-${imageId}">${imgDetail.original_filename || `Image ${imageId}`}</label>
                     `;
                     imageGrid.appendChild(container);
                 });
