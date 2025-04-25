@@ -81,6 +81,12 @@
     </style>
 </head>
 <body>
+    <nav class="main-menu">
+        <button onclick="showStep('auth')">🔐 Auth</button>
+        <button onclick="showStep('download')">💾 Download</button>
+        <button onclick="showStep('upload')">⚡ Upload</button>
+    </nav>
+
     <div class="container">
         <!-- Auth Step -->
         <div class="step-card step-active" id="step-auth">
@@ -142,7 +148,50 @@
                 <div id="upload-status" style="margin-top: 10px;"></div>
             </div>
         </div>
+
+        <!-- Standalone Upload Step -->
+        <div class="step-card" id="step-upload-standalone">
+            <h2>⚡ Direct Upload to POI</h2>
+            <div class="input-container">
+                <input type="file" id="bin-files-standalone" accept=".bin" multiple>
+                <button onclick="uploadToPoi()">Upload to POI</button>
+                <div id="upload-status-standalone" style="margin-top: 10px;"></div>
+            </div>
+        </div>
     </div>
+
+    <style>
+        /* Add menu styles */
+        .main-menu {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .main-menu button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 5px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .main-menu button:hover {
+            background: #0056b3;
+        }
+
+        /* Make upload steps independent */
+        #step-upload,
+        #step-upload-standalone {
+            display: none;
+        }
+        
+        .step-active {
+            display: block !important;
+        }
+    </style>
 
     <script>
         // Configuration
@@ -187,10 +236,17 @@
 
         // Step Navigation
         function showStep(stepId) {
+            // Hide all steps
             document.querySelectorAll('.step-card').forEach(step => {
                 step.classList.remove('step-active');
             });
-            document.getElementById(`step-${stepId}`).classList.add('step-active');
+            
+            // Special handling for upload
+            if (stepId === 'upload') {
+                document.getElementById('step-upload-standalone').classList.add('step-active');
+            } else {
+                document.getElementById(`step-${stepId}`).classList.add('step-active');
+            }
         }
 
         // Auth Functions
@@ -403,9 +459,10 @@
         }
 
         async function uploadToPoi() {
-            const fileInput = document.getElementById('bin-files');
-            const statusEl = document.getElementById('upload-status');
-            const uploadBtn = document.querySelector('#step-upload button');
+            const isStandalone = document.getElementById('step-upload-standalone').classList.contains('step-active');
+            const fileInput = document.getElementById(isStandalone ? 'bin-files-standalone' : 'bin-files');
+            const statusEl = document.getElementById(isStandalone ? 'upload-status-standalone' : 'upload-status');
+            const uploadBtn = document.querySelector(isStandalone ? '#step-upload-standalone button' : '#step-upload button');
             const POI_IPS = {
                 MAIN: "192.168.1.1",
                 AUX: "192.168.1.78"
@@ -527,6 +584,8 @@
             if (appState.jwt) {
                 showStep('timeline');
                 loadTimelines();
+            } else {
+                showStep('auth');
             }
         });
     </script>
