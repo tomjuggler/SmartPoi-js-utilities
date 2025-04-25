@@ -191,42 +191,78 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorEl = document.getElementById('auth-error');
+            const loginBtn = document.querySelector('#step-auth button');
+
+            if (!username || !password) {
+                errorEl.textContent = 'Please enter both username and password';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging in...';
 
             try {
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: username,
-                        password: password
-                    })
+                    body: JSON.stringify({ email: username, password })
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    appState.jwt = data.token;
-                    appState.user = data.user_id;
-                    saveState();
-                    loadTimelines();
-                    showStep('timeline');
-                } else {
-                    throw new Error('Login failed');
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Login failed');
                 }
+
+                const data = await response.json();
+                appState.jwt = data.token;
+                appState.user = data.user_id;
+                
+                // Save to cookies with expiration
+                const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+                document.cookie = `magicBridge=${JSON.stringify({
+                    jwt: data.token,
+                    user: data.user_id
+                })}; expires=${expires.toUTCString()}; path=/`;
+                
+                errorEl.style.display = 'none';
+                loadTimelines();
+                showStep('timeline');
             } catch (error) {
-                errorEl.textContent = 'Invalid credentials. Please try again.';
+                console.error('Login error:', error);
+                errorEl.textContent = error.message;
                 errorEl.style.display = 'block';
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login';
             }
         }
 
         // Timeline Functions
         async function loadTimelines() {
             const select = document.getElementById('timeline-select');
+            const continueBtn = document.querySelector('#step-timeline button');
+            
+            select.innerHTML = '<option>Loading timelines...</option>';
+            select.disabled = true;
+            continueBtn.disabled = true;
+
             try {
                 const response = await fetch('/api/get-user-timelines', {
                     headers: { 'Authorization': `Bearer ${appState.jwt}` }
                 });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Failed to load timelines');
+                }
                 
                 const timelines = await response.json();
+                
+                if (timelines.length === 0) {
+                    throw new Error('No timelines found for this account');
+                }
+
                 select.innerHTML = '';
                 timelines.forEach(tl => {
                     const option = document.createElement('option');
@@ -234,9 +270,12 @@
                     option.textContent = tl.title;
                     select.appendChild(option);
                 });
-                select.disabled = false;
             } catch (error) {
                 console.error('Failed to load timelines:', error);
+                select.innerHTML = '<option>Error loading timelines</option>';
+            } finally {
+                select.disabled = false;
+                continueBtn.disabled = false;
             }
         }
 
@@ -336,28 +375,89 @@
         async function uploadToPoi() {
             const fileInput = document.getElementById('bin-files');
             const statusEl = document.getElementById('upload-status');
-            
+            const uploadBtn = document.querySelector('#step-upload button');
+            const POI_IPS = {
+                MAIN: "192.168.1.1",
+                AUX: "192.168.1.78"
+            };
+
             if (fileInput.files.length === 0) {
                 statusEl.textContent = 'Please select .bin files first';
                 statusEl.style.color = 'red';
                 return;
             }
 
-            statusEl.textContent = 'Uploading...';
-            statusEl.style.color = 'black';
+            uploadBtn.disabled = true;
+            statusEl.textContent = 'Checking POI connectivity...';
+            statusEl.style.color = 'inherit';
 
-            // Reuse upload logic from upload_bin.html
             try {
-                // TODO: Implement actual POI upload logic
-                // This would use similar code to upload_bin.html's handleUpload()
+                // Check connectivity with timeout
+                const [mainAvailable, auxAvailable] = await Promise.all([
+                    verifyPoiConnection(POI_IPS.MAIN),
+                    verifyPoiConnection(POI_IPS.AUX)
+                ]);
+
+                if (!mainAvailable && !auxAvailable) {
+                    throw new Error("No POIs available for upload");
+                }
+
+                statusEl.textContent = `Uploading ${fileInput.files.length} files...`;
                 
+                // Upload to available POIs
+                const uploadPromises = [];
+                if (mainAvailable) {
+                    uploadPromises.push(uploadToPoiWithProgress(fileInput.files, POI_IPS.MAIN, 'Main POI'));
+                }
+                if (auxAvailable) {
+                    uploadPromises.push(uploadToPoiWithProgress(fileInput.files, POI_IPS.AUX, 'Aux POI'));
+                }
+
+                await Promise.all(uploadPromises);
                 statusEl.textContent = 'Upload completed successfully!';
                 statusEl.style.color = 'green';
             } catch (error) {
-                statusEl.textContent = 'Upload failed: ' + error.message;
-                statusEl.style.color = 'red';
                 console.error('Upload error:', error);
+                statusEl.textContent = `Upload failed: ${error.message}`;
+                statusEl.style.color = 'red';
+            } finally {
+                uploadBtn.disabled = false;
             }
+        }
+
+        async function verifyPoiConnection(ip) {
+            try {
+                const response = await fetch(`http://${ip}/get-pixels`, {
+                    method: 'GET',
+                    timeout: 3000
+                });
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function uploadToPoiWithProgress(files, ip, label) {
+            const statusEl = document.getElementById('upload-status');
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                statusEl.textContent = `Uploading to ${label}: ${i+1}/${files.length} (${file.name})`;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch(`http://${ip}/edit`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'Connection': 'close' }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to upload ${file.name}`);
+                }
+            }
+            return true;
         }
 
         // Initialize
