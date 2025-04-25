@@ -1,6 +1,24 @@
 # JavaScript and html Utilities for SmartPoi 
 ### quick start: 
 - open index.html and choose one of the options
+- For development/testing of smart-magic-bridge.html, use Chrome insecure mode:
+```bash
+chromium --disable-web-security --user-data-dir=/tmp/chrome-test
+```
+
+### New! smart-magic-bridge.html
+- **Cloud-to-POI Bridge** - Connects circuscientist.com cloud services directly to POI devices
+- Features:
+  - Secure JWT authentication
+  - Timeline-based image selection
+  - Dual POI upload (main+aux) with progress tracking
+  - LED configuration (type/count) presets
+  - Automatic .bin file conversion
+- Requires Chrome insecure mode for local CORS testing (see command above)
+- *Known Issues (v1.0):*
+  - Some .bin files may fail upload with connection reset errors (fix in progress)
+  - Requires latest firmware on both POI units
+  - Router mode not yet supported
 
 ### upload_bin.html usage: 
 - for uploading multiple backup images to SmartPoi for offline display
