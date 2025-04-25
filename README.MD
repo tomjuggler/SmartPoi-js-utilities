@@ -38,7 +38,7 @@ Files on the poi can be checked by opening list.html while connected to the poi 
 ### This project is now Electron capable? 
 - from the root directory, run on Linux, Windows or Mac with: 
 ```
-npm install
+npm installn
 npm start
 ```
 - to create an executable: 
