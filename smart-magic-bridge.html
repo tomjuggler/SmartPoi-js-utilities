@@ -494,11 +494,21 @@
             statusEl.style.color = 'inherit';
 
             try {
-                // Check connectivity with timeout
-                const [mainAvailable, auxAvailable] = await Promise.all([
-                    verifyPoiConnection(POI_IPS.MAIN),
-                    verifyPoiConnection(POI_IPS.AUX)
-                ]);
+                let mainAvailable = false;
+                let auxAvailable = false;
+
+                if (!document.getElementById('force-upload').checked) {
+                    // Check connectivity with timeout
+                    [mainAvailable, auxAvailable] = await Promise.all([
+                        verifyPoiConnection(POI_IPS.MAIN),
+                        verifyPoiConnection(POI_IPS.AUX)
+                    ]);
+                } else {
+                    // Bypass check and assume both are available
+                    mainAvailable = true;
+                    auxAvailable = true;
+                    statusEl.textContent = 'Bypassing connectivity checks...';
+                }
 
                 if (!mainAvailable && !auxAvailable) {
                     throw new Error("No POIs available for upload");
