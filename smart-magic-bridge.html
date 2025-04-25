@@ -303,42 +303,39 @@
             imageGrid.innerHTML = '<p>Loading images...</p>';
 
             try {
-                const response = await fetch(`${API_BASE_URL}/get-user-timeline/${timelineId}`, {
+                // 1. Get timeline metadata
+                const timelineRes = await fetch(`${API_BASE_URL}/get-user-timeline/${timelineId}`, {
                     headers: {
                         ...DEFAULT_HEADERS,
                         'Authorization': `Bearer ${appState.jwt}`
                     },
                     credentials: 'include'
                 });
-                
-                const timeline = await response.json();
-                imageGrid.innerHTML = '';
-                
-                // Get image details for each ID
-                const imageDetails = await Promise.all(
-                    timeline.images.map(imageId => 
-                        fetch(`${API_BASE_URL}/output-user-bin/${imageId}`, {
-                            headers: {
-                                'Authorization': `Bearer ${appState.jwt}`
-                            }
-                        }).then(r => r.json())
-                    )
-                );
+                const timeline = await timelineRes.json();
 
-                // Create checkboxes with filenames
-                imageDetails.forEach((imgDetail, index) => {
-                    const imageId = timeline.images[index];
+                // 2. Get filenames separately
+                const filenamesRes = await fetch(`${API_BASE_URL}/get-user-filenames?timeline_number=${timelineId}`, {
+                    headers: {
+                        ...DEFAULT_HEADERS,
+                        'Authorization': `Bearer ${appState.jwt}`
+                    }
+                });
+                const filenames = await filenamesRes.json();
+
+                // 3. Combine data
+                imageGrid.innerHTML = '';
+                timeline.images.forEach((imageId, index) => {
                     const container = document.createElement('div');
                     container.style.margin = '10px 0';
                     container.innerHTML = `
                         <input type="checkbox" id="img-${imageId}" value="${imageId}">
-                        <label for="img-${imageId}">${imgDetail.original_filename || `Image ${imageId}`}</label>
+                        <label for="img-${imageId}">${filenames[index] || `Image ${imageId}`}</label>
                     `;
                     imageGrid.appendChild(container);
                 });
             } catch (error) {
-                imageGrid.innerHTML = '<p style="color: red;">Failed to load images</p>';
                 console.error('Error loading timeline images:', error);
+                imageGrid.innerHTML = '<p style="color: red;">Error loading images. Check console for details.</p>';
             }
         }
 
