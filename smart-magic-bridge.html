@@ -583,38 +583,31 @@
               const charAtIndex = String.fromCharCode(97 + index);
               const fileName = `${charAtIndex}.bin`;
               
-              for (let attempt = 1; attempt <= UPLOAD_CONFIG.MAX_RETRIES; attempt++) {
-                try {
-                  const arrayBuffer = await file.arrayBuffer();
-                  const formData = new FormData();
-                  formData.append('file', new Blob([new Uint8Array(arrayBuffer)], {
-                    type: 'application/octet-stream'
-                  }), fileName);
+              const arrayBuffer = await file.arrayBuffer();
+              const formData = new FormData();
+              formData.append('file', new Blob([new Uint8Array(arrayBuffer)], {
+                type: 'application/octet-stream'
+              }), fileName);
 
-                  controller = new AbortController();
-                  const response = await fetch(`http://${ip}/edit`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: { 
-                      'Connection': 'close'
-                    },
-                    keepalive: false,
-                    signal: controller.signal
-                  });
+              controller = new AbortController();
+              const response = await fetch(`http://${ip}/edit`, {
+                method: 'POST',
+                body: formData,
+                headers: { 
+                  'Connection': 'close'
+                },
+                keepalive: false,
+                signal: controller.signal
+              });
 
-                  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                  
-                  // Add success delay
-                  await delay(500);
-                  return; // Success - exit retry loop
-                  
-                } catch (error) {
-                  if (attempt === UPLOAD_CONFIG.MAX_RETRIES) {
-                    throw new Error(`Failed after ${attempt} attempts: ${error.message}`);
-                  }
-                  await delay(UPLOAD_CONFIG.RETRY_BACKOFF[attempt-1]);
-                }
+              if (!response.ok) {
+                statusEl.textContent += `\nFailed ${file.name}: HTTP ${response.status}`;
+                return; // Exit on failure, no retry
               }
+              
+              await delay(500);
+            } catch (error) {
+              statusEl.textContent += `\nFailed ${file.name}: ${error.message}`;
             } finally {
               if (controller) controller.abort();
               await forceGC();
@@ -630,10 +623,9 @@
               
               statusEl.textContent = `Uploading to ${label}: Batch ${batchIndex+1}/${batchCount}`;
               
-              // Process files SEQUENTIALLY within batch
               for (let fileIndex = 0; fileIndex < batchFiles.length; fileIndex++) {
                 await processFile(batchFiles[fileIndex], batchStart + fileIndex);
-                await delay(UPLOAD_CONFIG.INTER_FILE_DELAY); // Add delay between files
+                await delay(UPLOAD_CONFIG.INTER_FILE_DELAY);
               }
               
               if (batchIndex < batchCount - 1) {
