@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Smart Magic Bridge</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         /* Base styles from upload_bin.html */
         * {
@@ -81,448 +82,152 @@
     </style>
 </head>
 <body>
-    <nav class="main-menu">
-        <button onclick="showStep('auth')">🔐 Auth</button>
-        <button onclick="showStep('download')">💾 Download</button>
-        <button onclick="showStep('upload')">⚡ Upload</button>
-    </nav>
-
     <div class="container">
-        <!-- Auth Step -->
-        <div class="step-card step-active" id="step-auth">
-            <h2>🔐 Authentication</h2>
-            <div class="input-container">
-                <input type="text" id="email" placeholder="Email">
-                <input type="password" id="password" placeholder="Password">
-                <button onclick="handleLogin()">Login</button>
-                <div id="auth-error" style="color: red; display: none;"></div>
-            </div>
-        </div>
-
-        <!-- Timeline Selection Step -->
-        <div class="step-card" id="step-timeline">
-            <h2>📅 Choose Timeline</h2>
-            <div class="input-container">
-                <select id="timeline-select" disabled>
-                    <option>Loading timelines...</option>
-                </select>
-                <button onclick="proceedToImages()">Continue</button>
-            </div>
-        </div>
-
-        <!-- Image Selection Step -->
-        <div class="step-card" id="step-images">
-            <h2>🖼️ Image Selection</h2>
-            <div class="input-container">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div>
-                        <label>LED Type:</label>
-                        <select id="led-type">
-                            <option value="WS2812">WS2812</option>
-                            <option value="APA102">APA102</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Number of LEDs:</label>
-                        <input type="number" id="led-count" value="120" min="1">
-                    </div>
-                </div>
-                <div id="image-grid" style="margin-top: 20px;"></div>
-                <button onclick="proceedToDownload()">Prepare Download</button>
-            </div>
-        </div>
-
-        <!-- Download Step -->
-        <div class="step-card" id="step-download">
-            <h2>💾 Download Bin Files</h2>
-            <div id="download-progress" style="margin: 20px 0;"></div>
-            <button onclick="beginDownload()">Download Selected</button>
-        </div>
-
-        <!-- Upload Step -->
-        <div class="step-card" id="step-upload">
-            <h2>⚡ Upload to POI</h2>
-            <div class="input-container">
-                <input type="file" id="bin-files" accept=".bin" multiple>
-                <div style="margin: 10px 0;">
-                    <label>
-                        <input type="checkbox" id="force-upload"> Bypass connectivity check
-                    </label>
-                </div>
-                <button onclick="uploadToPoi()">Upload to POI</button>
-                <div id="upload-status" style="margin-top: 10px;"></div>
-            </div>
-        </div>
-
         <!-- Standalone Upload Step -->
-        <div class="step-card" id="step-upload-standalone">
-            <h2>⚡ Direct Upload to POI</h2>
+        <div class="step-card step-active" id="step-upload-standalone">
+            <h2>⚡ Direct ZIP Upload to POI</h2>
             <div class="input-container">
-                <input type="file" id="bin-files-standalone" accept=".bin" multiple>
-                <button onclick="uploadToPoi()">Upload to POI</button>
+                <input type="file" id="zip-input" accept=".zip">
+                <div id="file-list" style="margin: 10px 0; display: none;">
+                    <h3>Files to upload:</h3>
+                    <ul id="file-names"></ul>
+                </div>
+                <button onclick="processAndUploadZip()">Upload to POI</button>
                 <div id="upload-status-standalone" style="margin-top: 10px;"></div>
             </div>
         </div>
     </div>
 
     <style>
-        /* Add menu styles */
-        .main-menu {
-            text-align: center;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-container {
+            display: flex;
+            flex-direction: column;
             margin-bottom: 20px;
         }
 
-        .main-menu button {
-            padding: 10px 20px;
-            margin: 0 5px;
-            border: none;
+        .input-container input,
+        .input-container button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 1rem;
             border-radius: 5px;
-            background: #007bff;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+
+        .input-container button {
+            background-color: #007bff;
             color: white;
             cursor: pointer;
-            transition: background 0.3s ease;
+            transition: background-color 0.3s ease;
+            border: none;
         }
 
-        .main-menu button:hover {
-            background: #0056b3;
-        }
-
-        /* Make upload steps independent */
-        #step-upload,
-        #step-upload-standalone {
-            display: none;
-        }
-        
-        .step-active {
-            display: block !important;
+        .input-container button:hover {
+            background-color: #0056b3;
         }
     </style>
 
     <script>
-        // Configuration
-        const API_BASE_URL = 'http://alpha.circusscientist.com/api';
-        const DEFAULT_HEADERS = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        };
-
-        // Upload Configuration - optimized for ESP8266 stability
+        // Modified Configuration
         const UPLOAD_CONFIG = {
-          BATCH_SIZE: 1,            // Reduced from 2 to 1 for ESP8266 stability
-          INTER_FILE_DELAY: 1500,    // Increased from 750ms
-          INTER_BATCH_DELAY: 3000,   // Increased from 1500ms
-          MAX_RETRIES: 5,            // Increased retry attempts
-          RETRY_BACKOFF: [1000, 3000, 5000, 7000, 10000], // Longer delays
+          BATCH_SIZE: 1,
+          INTER_FILE_DELAY: 1500,
+          INTER_BATCH_DELAY: 3000,
+          MAX_RETRIES: 5,
+          RETRY_BACKOFF: [1000, 3000, 5000, 7000, 10000],
           POI_CHECK_TIMEOUT: 5000
         };
 
-        // Application State
-        const appState = {
-            jwt: null,
-            user: null,
-            selectedTimeline: null,
-            selectedImages: [],
-            ledType: 'WS2812',
-            ledCount: 120,
-            downloadedFiles: []
-        };
+        async function processAndUploadZip() {
+            const fileInput = document.getElementById('zip-input');
+            const statusEl = document.getElementById('upload-status-standalone');
+            const uploadBtn = document.querySelector('#step-upload-standalone button');
+            const POI_IPS = { MAIN: "192.168.1.1", AUX: "192.168.1.78" };
 
-        // Cookie Management
-        function saveState() {
-            const state = {
-                jwt: appState.jwt,
-                user: appState.user,
-                ledType: appState.ledType,
-                ledCount: appState.ledCount
-            };
-            document.cookie = `magicBridge=${JSON.stringify(state)}; max-age=604800; path=/`;
-        }
-
-        function loadState() {
-            const cookie = document.cookie.split('; ')
-                .find(row => row.startsWith('magicBridge='));
-            if (cookie) {
-                const savedState = JSON.parse(cookie.split('=')[1]);
-                Object.assign(appState, savedState);
-                document.getElementById('led-type').value = savedState.ledType || 'WS2812';
-                document.getElementById('led-count').value = savedState.ledCount || 120;
-            }
-        }
-
-        // Step Navigation
-        function showStep(stepId) {
-            // Hide all steps
-            document.querySelectorAll('.step-card').forEach(step => {
-                step.classList.remove('step-active');
-            });
-            
-            // Special handling for upload
-            if (stepId === 'upload') {
-                document.getElementById('step-upload-standalone').classList.add('step-active');
-            } else {
-                document.getElementById(`step-${stepId}`).classList.add('step-active');
-            }
-        }
-
-        // Auth Functions
-        async function handleLogin() {
-            const username = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errorEl = document.getElementById('auth-error');
-            const loginBtn = document.querySelector('#step-auth button');
-
-            if (!username || !password) {
-                errorEl.textContent = 'Please enter both username and password';
-                errorEl.style.display = 'block';
-                return;
-            }
-
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'Logging in...';
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/login`, {
-                    method: 'POST',
-                    headers: DEFAULT_HEADERS,
-                    body: JSON.stringify({ email: username, password }),
-                    credentials: 'include'
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || 'Login failed');
-                }
-
-                const data = await response.json();
-                appState.jwt = data.token;
-                appState.user = data.user_id;
-                
-                // Save to cookies with expiration
-                const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-                document.cookie = `magicBridge=${JSON.stringify({
-                    jwt: data.token,
-                    user: data.user_id
-                })}; expires=${expires.toUTCString()}; path=/`;
-                
-                errorEl.style.display = 'none';
-                loadTimelines();
-                showStep('timeline');
-            } catch (error) {
-                console.error('Login error:', error);
-                errorEl.textContent = error.message;
-                errorEl.style.display = 'block';
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Login';
-            }
-        }
-
-        // Timeline Functions
-        async function loadTimelines() {
-            const select = document.getElementById('timeline-select');
-            const continueBtn = document.querySelector('#step-timeline button');
-            
-            select.innerHTML = '<option>Loading timelines...</option>';
-            select.disabled = true;
-            continueBtn.disabled = true;
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/get-user-timelines`, {
-                    headers: {
-                        ...DEFAULT_HEADERS,
-                        'Authorization': `Bearer ${appState.jwt}`
-                    },
-                    credentials: 'include'
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || 'Failed to load timelines');
-                }
-                
-                const timelines = await response.json();
-                
-                if (timelines.length === 0) {
-                    throw new Error('No timelines found for this account');
-                }
-
-                select.innerHTML = '';
-                timelines.forEach(tl => {
-                    const option = document.createElement('option');
-                    option.value = tl.id;
-                    option.textContent = tl.title;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Failed to load timelines:', error);
-                select.innerHTML = '<option>Error loading timelines</option>';
-            } finally {
-                select.disabled = false;
-                continueBtn.disabled = false;
-            }
-        }
-
-        function proceedToImages() {
-            const timelineSelect = document.getElementById('timeline-select');
-            appState.selectedTimeline = timelineSelect.value;
-            loadImagesForTimeline(timelineSelect.value);
-            showStep('images');
-        }
-
-        async function loadImagesForTimeline(timelineId) {
-            const imageGrid = document.getElementById('image-grid');
-            imageGrid.innerHTML = '<p>Loading images...</p>';
-
-            try {
-                // 1. Get timeline metadata
-                const timelineRes = await fetch(`${API_BASE_URL}/get-user-timeline/${timelineId}`, {
-                    headers: {
-                        ...DEFAULT_HEADERS,
-                        'Authorization': `Bearer ${appState.jwt}`
-                    },
-                    credentials: 'include'
-                });
-                const timeline = await timelineRes.json();
-
-                // 2. Get filenames separately
-                const filenamesRes = await fetch(`${API_BASE_URL}/get-user-filenames?timeline_number=${timelineId}`, {
-                    headers: {
-                        ...DEFAULT_HEADERS,
-                        'Authorization': `Bearer ${appState.jwt}`
-                    }
-                });
-                const filenames = await filenamesRes.json();
-
-                // 3. Combine data
-                imageGrid.innerHTML = '';
-                timeline.images.forEach((imageId, index) => {
-                    const container = document.createElement('div');
-                    container.style.margin = '10px 0';
-                    container.innerHTML = `
-                        <input type="checkbox" id="img-${imageId}" value="${imageId}">
-                        <label for="img-${imageId}">${filenames[index] || `Image ${imageId}`}</label>
-                    `;
-                    imageGrid.appendChild(container);
-                });
-            } catch (error) {
-                console.error('Error loading timeline images:', error);
-                imageGrid.innerHTML = '<p style="color: red;">Error loading images. Check console for details.</p>';
-            }
-        }
-
-        function proceedToDownload() {
-            appState.ledType = document.getElementById('led-type').value;
-            appState.ledCount = parseInt(document.getElementById('led-count').value);
-            saveState();
-            
-            // Collect selected images
-            appState.selectedImages = [];
-            document.querySelectorAll('#image-grid input[type="checkbox"]:checked').forEach(checkbox => {
-                appState.selectedImages.push(checkbox.value);
-            });
-            
-            showStep('download');
-            updateDownloadStatus('Ready to download ' + appState.selectedImages.length + ' files');
-        }
-
-        function updateDownloadStatus(message) {
-            document.getElementById('download-progress').textContent = message;
-        }
-
-        async function beginDownload() {
-            if (appState.selectedImages.length === 0) {
-                updateDownloadStatus('No images selected!');
-                return;
-            }
-
-            updateDownloadStatus('Starting download...');
-            
-            try {
-                for (let i = 0; i < appState.selectedImages.length; i++) {
-                    const imageId = appState.selectedImages[i];
-                    updateDownloadStatus(`Downloading image ${i+1} of ${appState.selectedImages.length}...`);
-                    
-                    const response = await fetch(`${API_BASE_URL}/output-user-bin/${imageId}?size=${appState.ledCount}`, {
-                        headers: {
-                            ...DEFAULT_HEADERS,
-                            'Authorization': `Bearer ${appState.jwt}`
-                        },
-                        credentials: 'include'
-                    });
-                    
-                    if (!response.ok) throw new Error('Download failed');
-                    
-                    const blob = await response.blob();
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `image_${imageId}.bin`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    
-                    await new Promise(resolve => setTimeout(resolve, 500)); // Throttle downloads
-                }
-                
-                updateDownloadStatus('All downloads completed!');
-                showStep('upload');
-            } catch (error) {
-                updateDownloadStatus('Download failed: ' + error.message);
-                console.error('Download error:', error);
-            }
-        }
-
-        async function uploadToPoi() {
-            const isStandalone = document.getElementById('step-upload-standalone').classList.contains('step-active');
-            const fileInput = document.getElementById(isStandalone ? 'bin-files-standalone' : 'bin-files');
-            const statusEl = document.getElementById(isStandalone ? 'upload-status-standalone' : 'upload-status');
-            const uploadBtn = document.querySelector(isStandalone ? '#step-upload-standalone button' : '#step-upload button');
-            const POI_IPS = {
-                MAIN: "192.168.1.1",
-                AUX: "192.168.1.78"
-            };
-
-            if (fileInput.files.length === 0) {
-                statusEl.textContent = 'Please select .bin files first';
+            if (!fileInput.files[0]) {
+                statusEl.textContent = 'Please select a ZIP file first';
                 statusEl.style.color = 'red';
                 return;
             }
 
             uploadBtn.disabled = true;
-            statusEl.textContent = 'Checking POI connectivity...';
+            statusEl.textContent = 'Processing ZIP file...';
             statusEl.style.color = 'inherit';
 
             try {
+                // Read and process ZIP file
+                const zip = await JSZip.loadAsync(fileInput.files[0]);
+                const files = await Promise.all(
+                    Object.values(zip.files)
+                        .filter(file => !file.dir && file.name.endsWith('.bin'))
+                        .sort((a,b) => a.name.localeCompare(b.name)) // Sort alphabetically
+                        .map(async (file, index) => {
+                            const blob = await file.async('blob');
+                            return new File([blob], `${String.fromCharCode(97 + index)}.bin`, {
+                                type: 'application/octet-stream'
+                            });
+                        })
+                );
+
+                if (files.length === 0) {
+                    throw new Error('No .bin files found in ZIP archive');
+                }
+
+                // Show file list
+                document.getElementById('file-list').style.display = 'block';
+                document.getElementById('file-names').innerHTML = files
+                    .map(f => `<li>${f.name}</li>`)
+                    .join('');
+
+                // Proceed with upload
+                statusEl.textContent = 'Checking POI connectivity...';
+                
                 let mainAvailable = false;
                 let auxAvailable = false;
 
-                if (!document.getElementById('force-upload').checked) {
-                    // Check connectivity with timeout
-                    [mainAvailable, auxAvailable] = await Promise.all([
-                        verifyPoiConnection(POI_IPS.MAIN),
-                        verifyPoiConnection(POI_IPS.AUX)
-                    ]);
-                } else {
-                    // Bypass check and assume both are available
-                    mainAvailable = true;
-                    auxAvailable = true;
-                    statusEl.textContent = 'Bypassing connectivity checks...';
-                }
+                // Connectivity check (same as before)
+                [mainAvailable, auxAvailable] = await Promise.all([
+                    verifyPoiConnection(POI_IPS.MAIN),
+                    verifyPoiConnection(POI_IPS.AUX)
+                ]);
 
                 if (!mainAvailable && !auxAvailable) {
                     throw new Error("No POIs available for upload");
                 }
 
-                statusEl.textContent = `Uploading ${fileInput.files.length} files...`;
+                statusEl.textContent = `Uploading ${files.length} files...`;
                 
                 // Upload to available POIs
                 const uploadPromises = [];
                 if (mainAvailable) {
-                    uploadPromises.push(uploadToPoiWithProgress(fileInput.files, POI_IPS.MAIN, 'Main POI'));
+                    uploadPromises.push(uploadToPoiWithProgress(files, POI_IPS.MAIN, 'Main POI'));
                 }
                 if (auxAvailable) {
-                    uploadPromises.push(uploadToPoiWithProgress(fileInput.files, POI_IPS.AUX, 'Aux POI'));
+                    uploadPromises.push(uploadToPoiWithProgress(files, POI_IPS.AUX, 'Aux POI'));
                 }
 
                 await Promise.all(uploadPromises);
@@ -575,7 +280,7 @@
         }
 
         async function uploadToPoiWithProgress(files, ip, label) {
-          const statusEl = document.getElementById('upload-status');
+          const statusEl = document.getElementById('upload-status-standalone');
           
           const processFile = async (file, index) => {
             let controller;
@@ -657,28 +362,9 @@
           });
         }
 
-        function abortableFetch(url, options) {
-          const controller = new AbortController();
-          const config = {
-            ...options,
-            signal: controller.signal,
-            cache: 'no-store'
-          };
-          return {
-            promise: fetch(url, config),
-            controller
-          };
-        }
-
         // Initialize
         window.addEventListener('load', () => {
-            loadState();
-            if (appState.jwt) {
-                showStep('timeline');
-                loadTimelines();
-            } else {
-                showStep('auth');
-            }
+            document.getElementById('step-upload-standalone').classList.add('step-active');
         });
     </script>
 </body>
