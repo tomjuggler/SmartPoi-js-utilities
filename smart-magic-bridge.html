@@ -184,11 +184,15 @@
                 const files = await Promise.all(
                     Object.values(zip.files)
                         .filter(file => {
-                            // More robust file detection
-                            const fileName = file.name.split('/').pop(); // Handle files in subdirectories
+                            // Extract just the filename without path
+                            const fileName = file.name.split('/').pop().trim();
+                            
+                            // Check ONLY the final extension using a regex
+                            const hasBinExtension = /\.bin$/i.test(fileName);
+                            
                             return !file.dir && 
-                                   fileName.toLowerCase().endsWith('.bin') && 
-                                   !file.name.startsWith('__MACOSX/'); // Ignore macOS metadata
+                                   hasBinExtension &&
+                                   !file.name.includes('__MACOSX/'); // More thorough macOS check
                         })
                         .sort((a,b) => a.name.localeCompare(b.name)) // Sort alphabetically
                         .map(async (file, index) => {
