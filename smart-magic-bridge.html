@@ -183,7 +183,13 @@
                 const zip = await JSZip.loadAsync(fileInput.files[0]);
                 const files = await Promise.all(
                     Object.values(zip.files)
-                        .filter(file => !file.dir && file.name.endsWith('.bin'))
+                        .filter(file => {
+                            // More robust file detection
+                            const fileName = file.name.split('/').pop(); // Handle files in subdirectories
+                            return !file.dir && 
+                                   fileName.toLowerCase().endsWith('.bin') && 
+                                   !file.name.startsWith('__MACOSX/'); // Ignore macOS metadata
+                        })
                         .sort((a,b) => a.name.localeCompare(b.name)) // Sort alphabetically
                         .map(async (file, index) => {
                             const blob = await file.async('blob');
