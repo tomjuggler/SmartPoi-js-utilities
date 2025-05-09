@@ -474,15 +474,14 @@
      * @returns {Promise<void>}
      */
     async function sync() {
-      try {
-        await Promise.all([
-          sendRequest(`http://${poi_two_ip}/resetimagetouse`),
-          sendRequest(`http://${poi_one_ip}/resetimagetouse`)
-        ]);
-        console.log('Both requests completed!');
-      } catch (error) {
-        console.error('Error syncing Poi:', error);
-      }
+      // Handle both sync requests separately
+      sendRequest(`http://${poi_two_ip}/resetimagetouse`)
+          .then(() => console.log('Aux sync successful'))
+          .catch(error => console.error('Aux sync failed:', error));
+      
+      sendRequest(`http://${poi_one_ip}/resetimagetouse`)
+          .then(() => console.log('Main sync successful'))
+          .catch(error => console.error('Main sync failed:', error));
     }
 
     /**
@@ -492,15 +491,17 @@
     function submitRouter() {
       const routerInput = document.getElementById('routerInput').value;
       const passwordInput = document.getElementById('passwordInput').value;
-      sendRequest(`http://${poi_two_ip}/setting?ssid=${routerInput}&pwd=${passwordInput}`);
-      sendRequest(`http://${poi_one_ip}/setting?ssid=${routerInput}&pwd=${passwordInput}`);
+      
+      // Handle each request independently
+      sendRequest(`http://${poi_two_ip}/setting?ssid=${routerInput}&pwd=${passwordInput}`)
+          .catch(error => console.error('Aux Poi router update failed:', error));
+      
+      sendRequest(`http://${poi_one_ip}/setting?ssid=${routerInput}&pwd=${passwordInput}`)
+          .catch(error => console.error('Main Poi router update failed:', error));
 
-      // Add a slight delay to ensure the fetch completes before proceeding
       setTimeout(() => {
-        // Trigger the fetchBtn click to update the current pattern first
         document.getElementById('fetchBtn').click();
-      }, 2500); // Adjust the delay if necessary
-
+      }, 2500);
     }
 
     /**
@@ -517,14 +518,15 @@
         return;
       }
 
-      // Send to both POIs like other settings
-      sendRequest(`http://${poi_one_ip}/setting?channel=${channelValue}`);
-      sendRequest(`http://${poi_two_ip}/setting?channel=${channelValue}`);
+      // Handle each request independently
+      sendRequest(`http://${poi_one_ip}/setting?channel=${channelValue}`)
+          .catch(error => console.error('Main Poi channel update failed:', error));
+      sendRequest(`http://${poi_two_ip}/setting?channel=${channelValue}`)
+          .catch(error => console.error('Aux Poi channel update failed:', error));
 
-      // Update UI after short delay
       setTimeout(() => {
         document.getElementById('fetchBtn').click();
-        channelInput.value = ""; // Clear input after submission
+        channelInput.value = "";
       }, 2000);
     }
 
@@ -540,20 +542,21 @@
      * @returns {void}
      */
     function submitPattern(chosen_pattern) {
-      // Send request 
-      sendRequest(`http://${poi_two_ip}/pattern?patternChooserChange=${chosen_pattern}`);
-      sendRequest(`http://${poi_one_ip}/pattern?patternChooserChange=${chosen_pattern}`);
+      // Use separate error handling for each request
+      sendRequest(`http://${poi_two_ip}/pattern?patternChooserChange=${chosen_pattern}`)
+          .catch(error => console.error('Aux Poi pattern failed:', error));
+          
+      sendRequest(`http://${poi_one_ip}/pattern?patternChooserChange=${chosen_pattern}`)
+          .catch(error => console.error('Main Poi pattern failed:', error));
 
       // Add a slight delay to ensure the fetch completes before proceeding
       setTimeout(() => {
-        // Trigger the fetchBtn click to update the current pattern first
         document.getElementById('fetchBtn').click();
-      }, 1500); // Adjust the delay if necessary
+      }, 1500);
 
       setTimeout(() => {
-        // Update the active button based on the selected pattern
         highlightActiveButton(pattern);
-      }, 2500); // Adjust the delay if necessary
+      }, 2500);
     }
 
     // Function to highlight the active pattern button
@@ -652,30 +655,35 @@
     });
 
     function submitBrightness(value) {
-      sendRequest(`http://${poi_two_ip}/brightness?brt=${value}`);
-      sendRequest(`http://${poi_one_ip}/brightness?brt=${value}`);
+      sendRequest(`http://${poi_two_ip}/brightness?brt=${value}`)
+          .catch(error => console.error('Aux Poi brightness update failed:', error));
+      sendRequest(`http://${poi_one_ip}/brightness?brt=${value}`)
+          .catch(error => console.error('Main Poi brightness update failed:', error));
     }
 
     /**
-     * Sends a request to the specified URL and handles the response.
+     * Sends a request to the specified URL with retry functionality.
      * @param {string} url - The URL to send the request to.
-     * @returns {void}
+     * @param {number} [retries=3] - Number of retry attempts
+     * @returns {Promise<void>}
      */
-    function sendRequest(url) {
-      fetch(url)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-          return response.text();
-        })
-        .then(data => {
-          console.log('Request succeeded with response:', data);
-          // Handle the response if needed
-        })
-        .catch(error => {
-          console.error('There was a problem with the fetch operation:', error);
-        });
+    async function sendRequest(url, retries = 3) {
+        for (let attempt = 1; attempt <= retries; attempt++) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                console.log('Request succeeded to:', url);
+                return; // Success - exit the function
+            } catch (error) {
+                console.error(`Attempt ${attempt} failed for ${url}:`, error);
+                if (attempt === retries) {
+                    console.error(`Giving up after ${retries} attempts for ${url}`);
+                    throw error; // Final failure
+                }
+                // Wait with exponential backoff before retrying
+                await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+            }
+        }
     }
 
     let ip = "";
