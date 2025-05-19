@@ -124,6 +124,50 @@
           color: #d98f8f; /* Soft red text */
         }
 
+        /* File list styling */
+        #fileListContainer {
+          margin: 15px 0;
+          border: 2px dashed #ccc;
+          min-height: 50px;
+          padding: 10px;
+        }
+
+        .draggable-file {
+          display: flex;
+          align-items: center;
+          padding: 10px;
+          margin: 5px 0;
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          cursor: move;
+          transition: all 0.3s ease;
+        }
+
+        .draggable-file.dragging {
+          opacity: 0.5;
+          background: #e9ecef;
+        }
+
+        .draggable-file img {
+          width: 40px;
+          height: 40px;
+          object-fit: cover;
+          margin-right: 10px;
+        }
+
+        .draggable-file span {
+          flex-grow: 1;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .drag-handle {
+          padding: 0 10px;
+          color: #666;
+          cursor: move;
+        }
+
         /* Responsive Media Queries */
         @media (max-width: 600px) {
             .container {
@@ -153,6 +197,7 @@
         <h1>Upload Pics</h1>
         <div class="input-container">
             <input type="file" id="fileInput" accept="image/*" multiple>
+            <div id="fileListContainer"></div>
             <button id="uploadButton" onclick="handleUpload()">Upload and convert</button>
         </div>
         <div class="input-container">
@@ -167,7 +212,7 @@
             <span class="current-px" id="currentPx">Current px: 120</span>
         </div>
         <div class="input-container">
-            <span class="note">Click on "Choose files" then click on "Upload and convert".</span>
+            <span class="note">1. Select files 2. Drag to reorder 3. Click upload</span>
             <span class="note">Correct number of pixels should be updated from poi.</span>
             <span class="note">Enjoy spinning!!</span>
         </div>
@@ -314,7 +359,7 @@
               throw new Error('Pixel encoding failed - dimension mismatch');
             }
 
-            const charAtIndex = getCharFromIndex(Array.from(document.getElementById('fileInput').files).indexOf(file));
+            const charAtIndex = getCharFromIndex(orderedFilesList.indexOf(file));
             const fileName = charAtIndex + '.bin';
             const formData = new FormData();
             formData.append('file', new Blob([Buffer.from(binaryData)], { type: 'application/octet-stream' }), fileName);
@@ -426,9 +471,8 @@
          * Handles the file upload process with optimized timing and retries
          */
         async function handleUpload() {
-          const files = Array.from(document.getElementById('fileInput').files);
-          
-          if (!files.length) {
+          // Get files in displayed order
+          if (!orderedFilesList.length) {
             alert("Please select at least one file.");
             return;
           }
@@ -441,6 +485,9 @@
               verifyPoiConnection(poi_one_ip),
               verifyPoiConnection(poi_two_ip)
             ]);
+
+            // Use the orderedFilesList directly
+            const files = orderedFilesList;
 
             if(!mainAvailable) {
               throw new Error("Main POI unavailable - upload cannot proceed");
@@ -607,6 +654,87 @@
                 document.getElementById('pixelInput').value = number_of_pixels;
             }
         }
+
+        let orderedFilesList = [];
+
+        function createFileListItem(file, index) {
+          const div = document.createElement('div');
+          div.className = 'draggable-file';
+          div.draggable = true;
+          div.dataset.index = index;
+          div.dataset.fileName = file.name;
+          
+          // Preview image
+          const img = document.createElement('img');
+          img.src = URL.createObjectURL(file);
+          
+          // Filename
+          const span = document.createElement('span');
+          span.textContent = file.name;
+          
+          // Drag handle
+          const handle = document.createElement('div');
+          handle.className = 'drag-handle';
+          handle.innerHTML = '☰';
+          
+          div.appendChild(img);
+          div.appendChild(span);
+          div.appendChild(handle);
+          
+          // Drag & drop handlers
+          div.addEventListener('dragstart', handleDragStart);
+          div.addEventListener('dragover', handleDragOver);
+          div.addEventListener('drop', handleDrop);
+          
+          return div;
+        }
+
+        function handleDragStart(e) {
+          e.dataTransfer.setData('text/plain', e.target.dataset.index);
+          e.target.classList.add('dragging');
+        }
+
+        function handleDragOver(e) {
+          e.preventDefault();
+          const container = document.getElementById('fileListContainer');
+          const dragging = container.querySelector('.dragging');
+          const files = [...container.children];
+          const target = files.find(child => {
+            const rect = child.getBoundingClientRect();
+            return e.clientY < rect.top + rect.height / 2;
+          });
+          
+          if (target && target !== dragging) {
+            container.insertBefore(dragging, target);
+          }
+        }
+
+        function handleDrop(e) {
+          e.preventDefault();
+          e.target.classList.remove('dragging');
+          updateFilesOrder();
+        }
+
+        function updateFilesOrder() {
+          const container = document.getElementById('fileListContainer');
+          const currentOrderNames = Array.from(container.children).map(item => item.dataset.fileName);
+          orderedFilesList = currentOrderNames.map(name => 
+            orderedFilesList.find(file => file.name === name)
+          ).filter(file => file !== undefined);
+        }
+
+        // Update the file input handler
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+          const container = document.getElementById('fileListContainer');
+          container.innerHTML = '';
+          orderedFilesList = Array.from(e.target.files); // Store original files
+  
+          orderedFilesList.forEach((file, index) => {
+            container.appendChild(createFileListItem(file, index));
+          });
+  
+          updateFilesOrder();
+        });
 
         window.addEventListener('load', () => {
             updateNumberOfPixels(poi_one_ip);
