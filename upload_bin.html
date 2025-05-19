@@ -359,7 +359,7 @@
               throw new Error('Pixel encoding failed - dimension mismatch');
             }
 
-            const charAtIndex = getCharFromIndex(Array.from(document.getElementById('fileInput').files).indexOf(file));
+            const charAtIndex = getCharFromIndex(orderedFilesList.indexOf(file));
             const fileName = charAtIndex + '.bin';
             const formData = new FormData();
             formData.append('file', new Blob([Buffer.from(binaryData)], { type: 'application/octet-stream' }), fileName);
@@ -472,13 +472,7 @@
          */
         async function handleUpload() {
           // Get files in displayed order
-          const container = document.getElementById('fileListContainer');
-          const orderedFiles = Array.from(container.children)
-            .map(item => Array.from(document.getElementById('fileInput').files)
-              .find(f => f.name === item.dataset.fileName))
-            .filter(f => f);
-
-          if (!orderedFiles.length) {
+          if (!orderedFilesList.length) {
             alert("Please select at least one file.");
             return;
           }
@@ -492,8 +486,8 @@
               verifyPoiConnection(poi_two_ip)
             ]);
 
-            // Use orderedFiles instead of the original file list
-            const files = orderedFiles;
+            // Use the orderedFilesList directly
+            const files = orderedFilesList;
 
             if(!mainAvailable) {
               throw new Error("Main POI unavailable - upload cannot proceed");
@@ -661,7 +655,7 @@
             }
         }
 
-        let filesOrder = [];
+        let orderedFilesList = [];
 
         function createFileListItem(file, index) {
           const div = document.createElement('div');
@@ -723,19 +717,22 @@
 
         function updateFilesOrder() {
           const container = document.getElementById('fileListContainer');
-          filesOrder = Array.from(container.children)
-            .map(item => item.dataset.fileName);
+          const currentOrderNames = Array.from(container.children).map(item => item.dataset.fileName);
+          orderedFilesList = currentOrderNames.map(name => 
+            orderedFilesList.find(file => file.name === name)
+          ).filter(file => file !== undefined);
         }
 
         // Update the file input handler
         document.getElementById('fileInput').addEventListener('change', function(e) {
           const container = document.getElementById('fileListContainer');
           container.innerHTML = '';
-          
-          Array.from(e.target.files).forEach((file, index) => {
+          orderedFilesList = Array.from(e.target.files); // Store original files
+  
+          orderedFilesList.forEach((file, index) => {
             container.appendChild(createFileListItem(file, index));
           });
-          
+  
           updateFilesOrder();
         });
 
