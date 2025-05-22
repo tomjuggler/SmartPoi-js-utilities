@@ -63,6 +63,7 @@
       color: white;
       width: 100%;
       margin-bottom: 1rem;
+      box-sizing: border-box;
     }
 
     button {
@@ -100,9 +101,32 @@
       text-align: center;
     }
 
+    #textCanvas {
+      max-width: 100%;
+      height: auto;
+    }
+
     @media (max-width: 600px) {
       .container {
         padding: 1rem;
+        box-sizing: border-box;
+      }
+      
+      .controls {
+        grid-template-columns: 1fr;
+      }
+      
+      input[type="color"] {
+        max-width: 100%;
+      }
+      
+      #textCanvas {
+        max-width: 100%;
+        height: auto;
+      }
+      
+      #download-link {
+        box-sizing: border-box;
       }
     }
   </style>
