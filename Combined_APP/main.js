@@ -69,7 +69,7 @@ function initializeNetworkDiscovery() {
     } finally {
       showLoadingState(false);
     }
-  });
+  }
 }
 
 async function scanNetwork(subnet) {
@@ -426,5 +426,3 @@ function initializeEventListeners() {
   document.getElementById('channelSubmit').addEventListener('click', submitChannel);
 }
 
-// Initialize the application
-document.addEventListener('DOMContentLoaded', init);
