@@ -516,7 +516,7 @@
          * Fetches the current settings and highlights the active pattern button.
          */
         document.addEventListener('DOMContentLoaded', () => {
-          const savedIPs = getCookie('poiIPs') || {};
+          const savedIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
           
           // Initialize router mode checkbox
           if (savedIPs.routerMode) {
@@ -640,14 +640,15 @@
 
         function submitRouterMode() {
           const routerMode = document.getElementById('routerModeCheckbox').checked;
-          const currentIPs = getCookie('poiIPs') || {};
+          const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
           
-          setCookie('poiIPs', {
+          const newIPs = {
             ...currentIPs,
             routerMode: routerMode,
             // Clear STA IPs when disabling router mode
             ...(routerMode ? {} : { mainIP: null, auxIP: null })
-          }, 365);
+          };
+          localStorage.setItem('poiIPs', JSON.stringify(newIPs));
 
           // Update global IPs immediately
           if (routerMode) {
@@ -914,21 +915,21 @@
                     poi_one_ip = ip;
                     foundDevices++;
                     // Update cookie with new findings
-                    setCookie('poiIPs', {
+                    localStorage.setItem('poiIPs', JSON.stringify({
                       subnet: currentSubnet,
                       mainIP: ip,
                       auxIP: ''
-                    }, 365);
+                    }));
                   } else {
                     poi_two_ip = ip;
                     foundDevices++;
                     // Update cookie with both IPs
-                    setCookie('poiIPs', {
+                    localStorage.setItem('poiIPs', JSON.stringify({
                       subnet: currentSubnet,
                       mainIP: poi_one_ip,
                       auxIP: ip,
                       routerMode: true // Automatically enable router mode
-                    }, 365);
+                    }));
                     document.getElementById('routerModeCheckbox').checked = true;
                     break;
                   }
@@ -959,14 +960,15 @@
           }
 
           // Only update if in router mode
-          const currentIPs = getCookie('poiIPs') || {};
+          const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
           if (currentIPs.routerMode) {
             const subnet = ip.split('.').slice(0, 3).join('.') + '.';
-            setCookie('poiIPs', {
+            const newIPs = {
               ...currentIPs,
               subnet: subnet,
               mainIP: ip
-            }, 365);
+            };
+            localStorage.setItem('poiIPs', JSON.stringify(newIPs));
             poi_one_ip = ip;
             ipInput.placeholder = ip;
             ipInput.value = '';
@@ -987,14 +989,15 @@
             return;
           }
 
-          const currentIPs = getCookie('poiIPs') || {};
+          const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
           if (currentIPs.routerMode) {
             const subnet = ip.split('.').slice(0, 3).join('.') + '.';
-            setCookie('poiIPs', {
+            const newIPs = {
               ...currentIPs,
               subnet: subnet,
               auxIP: ip
-            }, 365);
+            };
+            localStorage.setItem('poiIPs', JSON.stringify(newIPs));
             poi_two_ip = ip;
             ipInput.placeholder = ip;
             ipInput.value = '';
@@ -1007,21 +1010,6 @@
           return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip);
         }
 
-        // Cookie functions
-        function getCookie(name) {
-          const cookies = document.cookie.split(';');
-          for (const cookie of cookies) {
-            const [key, value] = cookie.trim().split('=');
-            if (key === name) return JSON.parse(decodeURIComponent(value));
-          }
-          return null;
-        }
-
-        function setCookie(name, value, days) {
-          const date = new Date();
-          date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-          document.cookie = `${name}=${encodeURIComponent(JSON.stringify(value))}; expires=${date.toUTCString()}; path=/`;
-        }
 
         /**
          * Event listener for the fetch button click.
