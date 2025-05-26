@@ -1,3 +1,49 @@
+// Image Management Functions
+function createBlackImages(containerId, ip) {
+    const container = document.getElementById(containerId);
+    
+    // Clear existing images
+    container.innerHTML = '';
+
+    for (let i = 0; i < 62; i++) {
+        const char = getCharFromIndex(i);
+        const fileName = char + '.bin';
+        
+        const imgElement = document.createElement('img');
+        imgElement.className = 'poi-image';
+        imgElement.style.width = `${state.settings.pixels}px`;
+        imgElement.style.height = `${state.settings.pixels}px`;
+        imgElement.alt = fileName;
+
+        imgElement.addEventListener('click', function() {
+            decompressAndDisplay(ip, fileName);
+        });
+
+        imgElement.addEventListener('dragover', handleDragOver);
+        imgElement.addEventListener('drop', (event) => handleImageDrop(event, ip));
+
+        container.appendChild(imgElement);
+    }
+}
+
+function getCharFromIndex(index) {
+    const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return characters.charAt(index);
+}
+
+function handleDragOver(event) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+}
+
+function handleImageDrop(event, ip) {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        handleImageUpload(files[0], ip);
+    }
+}
+
 // State Management
 function checkInitialStatus() {
     updateStatusIndicators();
@@ -255,17 +301,18 @@ async function updatePixelsOnBoth() {
 }
 
 function setupImageHandlers() {
-    // Initialize image grids
-    createBlackImages('mainImageGrid', state.poiIPs.main);
-    createBlackImages('auxImageGrid', state.poiIPs.aux);
+    // Initialize image grids with current IPs
+    createBlackImages('mainImageGrid', state.poiIPs.mainIP);
+    createBlackImages('auxImageGrid', state.poiIPs.auxIP);
 
-    // Drag and drop handling
-    const grids = document.querySelectorAll('.image-grid-container');
-    grids.forEach(grid => {
+    // Add drag/drop handlers to containers
+    document.querySelectorAll('.image-grid-container').forEach(grid => {
         grid.addEventListener('dragover', handleDragOver);
-        grid.addEventListener('drop', handleImageDrop);
+        grid.addEventListener('drop', (event) => handleImageDrop(event, 
+            grid.id === 'mainImageGrid' ? state.poiIPs.mainIP : state.poiIPs.auxIP
+        ));
     });
-
+    
     // Button handlers
     document.getElementById('refreshImages').addEventListener('click', refreshAllImages);
     document.getElementById('updatePixels').addEventListener('click', updatePixelsOnBoth);
