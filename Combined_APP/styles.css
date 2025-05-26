@@ -19,6 +19,40 @@
     margin-top: 20px;
 }
 
+.image-controls {
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.fetch-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.dark-button {
+    background: #444;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.dark-button:hover {
+    background: #666;
+}
+
+.alert-indicator {
+    color: #ffd700;
+    font-size: 0.9em;
+    margin-left: 8px;
+}
+
 .image-grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
