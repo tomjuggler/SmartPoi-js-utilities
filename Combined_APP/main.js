@@ -254,9 +254,10 @@ function loadState() {
     state.poiIPs = { ...state.poiIPs, ...saved.poiIPs };
     state.settings = { ...state.settings, ...saved.settings };
     
-    // Update UI elements
+    // Update UI elements with persisted state
     document.getElementById('routerIpInput').value = state.poiIPs.subnet + "1";
     document.getElementById('pixelInput').value = state.settings.pixels;
+    document.getElementById('currentPx').textContent = `Current px: ${state.settings.pixels}`;
 }
 
 // Network Discovery Implementation
@@ -463,11 +464,10 @@ async function fetchInitialPixels() {
     const mainPixels = await fetchNumberOfPixels(state.poiIPs.mainIP);
     const auxPixels = await fetchNumberOfPixels(state.poiIPs.auxIP);
     
-    if (mainPixels) {
-      state.settings.pixels = mainPixels;
-      document.getElementById('pixelInput').value = mainPixels;
-      document.getElementById('currentPx').textContent = `Current px: ${mainPixels}`;
-    }
+    // Always show current state, even if values differ between POIs
+    state.settings.pixels = mainPixels || state.settings.pixels;
+    document.getElementById('pixelInput').value = state.settings.pixels;
+    document.getElementById('currentPx').textContent = `Current px: ${state.settings.pixels}`;
     
     if (mainPixels !== auxPixels) {
       createMessage('Warning: Main and Aux POIs have different pixel counts!', 'warning');
