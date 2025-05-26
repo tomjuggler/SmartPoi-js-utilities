@@ -1,7 +1,15 @@
 // Image Management Functions
-function refreshAllImages() {
-    createBlackImages('mainImageGrid', state.poiIPs.mainIP);
-    createBlackImages('auxImageGrid', state.poiIPs.auxIP);
+function refreshAllImages(fullRefresh = false) {
+    if (fullRefresh) {
+        createBlackImages('mainImageGrid', state.poiIPs.mainIP);
+        createBlackImages('auxImageGrid', state.poiIPs.auxIP);
+    } else {
+        // Just update image sizes
+        document.querySelectorAll('.poi-image').forEach(img => {
+            img.style.width = `${state.settings.pixels}px`;
+            img.style.height = `${state.settings.pixels}px`;
+        });
+    }
 }
 
 function createBlackImages(containerId, ip) {
@@ -382,15 +390,26 @@ function saveState() {
 // Image handling core functions
 async function updatePixelsOnBoth() {
   const pixels = document.getElementById('pixelInput').value;
+  if (!pixels || pixels < 1 || pixels > 1000) {
+    createMessage('Invalid pixel value (1-1000)', 'error');
+    return;
+  }
+  
   try {
-    await Promise.all([
+    const [mainRes, auxRes] = await Promise.all([
       fetch(`http://${state.poiIPs.mainIP}/pixels?num=${pixels}`),
       fetch(`http://${state.poiIPs.auxIP}/pixels?num=${pixels}`)
     ]);
-    state.settings.pixels = pixels;
+    
+    if (!mainRes.ok || !auxRes.ok) throw new Error('Pixel update failed');
+    
+    state.settings.pixels = parseInt(pixels, 10);
+    document.getElementById('pixelInput').value = state.settings.pixels;
+    document.getElementById('currentPx').textContent = `Current px: ${state.settings.pixels}`;
     saveState();
-    createMessage(`Pixels updated to ${pixels}`);
-    refreshAllImages();
+    
+    createMessage(`Pixels updated to ${state.settings.pixels}`);
+    refreshAllImages(true); // Force full refresh
   } catch (error) {
     console.error('Pixel update failed:', error);
     createMessage('Failed to update pixels', 'error');
@@ -699,19 +718,33 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function fetchSettings(ip) {
-    const response = await fetch(`http://${ip}/returnsettings`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    
-    const data = await response.text();
-    const parts = data.split(',');
-    
-    // Handle different response formats
-    const baseFields = {
-        router: parts[0]?.trim() || 'N/A',
-        password: parts[1]?.trim() || 'N/A',
-        channel: parts[2]?.trim() || 'N/A',
-        pattern: parts[parts.length - 1]?.trim() || 'N/A'
-    };
+    try {
+        const response = await fetch(`http://${ip}/returnsettings`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.text();
+        const parts = data.split(',').map(p => p.trim());
+        
+        // Get fresh pixel count from dedicated endpoint
+        const pixels = await fetchNumberOfPixels(ip);
+        
+        return {
+            router: parts[0] || 'N/A',
+            password: parts[1] || 'N/A',
+            channel: parts[2] || 'N/A',
+            pattern: parts[parts.length - 1] || 'N/A',
+            pixels: pixels || '?'
+        };
+    } catch (error) {
+        console.error('Fetch settings failed:', error);
+        return {
+            router: 'N/A',
+            password: 'N/A',
+            channel: 'N/A',
+            pattern: 'N/A',
+            pixels: '?'
+        };
+    }
     
     // Try to get pixels separately to avoid failing entire request
     try {
@@ -744,11 +777,29 @@ function initializeFetchButton() {
     document.getElementById('fetchBtn').addEventListener('click', async () => {
         try {
             createMessage('Fetching settings...', 'info');
-            
+        
             const [mainData, auxData] = await Promise.all([
                 fetchSettings(state.poiIPs.mainIP),
                 fetchSettings(state.poiIPs.auxIP)
             ]);
+
+            // Update Main POI Display
+            document.getElementById('router').textContent = mainData.router;
+            document.getElementById('password').textContent = mainData.password;
+            document.getElementById('channel').textContent = mainData.channel;
+            document.getElementById('pattern').textContent = mainData.pattern;
+            document.getElementById('pixels').textContent = mainData.pixels;
+
+            // Update Aux POI Display
+            document.getElementById('routerTwo').textContent = auxData.router;
+            document.getElementById('passwordTwo').textContent = auxData.password;
+            document.getElementById('channelTwo').textContent = auxData.channel;
+            document.getElementById('patternTwo').textContent = auxData.pattern;
+            document.getElementById('pixelsTwo').textContent = auxData.pixels;
+
+            // Update input placeholders
+            document.getElementById('routerInput').placeholder = mainData.router;
+            document.getElementById('passwordInput').placeholder = mainData.password;
 
             // Update Main POI display
             // Update Main POI
