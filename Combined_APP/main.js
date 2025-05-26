@@ -240,15 +240,24 @@ function updateStatusIndicators() {
         }
     };
 
+    // Default to offline before checking
+    let mainStatus = 'offline';
+    let auxStatus = 'offline';
+
     Promise.allSettled([
         checkStatus(state.poiIPs.mainIP),
         checkStatus(state.poiIPs.auxIP)
     ]).then(([mainResult, auxResult]) => {
-        const mainStatus = mainResult.status === 'fulfilled' ? mainResult.value : 'offline';
-        const auxStatus = auxResult.status === 'fulfilled' ? auxResult.value : 'offline';
+        // Only set to online if we get explicit confirmation
+        mainStatus = mainResult.status === 'fulfilled' && mainResult.value === 'online' ? 'online' : 'offline';
+        auxStatus = auxResult.status === 'fulfilled' && auxResult.value === 'online' ? 'online' : 'offline';
         
         document.getElementById('mainStatus').className = `status-indicator ${mainStatus}`;
         document.getElementById('auxStatus').className = `status-indicator ${auxStatus}`;
+    }).catch(() => {
+        // Fallback error handling
+        document.getElementById('mainStatus').className = 'status-indicator offline';
+        document.getElementById('auxStatus').className = 'status-indicator offline';
     });
 }
 
