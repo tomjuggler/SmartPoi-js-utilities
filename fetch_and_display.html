@@ -1432,7 +1432,7 @@
             return;
           }
 
-          const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || {});
+          const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
           const subnet = ip.split('.').slice(0, 3).join('.') + '.';
           
           // Automatically enable router mode
@@ -1462,7 +1462,7 @@
             return;
           }
 
-          const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || {});
+          const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
           const subnet = ip.split('.').slice(0, 3).join('.') + '.';
           
           // Automatically enable router mode
