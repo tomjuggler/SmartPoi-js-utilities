@@ -28,6 +28,40 @@
                     <div id="auxStatus" class="status-indicator online">Aux POI: Online</div>
                 </div>
 
+                <div class="control-block">
+                    <h3 class="section-title">Pattern Selection</h3>
+                    <div class="pattern-buttons">
+                        <button data-pattern="1" onclick="submitPattern('1')">Generated</button>
+                        <button data-pattern="2" onclick="submitPattern('2')">IMG 1-5</button>
+                        <button data-pattern="3" onclick="submitPattern('3')">IMG 6-10</button>
+                        <button data-pattern="4" onclick="submitPattern('4')">IMG 10-20</button>
+                        <button data-pattern="5" onclick="submitPattern('5')">IMG 1-52</button>
+                        <button data-pattern="6" onclick="submitPattern('6')">On/Off Switch</button>
+                        <button data-pattern="7" onclick="submitPattern('7')">LEDs OFF</button>
+                    </div>
+                </div>
+
+                <div class="control-block">
+                    <h3 class="section-title">Synchronization</h3>
+                    <button id="syncButton">Sync Poi</button>
+                </div>
+
+                <div class="control-block">
+                    <h3 class="section-title">Adjustments</h3>
+                    <div class="slider-group">
+                        <div class="slider-container speed-slider">
+                            <label>Speed (0.5-1800s)</label>
+                            <input type="range" id="speedSlider" min="0" max="100" value="0">
+                            <div id="speedTooltip" class="tooltip"></div>
+                        </div>
+                        
+                        <div class="slider-container brightness-slider">
+                            <label>Brightness (20-255)</label>
+                            <input type="range" id="brightnessSlider" min="20" max="255" value="20">
+                            <div id="brightnessTooltip" class="tooltip"></div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Network Discovery -->
                 <div class="control-block">
@@ -83,40 +117,7 @@
                     </div>
                 </div>
 
-                <div class="control-block">
-                    <h3 class="section-title">Pattern Selection</h3>
-                    <div class="pattern-buttons">
-                        <button data-pattern="1" onclick="submitPattern('1')">Generated</button>
-                        <button data-pattern="2" onclick="submitPattern('2')">IMG 1-5</button>
-                        <button data-pattern="3" onclick="submitPattern('3')">IMG 6-10</button>
-                        <button data-pattern="4" onclick="submitPattern('4')">IMG 10-20</button>
-                        <button data-pattern="5" onclick="submitPattern('5')">IMG 1-52</button>
-                        <button data-pattern="6" onclick="submitPattern('6')">On/Off Switch</button>
-                        <button data-pattern="7" onclick="submitPattern('7')">LEDs OFF</button>
-                    </div>
-                </div>
-
-                <div class="control-block">
-                    <h3 class="section-title">Synchronization</h3>
-                    <button id="syncButton">Sync Poi</button>
-                </div>
-
-                <div class="control-block">
-                    <h3 class="section-title">Adjustments</h3>
-                    <div class="slider-group">
-                        <div class="slider-container speed-slider">
-                            <label>Speed (0.5-1800s)</label>
-                            <input type="range" id="speedSlider" min="0" max="100" value="0">
-                            <div id="speedTooltip" class="tooltip"></div>
-                        </div>
-                        
-                        <div class="slider-container brightness-slider">
-                            <label>Brightness (20-255)</label>
-                            <input type="range" id="brightnessSlider" min="20" max="255" value="20">
-                            <div id="brightnessTooltip" class="tooltip"></div>
-                        </div>
-                    </div>
-                </div>
+                
 
                 <div class="control-block danger-zone">
                     <h3 class="danger-title">DANGER ZONE</h3>
@@ -171,7 +172,7 @@
                     <p><i>Default is WS2812, click to change to APA102 (raw mode)</i></p>
                 </div>
                 
-                <div class="image-grid">
+                
                     <div class="image-grid">
                         <div class="poi-images">
                             <h3 class="section-title">Main Poi</h3>
@@ -182,7 +183,7 @@
                             <div id="auxImageGrid" class="image-grid-container"></div>
                         </div>
                     </div>
-                </div>
+                
             </div>
         </div>
 
