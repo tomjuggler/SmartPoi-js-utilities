@@ -536,28 +536,48 @@ function initializeFetchButton() {
             ]);
 
             // Update Main POI display
-            document.getElementById('router').textContent = mainData.router;
-            document.getElementById('password').textContent = mainData.password;
-            document.getElementById('channel').textContent = mainData.channel;
-            document.getElementById('pattern').textContent = mainData.pattern;
-            document.getElementById('pixels').textContent = mainData.pixels || '?';
+            // Update Main POI display and state
+            state.settings.router = mainData.router;
+            state.settings.password = mainData.password;
+            state.settings.channel = mainData.channel;
+            state.settings.pattern = mainData.pattern.toString();
+            state.settings.pixels = mainData.pixels;
+            
+            document.getElementById('router').textContent = state.settings.router;
+            document.getElementById('password').textContent = state.settings.password;
+            document.getElementById('channel').textContent = state.settings.channel;
+            document.getElementById('pattern').textContent = state.settings.pattern;
+            document.getElementById('pixels').textContent = state.settings.pixels || '?';
 
-            // Update Aux POI display
-            document.getElementById('routerTwo').textContent = auxData.router;
-            document.getElementById('passwordTwo').textContent = auxData.password;
-            document.getElementById('channelTwo').textContent = auxData.channel;
-            document.getElementById('patternTwo').textContent = auxData.pattern;
-            document.getElementById('pixelsTwo').textContent = auxData.pixels || '?';
+            // Update Aux POI display and state
+            state.settings.routerTwo = auxData.router;
+            state.settings.passwordTwo = auxData.password;
+            state.settings.channelTwo = auxData.channel;
+            state.settings.patternTwo = auxData.pattern.toString();
+            state.settings.pixelsTwo = auxData.pixels;
 
-            // Update state and UI
-            state.settings.pattern = mainData.pattern;
+            document.getElementById('routerTwo').textContent = state.settings.routerTwo;
+            document.getElementById('passwordTwo').textContent = state.settings.passwordTwo;
+            document.getElementById('channelTwo').textContent = state.settings.channelTwo;
+            document.getElementById('patternTwo').textContent = state.settings.patternTwo;
+            document.getElementById('pixelsTwo').textContent = state.settings.pixelsTwo || '?';
             highlightActiveButton(mainData.pattern);
+            // Force UI refresh
+            saveState();
+            updateStatusIndicators();
             createMessage('Settings updated successfully');
+            highlightActiveButton(state.settings.pattern);
 
         } catch (error) {
             console.error('Fetch error:', error);
             createMessage('Failed to fetch settings - check POI connections', 'error');
             updateStatusIndicators();
+            // Update UI with cached state on error
+            document.getElementById('router').textContent = state.settings.router;
+            document.getElementById('password').textContent = state.settings.password;
+            document.getElementById('channel').textContent = state.settings.channel;
+            document.getElementById('pattern').textContent = state.settings.pattern;
+            document.getElementById('pixels').textContent = state.settings.pixels || '?';
         }
     });
 }
