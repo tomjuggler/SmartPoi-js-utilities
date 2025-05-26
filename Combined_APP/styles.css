@@ -9,28 +9,24 @@
 
 /* Image Management Styles */
 .image-management {
-    padding: 20px;
+    padding: 15px;
 }
 
 .image-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-top: 20px;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-top: 15px;
 }
 
 .image-controls {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-}
-
-.fetch-buttons {
-    display: flex;
-    gap: 10px;
-    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    background: #1a1a1a;
+    border-radius: 8px;
 }
 
 .dark-button {
@@ -47,14 +43,61 @@
     background: #666;
 }
 
+.poi-images {
+    background: #1a1a1a;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.image-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+    padding: 5px;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.poi-image {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1/1;
+    background: #000;
+    border: 1px solid #333;
+    cursor: pointer;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.poi-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.current-px {
+    font-size: 1em;
+    margin-left: 10px;
+    color: #90c695;
+}
+
+.fetch-buttons {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0;
+    align-items: center;
+}
+
 .alert-indicator {
     color: #ffd700;
     font-size: 0.9em;
-    margin-left: 8px;
+    margin-left: 5px;
 }
 
 #ws_apaBtn {
-    margin-left: 20px;
+    margin-left: 10px;
 }
 
 #ws_apa_indicator {
@@ -62,39 +105,32 @@
     font-weight: bold;
 }
 
-.image-grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-    padding: 10px;
-    background: #1a1a1a;
-    border-radius: 8px;
+/* Adjust section titles */
+.poi-images h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.1em;
+    color: #2c7a47;
 }
 
-.poi-image {
-    width: 100px;
-    height: 100px;
-    background: #000;
-    border: 2px solid #333;
-    margin: 5px;
-    cursor: pointer;
-    object-fit: cover;
-    border-radius: 4px;
-}
-
-.image-grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-    padding: 10px;
-    background: #1a1a1a;
-    border-radius: 8px;
-}
-
-.poi-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .image-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .image-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .poi-images {
+        padding: 10px;
+    }
+    
+    .image-grid-container {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        gap: 6px;
+    }
 }
 
 /* Network Discovery Enhancements */
