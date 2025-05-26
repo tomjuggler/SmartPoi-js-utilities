@@ -200,6 +200,21 @@
       margin-left: 10px;
       font-size: 0.9em;
     }
+
+    .manual-ip-controls {
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .manual-ip-controls input[type="text"] {
+      width: 120px;
+      margin-right: 10px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
   </style>
 </head>
 
@@ -296,6 +311,21 @@
       <span id="result"></span>
     </label>
   </div>
+  <div class="manual-ip-controls">
+    <label>
+      Set Main Poi IP: 
+      <input type="text" id="manualMainIp" placeholder="192.168.1.x">
+      <button type="button" onclick="setMainIp()">Set Main</button>
+      <span id="mainIpError" style="color: red; display: none;">Invalid IP!</span>
+    </label>
+    <label>
+      Set Aux Poi IP: 
+      <input type="text" id="manualAuxIp" placeholder="192.168.1.x">
+      <button type="button" onclick="setAuxIp()">Set Aux</button>
+      <span id="auxIpError" style="color: red; display: none;">Invalid IP!</span>
+    </label>
+  </div>
+
   <div class="status-section">
     <h3 class="section-title">Poi Status</h3>
   <button id="fetchBtn">Fetch Settings</button>
@@ -437,6 +467,24 @@
      * Fetches the current settings and highlights the active pattern button.
      */
     document.addEventListener('DOMContentLoaded', () => {
+      // Load saved IPs from cookie
+      const savedIPs = getCookie('poiIPs');
+      if (savedIPs) {
+        if (savedIPs.mainIP) {
+          document.getElementById('manualMainIp').placeholder = savedIPs.mainIP;
+          poi_one_ip = savedIPs.mainIP;
+        }
+        if (savedIPs.auxIP) {
+          document.getElementById('manualAuxIp').placeholder = savedIPs.auxIP;
+          poi_two_ip = savedIPs.auxIP;
+        }
+        // Auto-fill router IP input with subnet if available
+        if (savedIPs.subnet) {
+          const baseIp = savedIPs.subnet.replace(/\.$/, '') + '.1';
+          document.getElementById('routerIpInput').value = baseIp;
+        }
+      }
+
       // Fetch the current settings when the page loads
       document.getElementById('fetchBtn').click();
 
@@ -816,6 +864,60 @@
     });
 
     // Add this validation function
+    function setMainIp() {
+      const ipInput = document.getElementById('manualMainIp');
+      const errorSpan = document.getElementById('mainIpError');
+      const ip = ipInput.value.trim();
+      
+      errorSpan.style.display = 'none';
+      
+      if (!isValidIP(ip)) {
+        errorSpan.style.display = 'inline';
+        return;
+      }
+
+      poi_one_ip = ip;
+      const subnet = ip.split('.').slice(0, 3).join('.') + '.';
+      
+      // Update cookie
+      const currentIPs = getCookie('poiIPs') || {};
+      setCookie('poiIPs', {
+        ...currentIPs,
+        subnet: subnet,
+        mainIP: ip
+      }, 365);
+      
+      ipInput.placeholder = ip;
+      ipInput.value = '';
+    }
+
+    function setAuxIp() {
+      const ipInput = document.getElementById('manualAuxIp');
+      const errorSpan = document.getElementById('auxIpError');
+      const ip = ipInput.value.trim();
+      
+      errorSpan.style.display = 'none';
+      
+      if (!isValidIP(ip)) {
+        errorSpan.style.display = 'inline';
+        return;
+      }
+
+      poi_two_ip = ip;
+      const subnet = ip.split('.').slice(0, 3).join('.') + '.';
+      
+      // Update cookie
+      const currentIPs = getCookie('poiIPs') || {};
+      setCookie('poiIPs', {
+        ...currentIPs,
+        subnet: subnet,
+        auxIP: ip
+      }, 365);
+      
+      ipInput.placeholder = ip;
+      ipInput.value = '';
+    }
+
     function isValidIP(ip) {
       return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip);
     }
