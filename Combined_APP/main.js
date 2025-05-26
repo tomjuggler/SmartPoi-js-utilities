@@ -379,16 +379,6 @@ function initializeSliders() {
         return;
     }
 
-    // Convert stored values to slider positions
-    const initialSpeed = valueToSlider(state.settings.speed);
-    const initialBrightness = state.settings.brightness;
-
-    speedSlider.value = initialSpeed;
-    brightnessSlider.value = initialBrightness;
-
-    // Set initial tooltip values
-    speedTooltip.textContent = `${sliderToValue(initialSpeed).toFixed(1)}s`;
-    brightnessTooltip.textContent = initialBrightness;
 
   // Speed Slider
   speedSlider.addEventListener('input', (e) => {
