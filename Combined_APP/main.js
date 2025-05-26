@@ -306,6 +306,76 @@ function savePersistedState() {
     }));
 }
 
+// Danger Zone Functions
+function submitRouterMode() {
+    const routerMode = document.getElementById('routerModeCheckbox').checked;
+    state.poiIPs.routerMode = routerMode;
+    
+    // Send to both POIs
+    Promise.all([
+        fetch(`http://${state.poiIPs.mainIP}/mode?router=${routerMode ? 1 : 0}`),
+        fetch(`http://${state.poiIPs.auxIP}/mode?router=${routerMode ? 1 : 0}`)
+    ]).then(() => {
+        createMessage('Router mode updated successfully');
+        saveState();
+    }).catch(error => {
+        console.error('Error updating router mode:', error);
+        createMessage('Failed to update router mode', 'error');
+    });
+}
+
+function submitChannel() {
+    const channel = document.getElementById('channelInput').value;
+    if (!channel || channel < 1 || channel > 13) {
+        showError('channelError', 'Invalid channel (1-13)');
+        return;
+    }
+
+    Promise.all([
+        fetch(`http://${state.poiIPs.mainIP}/channel?num=${channel}`, { method: 'POST' }),
+        fetch(`http://${state.poiIPs.auxIP}/channel?num=${channel}`, { method: 'POST' })
+    ]).then(() => {
+        createMessage(`Channel updated to ${channel}`);
+        saveState();
+    }).catch(error => {
+        console.error('Channel update failed:', error);
+        createMessage('Channel update failed', 'error');
+    });
+}
+
+function submitRouter() {
+    const ssid = document.getElementById('routerInput').value;
+    const password = document.getElementById('passwordInput').value;
+    
+    if (!ssid || !password) {
+        showError('routerError', 'Both fields required');
+        return;
+    }
+
+    const formData = new URLSearchParams();
+    formData.append('ssid', ssid);
+    formData.append('pass', password);
+
+    Promise.all([
+        fetch(`http://${state.poiIPs.mainIP}/wifi`, {
+            method: 'POST',
+            body: formData,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        }),
+        fetch(`http://${state.poiIPs.auxIP}/wifi`, {
+            method: 'POST',
+            body: formData,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        })
+    ]).then(() => {
+        createMessage('Router credentials updated');
+        saveState();
+    }).catch(error => {
+        console.error('Router update failed:', error);
+        createMessage('Failed to update router', 'error');
+    });
+}
+
 // Unified Event Listeners
 function initializeEventListeners() {
   // Pattern buttons
