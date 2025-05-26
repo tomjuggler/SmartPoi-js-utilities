@@ -28,9 +28,11 @@ const state = {
 function init() {
     loadState();
     setupTabNavigation();
-    setupEventListeners();
     initializeNetworkDiscovery();
     setupImageHandlers();
+    initializeModal();
+    initializeEventListeners();
+    initializeSliders();
     checkInitialStatus();
 }
 
@@ -38,6 +40,84 @@ function init() {
 function loadState() {
     const saved = JSON.parse(localStorage.getItem('poiState') || '{}');
     state.poiIPs = { ...state.poiIPs, ...saved.poiIPs };
+
+// Network Discovery Implementation
+function initializeNetworkDiscovery() {
+  const discoverBtn = document.getElementById('discoverBtn');
+  discoverBtn.addEventListener('click', async () => {
+    const routerIp = document.getElementById('routerIpInput').value;
+    if (!validateIP(routerIp)) {
+      showError('ipError', 'Invalid IP address format!');
+      return;
+    }
+
+    const octets = routerIp.split('.').slice(0, 3);
+    const subnet = octets.join('.') + '.';
+    state.poiIPs.subnet = subnet;
+
+    showLoadingState(true);
+    
+    try {
+      const { mainIP, auxIP } = await scanNetwork(subnet);
+      state.poiIPs.mainIP = mainIP;
+      state.poiIPs.auxIP = auxIP;
+      state.poiIPs.routerMode = true;
+      saveState();
+      updateStatusIndicators();
+    } catch (error) {
+      showError('result', 'No POI found on this subnet');
+    } finally {
+      showLoadingState(false);
+    }
+  });
+}
+
+async function scanNetwork(subnet) {
+  const scanOrder = generateScanOrder(subnet);
+  let foundDevices = [];
+
+  for (const ip of scanOrder) {
+    try {
+      const response = await fetch(`http://${ip}/`, { timeout: 1500 });
+      if (response.ok) {
+        foundDevices.push(ip);
+        if (foundDevices.length === 2) break;
+      }
+    } catch (error) {
+      // Continue scanning on error
+    }
+  }
+  
+  return {
+    mainIP: foundDevices[0] || state.poiIPs.mainIP,
+    auxIP: foundDevices[1] || state.poiIPs.auxIP
+  };
+}
+
+function generateScanOrder(subnet) {
+  const cachedIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
+  let scanOrder = [];
+
+  if (cachedIPs.subnet === subnet && cachedIPs.mainIP) {
+    const baseIP = cachedIPs.mainIP.split('.').pop();
+    let current = parseInt(baseIP, 10);
+    let offset = 0;
+    
+    while (scanOrder.length < 254) {
+      const low = current - offset;
+      const high = current + offset;
+      
+      if (low >= 1 && !scanOrder.includes(low)) scanOrder.push(low);
+      if (high <= 254 && high !== low && !scanOrder.includes(high)) scanOrder.push(high);
+      offset++;
+    }
+    
+    scanOrder = [current, current, current, ...scanOrder.filter(ip => ip !== current)];
+  } else {
+    scanOrder = Array.from({length: 254}, (_, i) => i + 1);
+  }
+
+  return scanOrder.map(octet => `${subnet}${octet}`);
     state.settings = { ...state.settings, ...saved.settings };
     
     // Update UI elements
