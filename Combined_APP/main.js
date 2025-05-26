@@ -230,10 +230,16 @@ function updateStatusIndicators() {
         
         try {
             const response = await fetch(`http://${ip}/get-pixels`, {
-                signal: controller.signal
+                signal: controller.signal,
+                mode: 'cors',
+                redirect: 'error'
             });
             clearTimeout(timeoutId);
-            return response.ok ? 'online' : 'offline';
+            
+            if (!response.ok || response.type === 'error') {
+                return 'offline';
+            }
+            return 'online';
         } catch (error) {
             clearTimeout(timeoutId);
             return 'offline';
