@@ -153,8 +153,7 @@
 .tooltip {
     position: absolute;
     bottom: 120%;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
     background: #333;
     color: white;
     padding: 5px 10px;
@@ -162,6 +161,8 @@
     opacity: 0;
     transition: opacity 0.2s;
     pointer-events: none;
+    transform: translateX(-50%);
+    width: max-content;
 }
 
 .status-section {

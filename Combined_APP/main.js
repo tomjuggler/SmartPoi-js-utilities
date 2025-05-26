@@ -614,18 +614,28 @@ function initializeSliders() {
     const value = sliderToValue(e.target.value);
     speedTooltip.textContent = `${value.toFixed(1)}s`;
     speedTooltip.style.opacity = '1';
-    const percent = (e.target.value / 100);
-    speedTooltip.style.left = `calc(${percent * 100}% - ${percent * 20}px)`;
+    
+    // Calculate exact thumb position
+    const sliderWidth = speedSlider.offsetWidth;
+    const thumbPosition = (e.target.value / speedSlider.max) * sliderWidth;
+    speedTooltip.style.left = `${thumbPosition}px`;
+    
     updateBothPOIs(`/intervalChange?interval=${value}`);
   });
 
   // Brightness Slider
   brightnessSlider.addEventListener('input', (e) => {
-    brightnessTooltip.textContent = e.target.value;
+    const value = e.target.value;
+    brightnessTooltip.textContent = value;
     brightnessTooltip.style.opacity = '1';
-    const percent = ((e.target.value - 20) / (255 - 20)) * 100;
-    brightnessTooltip.style.left = `calc(${percent}% - ${percent * 0.2}px)`;
-    updateBothPOIs(`/brightness?brt=${e.target.value}`);
+    
+    // Calculate exact thumb position
+    const sliderWidth = brightnessSlider.offsetWidth;
+    const range = brightnessSlider.max - brightnessSlider.min;
+    const thumbPosition = ((value - brightnessSlider.min) / range) * sliderWidth;
+    brightnessTooltip.style.left = `${thumbPosition}px`;
+    
+    updateBothPOIs(`/brightness?brt=${value}`);
   });
 }
 
