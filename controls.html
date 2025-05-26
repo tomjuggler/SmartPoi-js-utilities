@@ -215,6 +215,48 @@
       border: 1px solid #ccc;
       border-radius: 4px;
     }
+
+    /* Network Discovery Styles */
+    .discovery-section {
+      margin-bottom: 20px;
+    }
+
+    .discovery-input-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .manual-ip-section {
+      margin-top: 20px;
+    }
+
+    .manual-ip-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .manual-ip-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .manual-ip-section label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    #routerIpInput {
+      width: 150px;
+    }
+
+    .manual-ip-row input[type="text"] {
+      width: 140px;
+    }
   </style>
 </head>
 
@@ -300,31 +342,37 @@
 
       <div class="control-block">
         <h3 class="section-title">Network Discovery</h3>
+        
         <!-- Spinner and counter elements -->
         <div class="spinner" id="spinner"></div>
         <p id="counter">Scanning IP: <span id="currentIP">0</span> for poi!</p>
 
-        <label>
-          WiFi Poi IP Address Discovery (Router Mode) - enter router IP address first</label>
-        <input type="text" id="routerIpInput" placeholder="192.168.1.1" pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$">
-        <button type="button" id="discoverBtn">Discover POI</button>
-        <span id="ipError" style="color: red; display: none;">Invalid IP address format!</span>
-        <span id="result"></span>
+        <!-- Discovery Section -->
+        <div class="discovery-section">
+          <label>WiFi Poi IP Address Discovery (Router Mode) - enter router IP address first</label>
+          <div class="discovery-input-group">
+            <input type="text" id="routerIpInput" placeholder="192.168.1.1" pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$">
+            <button type="button" id="discoverBtn">Discover POI</button>
+            <span id="ipError" style="color: red; display: none;">Invalid IP address format!</span>
+          </div>
+          <span id="result"></span>
+        </div>
 
-        <label>Manually Set Poi IP (Router Mode)</label>
-        <div class="manual-ip-controls">
-          <label>
-            Set Main Poi IP:</label>
-          <input type="text" id="manualMainIp" placeholder="192.168.1.x">
-          <button type="button" onclick="setMainIp()">Set Main</button>
-          <span id="mainIpError" style="color: red; display: none;">Invalid IP!</span>
-
-          <label>
-            Set Aux Poi IP:</label>
-          <input type="text" id="manualAuxIp" placeholder="192.168.1.x">
-          <button type="button" onclick="setAuxIp()">Set Aux</button>
-          <span id="auxIpError" style="color: red; display: none;">Invalid IP!</span>
-
+        <!-- Manual IP Section -->
+        <div class="manual-ip-section">
+          <label>Manually Set Poi IP (Router Mode)</label>
+          <div class="manual-ip-group">
+            <div class="manual-ip-row">
+              <input type="text" id="manualMainIp" placeholder="192.168.1.x">
+              <button type="button" onclick="setMainIp()">Set Main</button>
+              <span id="mainIpError" style="color: red; display: none;">Invalid IP!</span>
+            </div>
+            <div class="manual-ip-row">
+              <input type="text" id="manualAuxIp" placeholder="192.168.1.x">
+              <button type="button" onclick="setAuxIp()">Set Aux</button>
+              <span id="auxIpError" style="color: red; display: none;">Invalid IP!</span>
+            </div>
+          </div>
         </div>
       </div>
       <div class="status-section">
