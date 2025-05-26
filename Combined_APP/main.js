@@ -42,7 +42,7 @@ async function handleImageUpload(file, ip, targetFileName) {
                     const r = processed.bitmap.data[idx];
                     const g = processed.bitmap.data[idx + 1];
                     const b = processed.bitmap.data[idx + 2];
-                    const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6);
+                    const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6));
                     binaryData.push(encoded);
                 }
             );
