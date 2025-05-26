@@ -537,7 +537,6 @@ function initializeFetchButton() {
 
             // Update Main POI display
             // Update Main POI
-            const mainData = await fetch(`http://${state.poiIPs.mainIP}/returnsettings`);
             if (mainData.ok) {
                 const data = await mainData.text();
                 const parts = data.split(',');
