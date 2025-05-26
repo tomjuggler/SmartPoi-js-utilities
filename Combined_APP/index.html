@@ -34,19 +34,19 @@
                     <div class="discovery-section">
                         <label>WiFi Poi IP Address Discovery (Router Mode)</label>
                         <div class="discovery-input-group">
-                            <input type="text" id="routerIpInput" placeholder="192.168.1.1">
+                            <input type="text" id="routerIpInput" placeholder="192.168.1.1" value="">
                             <button type="button" id="discoverBtn">Discover POI</button>
                             <span id="ipError" class="error-message"></span>
                         </div>
                         <div class="manual-ip-section">
                             <div class="manual-ip-group">
                                 <div class="manual-ip-row">
-                                    <input type="text" id="manualMainIp" placeholder="192.168.1.x">
+                                    <input type="text" id="manualMainIp" placeholder="192.168.1.x" value="">
                                     <button onclick="setMainIp()">Set Main</button>
                                     <span id="mainIpError" class="error-message"></span>
                                 </div>
                                 <div class="manual-ip-row">
-                                    <input type="text" id="manualAuxIp" placeholder="192.168.1.x">
+                                    <input type="text" id="manualAuxIp" placeholder="192.168.1.x" value="">
                                     <button onclick="setAuxIp()">Set Aux</button>
                                     <span id="auxIpError" class="error-message"></span>
                                 </div>

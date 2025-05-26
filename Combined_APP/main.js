@@ -255,7 +255,18 @@ function loadState() {
     state.settings = { ...state.settings, ...saved.settings };
     
     // Update UI elements with persisted state
-    document.getElementById('routerIpInput').value = state.poiIPs.subnet + "1";
+    // Initialize router IP input
+    const routerInput = document.getElementById('routerIpInput');
+    routerInput.placeholder = '192.168.1.1';
+    if (state.poiIPs.subnet) {
+        routerInput.value = state.poiIPs.subnet + "1";
+    }
+    
+    // Initialize manual IP inputs
+    const mainIpInput = document.getElementById('manualMainIp');
+    const auxIpInput = document.getElementById('manualAuxIp');
+    mainIpInput.placeholder = state.poiIPs.mainIP || '192.168.1.x';
+    auxIpInput.placeholder = state.poiIPs.auxIP || '192.168.1.x';
     document.getElementById('pixelInput').value = state.settings.pixels;
     document.getElementById('currentPx').textContent = `Current px: ${state.settings.pixels}`;
 }
