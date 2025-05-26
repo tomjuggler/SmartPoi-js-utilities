@@ -538,13 +538,10 @@ function initializeFetchButton() {
             // Update Main POI display
             // Update Main POI
             if (mainData) {
-                const data = mainData;
-                const parts = data.split(',');
-                
-                state.settings.router = parts[0].trim();
-                state.settings.password = parts[1].trim();
-                state.settings.channel = parts[2].trim();
-                state.settings.pattern = parts[parts.length-1].trim();
+                state.settings.router = mainData.router;
+                state.settings.password = mainData.password;
+                state.settings.channel = mainData.channel;
+                state.settings.pattern = mainData.pattern;
                 state.settings.pixels = await fetchNumberOfPixels(state.poiIPs.mainIP);
 
                 document.getElementById('router').textContent = state.settings.router;
@@ -560,13 +557,10 @@ function initializeFetchButton() {
 
             // Update Aux POI 
             if (auxData) {
-                const data = auxData;
-                const parts = data.split(',');
-                
-                state.settings.routerTwo = parts[0].trim();
-                state.settings.passwordTwo = parts[1].trim();
-                state.settings.channelTwo = parts[2].trim();
-                state.settings.patternTwo = parts[parts.length-1].trim();
+                state.settings.routerTwo = auxData.router;
+                state.settings.passwordTwo = auxData.password;
+                state.settings.channelTwo = auxData.channel;
+                state.settings.patternTwo = auxData.pattern;
                 state.settings.pixelsTwo = await fetchNumberOfPixels(state.poiIPs.auxIP);
 
                 document.getElementById('routerTwo').textContent = state.settings.routerTwo;
