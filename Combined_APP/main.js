@@ -1177,22 +1177,25 @@ function submitRouterMode() {
 }
 
 function submitChannel() {
-    const channel = document.getElementById('channelInput').value;
-    if (!channel || channel < 1 || channel > 13) {
-        showError('channelError', 'Invalid channel (1-13)');
+    const channelInput = document.getElementById('channelInput');
+    const channelValue = parseInt(channelInput.value);
+
+    if (isNaN(channelValue) || channelValue < 1 || channelValue > 13) {
+        alert("Invalid channel! WiFi channels must be between 1-13");
+        channelInput.value = ""; // Clear invalid input
         return;
     }
 
-    Promise.all([
-        fetch(`http://${state.poiIPs.mainIP}/channel?num=${channel}`, { method: 'POST' }),
-        fetch(`http://${state.poiIPs.auxIP}/channel?num=${channel}`, { method: 'POST' })
-    ]).then(() => {
-        createMessage(`Channel updated to ${channel}`);
-        saveState();
-    }).catch(error => {
-        console.error('Channel update failed:', error);
-        createMessage('Channel update failed', 'error');
-    });
+    // Handle each request independently
+    sendRequest(`http://${state.poiIPs.mainIP}/setting?channel=${channelValue}`)
+        .catch(error => console.error('Main Poi channel update failed:', error));
+    sendRequest(`http://${state.poiIPs.auxIP}/setting?channel=${channelValue}`)
+        .catch(error => console.error('Aux Poi channel update failed:', error));
+
+    setTimeout(() => {
+        document.getElementById('fetchBtn').click();
+        channelInput.value = "";
+    }, 2000);
 }
 
 function submitRouter() {
