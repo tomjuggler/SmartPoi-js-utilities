@@ -9,7 +9,7 @@ function checkInitialStatus() {
 function updateStatusIndicators() {
     const checkStatus = async (ip) => {
         try {
-            await fetch(`http://${ip}/status`, { timeout: 2000 });
+            await fetch(`http://${ip}/status`, { mode: 'no-cors' });
             return 'online';
         } catch {
             return 'offline';
@@ -60,6 +60,35 @@ function init() {
     initializeEventListeners();
     initializeSliders();
     checkInitialStatus();
+}
+
+// IP Setting Functions
+function setMainIp() {
+    const ip = document.getElementById('manualMainIp').value;
+    if (validateIP(ip)) {
+        state.poiIPs.mainIP = ip;
+        saveState();
+        createMessage(`Main IP set to ${ip}`);
+        updateStatusIndicators();
+    } else {
+        showError('mainIpError', 'Invalid IP format');
+    }
+}
+
+function setAuxIp() {
+    const ip = document.getElementById('manualAuxIp').value;
+    if (validateIP(ip)) {
+        state.poiIPs.auxIP = ip;
+        saveState();
+        createMessage(`Aux IP set to ${ip}`);
+        updateStatusIndicators();
+    } else {
+        showError('auxIpError', 'Invalid IP format');
+    }
+}
+
+function validateIP(ip) {
+    return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip);
 }
 
 // State Persistence
@@ -241,8 +270,17 @@ function initializeSync() {
 
 // Slider Controls
 function initializeSliders() {
-  const speedSlider = document.getElementById('speedSlider');
-  const brightnessSlider = document.getElementById('brightnessSlider');
+    const speedSlider = document.getElementById('speedSlider');
+    const brightnessSlider = document.getElementById('brightnessSlider');
+
+    if (!speedSlider || !brightnessSlider) {
+        console.error('Sliders not found in DOM');
+        return;
+    }
+
+    // Set initial values from state
+    speedSlider.value = state.settings.speed * 100;
+    brightnessSlider.value = state.settings.brightness;
   
   function debounce(func, timeout = 500) {
     let timer;
