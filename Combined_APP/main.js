@@ -537,8 +537,8 @@ function initializeFetchButton() {
 
             // Update Main POI display
             // Update Main POI
-            if (mainData.ok) {
-                const data = await mainData.text();
+            if (mainData) {
+                const data = mainData;
                 const parts = data.split(',');
                 
                 state.settings.router = parts[0].trim();
