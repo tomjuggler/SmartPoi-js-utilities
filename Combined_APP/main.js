@@ -477,8 +477,12 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
     initializePatternControls();
     initializeSync();
-    initializeSliders();
     setupImageHandlers();
+    
+    // Initialize sliders after DOM is ready
+    setTimeout(() => {
+        initializeSliders();
+    }, 100);
 
     // Initialize slider positions from state
     const speedSlider = document.getElementById('speedSlider');
