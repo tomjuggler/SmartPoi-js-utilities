@@ -19,12 +19,61 @@
 
         <!-- Controls Tab -->
         <div id="controls" class="tab-content active">
-            <!-- Content from controls.html will go here -->
+            <div class="control-block">
+                <h2 class="section-title">Poi Controls</h2>
+
+                <!-- Network Discovery -->
+                <div class="control-block">
+                    <h3 class="section-title">Network Discovery</h3>
+                    <div class="discovery-section">
+                        <label>WiFi Poi IP Address Discovery (Router Mode)</label>
+                        <div class="discovery-input-group">
+                            <input type="text" id="routerIpInput" placeholder="192.168.1.1">
+                            <button type="button" id="discoverBtn">Discover POI</button>
+                            <span id="ipError" class="error-message"></span>
+                        </div>
+                        <div class="manual-ip-section">
+                            <div class="manual-ip-group">
+                                <div class="manual-ip-row">
+                                    <input type="text" id="manualMainIp" placeholder="192.168.1.x">
+                                    <button onclick="setMainIp()">Set Main</button>
+                                    <span id="mainIpError" class="error-message"></span>
+                                </div>
+                                <div class="manual-ip-row">
+                                    <input type="text" id="manualAuxIp" placeholder="192.168.1.x">
+                                    <button onclick="setAuxIp()">Set Aux</button>
+                                    <span id="auxIpError" class="error-message"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
         </div>
 
         <!-- Images Tab -->
         <div id="images" class="tab-content">
-            <!-- Content from fetch_and_display.html will go here -->
+            <div class="image-management">
+                <h2 class="section-title">Image Management</h2>
+                <div class="image-controls">
+                    <button id="refreshImages">Refresh Images</button>
+                    <div class="pixel-control">
+                        <input type="number" id="pixelInput" min="1" max="1000">
+                        <button id="updatePixels">Update Pixels</button>
+                        <span class="current-px" id="currentPx"></span>
+                    </div>
+                </div>
+                
+                <div class="image-grid">
+                    <div class="poi-images">
+                        <h3>Main Poi</h3>
+                        <div id="mainImageGrid" class="image-grid-container"></div>
+                    </div>
+                    <div class="poi-images">
+                        <h3>Aux Poi</h3>
+                        <div id="auxImageGrid" class="image-grid-container"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Modal -->
@@ -33,8 +82,12 @@
                 <img class="modal-image" alt="Enlarged View">
                 <div class="modal-footer">
                     <span class="filename"></span>
-                    <button class="delete-button">Delete</button>
-                    <button class="close-button">Close</button>
+                    <div class="modal-controls">
+                        <button class="delete-button">Delete</button>
+                        <input type="number" id="brightnessAdjust" min="-1" max="1" step="0.1" value="0">
+                        <button onclick="applyBrightness()">Adjust Brightness</button>
+                        <button class="close-button">Close</button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -51,6 +51,39 @@ function saveState() {
     }));
 }
 
+// Image handling core functions
+function setupImageHandlers() {
+    // Initialize image grids
+    createBlackImages('mainImageGrid', state.poiIPs.main);
+    createBlackImages('auxImageGrid', state.poiIPs.aux);
+
+    // Drag and drop handling
+    const grids = document.querySelectorAll('.image-grid-container');
+    grids.forEach(grid => {
+        grid.addEventListener('dragover', handleDragOver);
+        grid.addEventListener('drop', handleImageDrop);
+    });
+
+    // Button handlers
+    document.getElementById('refreshImages').addEventListener('click', refreshAllImages);
+    document.getElementById('updatePixels').addEventListener('click', updatePixelsOnBoth);
+}
+
+function handleImageDrop(event) {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        const targetGrid = event.target.closest('.image-grid-container');
+        const ip = targetGrid.id === 'mainImageGrid' ? state.poiIPs.main : state.poiIPs.aux;
+        handleImageUpload(files[0], ip);
+    }
+}
+
+function handleDragOver(event) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', init);
 app.setName('smartPoi-js-utilities');
