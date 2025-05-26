@@ -358,6 +358,19 @@ function initializeSliders() {
     const speedTooltip = document.getElementById('speedTooltip');
     const brightnessTooltip = document.getElementById('brightnessTooltip');
 
+    // Initialize slider positions from state
+    const initialSpeed = valueToSlider(state.settings.speed);
+    const initialBrightness = state.settings.brightness;
+
+    speedSlider.value = initialSpeed;
+    brightnessSlider.value = initialBrightness;
+
+    // Set initial tooltip values
+    speedTooltip.textContent = `${sliderToValue(initialSpeed).toFixed(1)}s`;
+    brightnessTooltip.textContent = initialBrightness;
+    const speedTooltip = document.getElementById('speedTooltip');
+    const brightnessTooltip = document.getElementById('brightnessTooltip');
+
     if (!speedSlider || !brightnessSlider) {
         console.error('Sliders not found in DOM');
         return;
