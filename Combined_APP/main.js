@@ -559,9 +559,8 @@ function initializeFetchButton() {
             }
 
             // Update Aux POI 
-            const auxData = await fetch(`http://${state.poiIPs.auxIP}/returnsettings`);
-            if (auxData.ok) {
-                const data = await auxData.text();
+            if (auxData) {
+                const data = auxData;
                 const parts = data.split(',');
                 
                 state.settings.routerTwo = parts[0].trim();
