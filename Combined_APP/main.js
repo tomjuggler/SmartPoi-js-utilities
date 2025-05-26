@@ -491,6 +491,8 @@ document.addEventListener('DOMContentLoaded', () => {
     brightnessSlider.value = state.settings.brightness;
 
 
+});
+
 async function fetchSettings(ip) {
     const response = await fetch(`http://${ip}/returnsettings`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -506,7 +508,6 @@ async function fetchSettings(ip) {
         pixels: await fetchNumberOfPixels(ip)
     };
 }
-});
 // Slider conversion functions
 function sliderToValue(sliderPercent) {
     if (sliderPercent <= 50) {
