@@ -313,13 +313,79 @@ async function updateBothPOIs(endpoint) {
   }
 }
 
+// Utility Functions
+async function fetchNumberOfPixels(ip) {
+    try {
+        const response = await fetch(`http://${ip}/get-pixels`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return parseInt(await response.text(), 10);
+    } catch (error) {
+        console.error(`Error fetching pixels from ${ip}:`, error);
+        return null;
+    }
+}
+
+function sliderToValue(sliderPercent) {
+    return sliderPercent <= 50 ? 
+        0.5 + Math.floor((sliderPercent / 50) * 60) * 0.5 : 
+        30 * Math.pow(1800 / 30, (sliderPercent - 50) / 50);
+}
+
+function valueToSlider(value) {
+    return value <= 30 ? 
+        ((value - 0.5) / 29.5) * 50 * (30 / 29.5) : 
+        50 + (Math.log(value / 30) / Math.log(60)) * 50;
+}
+
+async function sendRequest(url, retries = 3) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            return;
+        } catch (error) {
+            if (attempt === retries) throw error;
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+        }
+    }
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
+    const savedIPs = JSON.parse(localStorage.getItem('poiIPs') || {};
+    
+    if (savedIPs.routerMode) {
+        document.getElementById('routerModeCheckbox').checked = true;
+        state.poiIPs.mainIP = savedIPs.mainIP || "192.168.1.1";
+        state.poiIPs.auxIP = savedIPs.auxIP || "192.168.1.78";
+    }
+
     init();
     initializePatternControls();
     initializeSync();
     initializeSliders();
-    setupImageHandlers();  // Initialize image handling upfront
+    setupImageHandlers();
+
+    // Initialize slider positions from state
+    const speedSlider = document.getElementById('speedSlider');
+    const brightnessSlider = document.getElementById('brightnessSlider');
+    speedSlider.value = valueToSlider(state.settings.speed);
+    brightnessSlider.value = state.settings.brightness;
+
+    // Add fetch button handler
+    document.getElementById('fetchBtn').addEventListener('click', async () => {
+        try {
+            const [mainData, auxData] = await Promise.all([
+                fetch(`http://${state.poiIPs.mainIP}/returnsettings`),
+                fetch(`http://${state.poiIPs.auxIP}/returnsettings`)
+            ]);
+            
+            // Process and display settings data
+            // ... (implementation from controls.html)
+        } catch (error) {
+            console.error('Error fetching settings:', error);
+        }
+    });
 });
 // Initialize the application
 function init() {

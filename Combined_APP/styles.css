@@ -88,6 +88,55 @@
     background: #4a1e1e;
     border: 1px solid #8b4444;
 }
+
+/* Spinner and Tooltip Styles */
+.spinner {
+    display: none;
+    margin: 20px auto;
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.tooltip {
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+
+.status-section {
+    background: #1a1a1a;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    border: 1px solid #333;
+}
+
+.status-section h4 {
+    margin-bottom: 5px;
+    color: #2c7a47;
+}
+
+.status-section p {
+    margin: 5px 0;
+    font-size: 0.9em;
+}
 :root {
     --primary-color: #2c7a47;
     --danger-color: #dc3545;
