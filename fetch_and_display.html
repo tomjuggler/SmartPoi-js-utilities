@@ -396,23 +396,47 @@
         let poi_two_ip = "192.168.1.78"; // Default Auxillary Poi IP (AP Mode)
 
         document.addEventListener('DOMContentLoaded', () => {
-          const savedIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}';
+          const savedIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
           
           if (savedIPs.routerMode) {
             if (savedIPs.mainIP) poi_one_ip = savedIPs.mainIP;
             if (savedIPs.auxIP) poi_two_ip = savedIPs.auxIP;
             
-            // Update manual IP placeholders
-            document.getElementById('manualMainIp').placeholder = savedIPs.mainIP || "192.168.1.x";
-            document.getElementById('manualAuxIp').placeholder = savedIPs.auxIP || "192.168.1.x";
+            // Update manual IP placeholders if elements exist
+            const mainInput = document.getElementById('manualMainIp');
+            const auxInput = document.getElementById('manualAuxIp');
+            if (mainInput) mainInput.placeholder = savedIPs.mainIP || "192.168.1.x";
+            if (auxInput) auxInput.placeholder = savedIPs.auxIP || "192.168.1.x";
             
-            // Auto-fill router IP input
-            if (savedIPs.subnet) {
-              const baseIp = savedIPs.subnet.replace(/\.$/, '') + '.1';
-              document.getElementById('routerIpInput').value = baseIp;
+            // Auto-fill router IP input if element exists
+            const routerInput = document.getElementById('routerIpInput');
+            if (routerInput && savedIPs.subnet) {
+              routerInput.value = savedIPs.subnet.replace(/\.$/, '') + '.1';
             }
           }
+          
+          // Initialize status checks
+          checkAndUpdateStatus();
         });
+
+        // Add this status check function
+        async function checkAndUpdateStatus() {
+          const checkStatus = async (ip, isMain) => {
+            try {
+              const response = await fetch(`http://${ip}/get-pixels`, { timeout: 2000 });
+              updatePoiStatus(ip, response.ok);
+              return response.ok;
+            } catch (error) {
+              updatePoiStatus(ip, false);
+              return false;
+            }
+          };
+
+          await Promise.all([
+            checkStatus(poi_one_ip, true),
+            checkStatus(poi_two_ip, false)
+          ]);
+        }
 
         /**
          * Updates the pixel size based on the input value.
@@ -1296,7 +1320,7 @@
 
           const timeout = 1500;
           let foundDevices = 0;
-          const cachedIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}';
+          const cachedIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
           let scanOrder = [];
 
           if (cachedIPs.subnet === currentSubnet && cachedIPs.mainIP) {
