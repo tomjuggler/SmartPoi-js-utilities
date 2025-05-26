@@ -53,6 +53,15 @@
     margin-left: 8px;
 }
 
+#ws_apaBtn {
+    margin-left: 20px;
+}
+
+#ws_apa_indicator {
+    color: #00ff00;
+    font-weight: bold;
+}
+
 .image-grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));

@@ -173,8 +173,9 @@ function updateStatusIndicators() {
 }
 
 const state = {
+    wsStrip: true,
     poiIPs: {
-        mainIP: "192.168.1.1",
+        mainIP: "192.168.1.1", 
         auxIP: "192.168.1.78",
         routerMode: false,
         subnet: ""
@@ -251,8 +252,13 @@ function validateIP(ip) {
 // State Persistence
 function loadState() {
     const saved = JSON.parse(localStorage.getItem('poiState') || '{}');
+    state.wsStrip = saved.wsStrip !== undefined ? saved.wsStrip : true;
     state.poiIPs = { ...state.poiIPs, ...saved.poiIPs };
     state.settings = { ...state.settings, ...saved.settings };
+    
+    // Initialize WS/APA indicator
+    document.getElementById('ws_apa_indicator').textContent = 
+        `Current: ${state.wsStrip ? 'WS2812' : 'APA102'}`;
     
     // Update UI elements with persisted state
     // Initialize router IP input
@@ -394,6 +400,7 @@ function generateScanOrder(subnet) {
 
 function saveState() {
     localStorage.setItem('poiState', JSON.stringify({
+        wsStrip: state.wsStrip,
         poiIPs: state.poiIPs,
         settings: state.settings
     }));
@@ -1067,6 +1074,15 @@ function submitRouter() {
 
 // Unified Event Listeners
 function initializeEventListeners() {
+  // WS2812/APA102 toggle handler
+  document.getElementById('ws_apaBtn').addEventListener('click', function() {
+    state.wsStrip = !state.wsStrip;
+    const indicator = document.getElementById('ws_apa_indicator');
+    indicator.textContent = `Current: ${state.wsStrip ? 'WS2812' : 'APA102'}`;
+    createMessage(`Switched to ${state.wsStrip ? 'WS2812 (compressed)' : 'APA102 (raw)'} mode`);
+    saveState();
+  });
+
   // Add manual IP handlers
   document.getElementById('manualMainIp').addEventListener('change', setMainIp);
   document.getElementById('manualAuxIp').addEventListener('change', setAuxIp);
