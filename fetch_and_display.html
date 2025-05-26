@@ -373,12 +373,30 @@
          * @type {string}
          */
         let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
-        // const poi_one_ip = "10.0.0.5"
         /**
          * Default Auxillary Poi IP (AP Mode).
          * @type {string}
          */
-        const poi_two_ip = "192.168.1.78"; // Default Auxillary Poi IP (AP Mode)
+        let poi_two_ip = "192.168.1.78"; // Default Auxillary Poi IP (AP Mode)
+
+        document.addEventListener('DOMContentLoaded', () => {
+          const savedIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}';
+          
+          if (savedIPs.routerMode) {
+            if (savedIPs.mainIP) poi_one_ip = savedIPs.mainIP;
+            if (savedIPs.auxIP) poi_two_ip = savedIPs.auxIP;
+            
+            // Update manual IP placeholders
+            document.getElementById('manualMainIp').placeholder = savedIPs.mainIP || "192.168.1.x";
+            document.getElementById('manualAuxIp').placeholder = savedIPs.auxIP || "192.168.1.x";
+            
+            // Auto-fill router IP input
+            if (savedIPs.subnet) {
+              const baseIp = savedIPs.subnet.replace(/\.$/, '') + '.1';
+              document.getElementById('routerIpInput').value = baseIp;
+            }
+          }
+        });
 
         /**
          * Updates the pixel size based on the input value.
@@ -1243,83 +1261,181 @@
         // processFiles();
         let ip = "";
         document.getElementById('discoverBtn').addEventListener('click', async function () {
-            const routerIp = document.getElementById('routerIpInput').value;
-            const ipError = document.getElementById('ipError');
+          const routerIp = document.getElementById('routerIpInput').value;
+          const ipError = document.getElementById('ipError');
+          
+          ipError.style.display = 'none';
+          
+          if (!isValidIP(routerIp)) {
+            ipError.style.display = 'inline';
+            return;
+          }
+
+          const octets = routerIp.split('.').slice(0, 3);
+          const subnet = octets.join('.') + '.';
+          const currentSubnet = octets.slice(0, 3).join('.') + '.';
+
+          spinner.style.display = 'block';
+          counter.style.display = 'block';
+
+          const timeout = 1500;
+          let foundDevices = 0;
+          const cachedIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}';
+          let scanOrder = [];
+
+          if (cachedIPs.subnet === currentSubnet && cachedIPs.mainIP) {
+            const baseIP = cachedIPs.mainIP.split('.').pop();
+            let current = parseInt(baseIP, 10);
+            let offset = 0;
             
-            // Reset error state
-            ipError.style.display = 'none';
-            
-            // Validate IP format
-            if (!isValidIP(routerIp)) {
-                ipError.style.display = 'inline';
-                return;
+            while (scanOrder.length < 254) {
+              const low = current - offset;
+              const high = current + offset;
+              
+              if (low >= 1 && !scanOrder.includes(low)) scanOrder.push(low);
+              if (high <= 254 && high !== low && !scanOrder.includes(high)) scanOrder.push(high);
+              offset++;
             }
-
-            // Extract subnet from first 3 octets
-            const octets = routerIp.split('.').slice(0, 3);
-            if (octets.length !== 3) {
-                ipError.style.display = 'inline';
-                return;
-            }
             
-            const subnet = octets.join('.') + '.';
+            scanOrder = [current, current, current, ...scanOrder.filter(ip => ip !== current)];
+          } else {
+            scanOrder = Array.from({length: 254}, (_, i) => i + 1);
+          }
+
+          try {
+            const fullScanOrder = scanOrder.map(octet => `${subnet}${octet}`);
             
-            // Show loading state
-            spinner.style.display = 'block';
-            counter.style.display = 'block';
-
-            const timeout = 1500;
-            let foundDevices = 0;
-
-            try {
-                for (let i = 1; i <= 254; i++) {
-                    const ip = subnet + i;
-                    currentIPSpan.innerText = ip;
-
-                    try {
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), timeout);
-                        
-                        const response = await fetch(`http://${ip}/`, { signal: controller.signal });
-                        clearTimeout(timeoutId);
-
-                        if (response.ok) {
-                            if (foundDevices === 0) {
-                                poi_one_ip = ip;
-                                document.getElementById('result').innerText = `First POI: ${ip}`;
-                                foundDevices++;
-                            } else {
-                                poi_two_ip = ip;
-                                document.getElementById('result').innerText += ` | Second POI: ${ip}`;
-                                foundDevices++;
-                                break;
-                            }
-                        }
-                    } catch (error) {
-                        // Expected timeout, continue scanning
+            if (cachedIPs.mainIP && cachedIPs.subnet === currentSubnet) {
+              for (let i = 0; i < 3; i++) {
+                currentIPSpan.innerText = cachedIPs.mainIP;
+                try {
+                  const response = await fetch(`http://${cachedIPs.mainIP}/`, { timeout });
+                  if (response.ok) {
+                    if (foundDevices === 0) {
+                      poi_one_ip = cachedIPs.mainIP;
+                      foundDevices++;
+                    } else {
+                      poi_two_ip = cachedIPs.mainIP;
+                      foundDevices++;
+                      break;
                     }
-                }
-            } finally {
-                spinner.style.display = 'none';
-                counter.style.display = 'none';
-                
-                if (foundDevices === 0) {
-                    document.getElementById('result').innerText = 'No POI found on this subnet';
-                }
-                
-                // Update status indicators after discovery
-                const [mainStatus, auxStatus] = await Promise.all([
-                    checkPoiHealth(poi_one_ip),
-                    checkPoiHealth(poi_two_ip, false)
-                ]);
-                updatePoiStatus(poi_one_ip, mainStatus.online);
-                updatePoiStatus(poi_two_ip, auxStatus.online);
+                  }
+                } catch (error) {}
+              }
             }
+
+            for (const ip of fullScanOrder) {
+              if (foundDevices >= 2) break;
+              currentIPSpan.innerText = ip;
+              
+              try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeout);
+                const response = await fetch(`http://${ip}/`, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                  if (foundDevices === 0) {
+                    poi_one_ip = ip;
+                    foundDevices++;
+                    localStorage.setItem('poiIPs', JSON.stringify({
+                      subnet: currentSubnet,
+                      mainIP: ip,
+                      auxIP: ''
+                    }));
+                  } else {
+                    poi_two_ip = ip;
+                    foundDevices++;
+                    localStorage.setItem('poiIPs', JSON.stringify({
+                      subnet: currentSubnet,
+                      mainIP: poi_one_ip,
+                      auxIP: ip,
+                      routerMode: true
+                    }));
+                    break;
+                  }
+                }
+              } catch (error) {}
+            }
+          } finally {
+            spinner.style.display = 'none';
+            counter.style.display = 'none';
+            
+            if (foundDevices === 0) {
+              document.getElementById('result').innerText = 'No POI found on this subnet';
+            }
+            
+            // Update status indicators
+            const [mainStatus, auxStatus] = await Promise.all([
+              checkPoiHealth(poi_one_ip),
+              checkPoiHealth(poi_two_ip, false)
+            ]);
+            updatePoiStatus(poi_one_ip, mainStatus.online);
+            updatePoiStatus(poi_two_ip, auxStatus.online);
+          }
         });
 
         // Add validation function
         function isValidIP(ip) {
-            return /^(?!0)(?!.*\.$)((25[0-5]|2[0-4][0-9]|[01]?[0-9]{1,3})(\.|$)){4}/.test(ip);
+          return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip);
+        }
+
+        function setMainIp() {
+          const ipInput = document.getElementById('manualMainIp');
+          const errorSpan = document.getElementById('mainIpError');
+          const ip = ipInput.value.trim();
+          
+          errorSpan.style.display = 'none';
+          
+          if (!isValidIP(ip)) {
+            errorSpan.style.display = 'inline';
+            return;
+          }
+
+          const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
+          if (currentIPs.routerMode) {
+            const subnet = ip.split('.').slice(0, 3).join('.') + '.';
+            localStorage.setItem('poiIPs', JSON.stringify({
+              ...currentIPs,
+              subnet: subnet,
+              mainIP: ip
+            }));
+            poi_one_ip = ip;
+            ipInput.placeholder = ip;
+            ipInput.value = '';
+            updatePoiStatus(ip, true);
+          } else {
+            alert("Enable Router Mode first!");
+          }
+        }
+
+        function setAuxIp() {
+          const ipInput = document.getElementById('manualAuxIp');
+          const errorSpan = document.getElementById('auxIpError');
+          const ip = ipInput.value.trim();
+          
+          errorSpan.style.display = 'none';
+          
+          if (!isValidIP(ip)) {
+            errorSpan.style.display = 'inline';
+            return;
+          }
+
+          const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
+          if (currentIPs.routerMode) {
+            const subnet = ip.split('.').slice(0, 3).join('.') + '.';
+            localStorage.setItem('poiIPs', JSON.stringify({
+              ...currentIPs,
+              subnet: subnet,
+              auxIP: ip
+            }));
+            poi_two_ip = ip;
+            ipInput.placeholder = ip;
+            ipInput.value = '';
+            updatePoiStatus(ip, true);
+          } else {
+            alert("Enable Router Mode first!");
+          }
         }
 
         // Add WS2812/APA102 toggle handler
