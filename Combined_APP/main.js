@@ -84,8 +84,84 @@ function handleDragOver(event) {
     event.dataTransfer.dropEffect = 'copy';
 }
 
+// Pattern Handling
+function initializePatternControls() {
+  document.querySelectorAll('.pattern-buttons button').forEach(button => {
+    button.addEventListener('click', async () => {
+      const pattern = button.dataset.pattern;
+      await setPatternOnBoth(pattern);
+      highlightActiveButton(pattern);
+    });
+  });
+}
+
+function highlightActiveButton(pattern) {
+  document.querySelectorAll('.pattern-buttons button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.pattern === pattern);
+  });
+}
+
+async function setPatternOnBoth(pattern) {
+  await Promise.all([
+    fetch(`http://${state.poiIPs.main}/pattern?patternChooserChange=${pattern}`),
+    fetch(`http://${state.poiIPs.aux}/pattern?patternChooserChange=${pattern}`)
+  ]);
+}
+
+// Sync Handling
+function initializeSync() {
+  document.getElementById('syncButton').addEventListener('click', async () => {
+    await Promise.all([
+      fetch(`http://${state.poiIPs.main}/resetimagetouse`),
+      fetch(`http://${state.poiIPs.aux}/resetimagetouse`)
+    ]);
+    createMessage('Both POIs synchronized successfully');
+  });
+}
+
+// Slider Controls
+function initializeSliders() {
+  const speedSlider = document.getElementById('speedSlider');
+  const brightnessSlider = document.getElementById('brightnessSlider');
+  
+  function debounce(func, timeout = 500) {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { func.apply(this, args); }, timeout);
+    };
+  }
+
+  speedSlider.addEventListener('input', debounce(async (e) => {
+    const value = sliderToValue(e.target.value);
+    await updateBothPOIs(`/intervalChange?interval=${value}`);
+  }));
+
+  brightnessSlider.addEventListener('input', debounce(async (e) => {
+    await updateBothPOIs(`/brightness?brt=${e.target.value}`);
+  }));
+}
+
+async function updateBothPOIs(endpoint) {
+  try {
+    await Promise.all([
+      fetch(`http://${state.poiIPs.main}${endpoint}`),
+      fetch(`http://${state.poiIPs.aux}${endpoint}`)
+    ]);
+    createMessage('Settings updated on both POIs');
+  } catch (error) {
+    console.error('Error updating POIs:', error);
+    createMessage('Error updating settings', 'error');
+  });
+}
+
 // Initialize the application
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  initializePatternControls();
+  initializeSync();
+  initializeSliders();
+});
 app.setName('smartPoi-js-utilities');
 const fs = require('fs');
 const path = require('path');

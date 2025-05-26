@@ -48,7 +48,51 @@
                         </div>
                     </div>
                 </div>
-        </div>
+
+                <div class="control-block">
+                    <h3 class="section-title">Pattern Selection</h3>
+                    <div class="pattern-buttons">
+                        <button data-pattern="1">Generated</button>
+                        <button data-pattern="2">IMG 1-5</button>
+                        <button data-pattern="3">IMG 6-10</button>
+                        <button data-pattern="4">IMG 10-20</button>
+                        <button data-pattern="5">IMG 1-52</button>
+                        <button data-pattern="6">On/Off Switch</button>
+                        <button data-pattern="7">LEDs OFF</button>
+                    </div>
+                </div>
+
+                <div class="control-block">
+                    <h3 class="section-title">Synchronization</h3>
+                    <button id="syncButton">Sync Poi</button>
+                </div>
+
+                <div class="control-block danger-zone">
+                    <h3 class="danger-title">DANGER ZONE</h3>
+                    <div>
+                        <label>
+                            Update Router Name and Password:
+                            <input type="text" id="routerInput" placeholder="Enter Router Name">
+                            <input type="text" id="passwordInput" placeholder="Enter Router Password">
+                            <button type="button" onclick="submitRouter()">Submit</button>
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            Switch for Router Mode:
+                            <input type="checkbox" id="routerModeCheckbox">
+                            <button type="button" onclick="submitRouterMode()">Submit</button>
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            Update WiFi Channel (1-13):
+                            <input type="number" id="channelInput" min="1" max="13" placeholder="1-13">
+                            <button type="button" onclick="submitChannel()">Update Channel</button>
+                        </label>
+                    </div>
+                </div>
+            </div>
 
         <!-- Images Tab -->
         <div id="images" class="tab-content">
