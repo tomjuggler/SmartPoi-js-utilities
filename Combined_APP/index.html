@@ -103,8 +103,19 @@
                 <div class="control-block">
                     <h3 class="section-title">Adjustments</h3>
                     <div class="slider-group">
-                        <label>Speed: <input type="range" id="speedSlider" min="0" max="100" value="50"></label>
-                        <label>Brightness: <input type="range" id="brightnessSlider" min="0" max="100" value="100"></label>
+                        <label>Speed (0.5-1800s): 
+                            <div class="slider-container">
+                                <input type="range" id="speedSlider" min="0" max="100" value="0">
+                                <div id="speedTooltip" class="tooltip"></div>
+                            </div>
+                        </label>
+                        
+                        <label>Brightness (20-255): 
+                            <div class="slider-container brightness-slider-container">
+                                <input type="range" id="brightnessSlider" min="20" max="255" value="20">
+                                <div id="brightnessTooltip" class="tooltip"></div>
+                            </div>
+                        </label>
                     </div>
                 </div>
 
