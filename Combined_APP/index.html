@@ -155,10 +155,18 @@
                 <h2 class="section-title">Image Management</h2>
                 <div class="image-controls">
                     <button id="refreshImages">Refresh Images</button>
+                    <button class="dark-button" onclick="getFilesAndDisplay()">Fetch and Display All Images</button>
+                    <button class="dark-button" onclick="window.location.reload()">Refresh Page</button>
                     <div class="pixel-control">
                         <input type="number" id="pixelInput" min="1" max="1000">
                         <button id="updatePixels">Update Pixels</button>
                         <span class="current-px" id="currentPx"></span>
+                    </div>
+                    <div class="fetch-buttons">
+                        <button class="dark-button" onclick="getFilesOne()">Fetch Main Poi Images</button>
+                        <span class="alert-indicator" id="get-files-one-indicator"></span>
+                        <button class="dark-button" onclick="getFilesTwo()">Fetch Aux Poi Images</button> 
+                        <span class="alert-indicator" id="get-files-two-indicator"></span>
                     </div>
                 </div>
                 

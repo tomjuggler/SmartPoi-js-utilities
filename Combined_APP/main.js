@@ -111,6 +111,8 @@ function init() {
     initializeEventListeners();
     initializeSliders();
     checkInitialStatus();
+    fetchInitialPixels();
+    refreshAllImages();
 }
 
 // IP Setting Functions
@@ -297,11 +299,74 @@ async function updatePixelsOnBoth() {
       fetch(`http://${state.poiIPs.mainIP}/pixels?num=${pixels}`),
       fetch(`http://${state.poiIPs.auxIP}/pixels?num=${pixels}`)
     ]);
+    state.settings.pixels = pixels;
+    saveState();
     createMessage(`Pixels updated to ${pixels}`);
     refreshAllImages();
   } catch (error) {
     console.error('Pixel update failed:', error);
     createMessage('Failed to update pixels', 'error');
+  }
+}
+
+async function getFilesAndDisplay() {
+  getFilesOne();
+  getFilesTwo();
+}
+
+async function getFilesOne() {
+  const indicator = document.getElementById('get-files-one-indicator');
+  try {
+    indicator.textContent = "Fetching images...";
+    const response = await fetch(`http://${state.poiIPs.mainIP}/list?dir=/`);
+    const files = await response.json();
+    const imageFiles = files.filter(f => f.name.endsWith('.bin')).map(f => f.name);
+    
+    for (const fileName of imageFiles) {
+      await decompressAndDisplay(state.poiIPs.mainIP, fileName);
+    }
+    indicator.textContent = "Images fetched successfully";
+  } catch (error) {
+    console.error('Error fetching main images:', error);
+    indicator.textContent = "Failed to fetch images";
+  }
+}
+
+async function getFilesTwo() {
+  const indicator = document.getElementById('get-files-two-indicator');
+  try {
+    indicator.textContent = "Fetching images...";
+    const response = await fetch(`http://${state.poiIPs.auxIP}/list?dir=/`);
+    const files = await response.json();
+    const imageFiles = files.filter(f => f.name.endsWith('.bin')).map(f => f.name);
+    
+    for (const fileName of imageFiles) {
+      await decompressAndDisplay(state.poiIPs.auxIP, fileName);
+    }
+    indicator.textContent = "Images fetched successfully";
+  } catch (error) {
+    console.error('Error fetching aux images:', error);
+    indicator.textContent = "Failed to fetch images";
+  }
+}
+
+// Add to init function
+async function fetchInitialPixels() {
+  try {
+    const mainPixels = await fetchNumberOfPixels(state.poiIPs.mainIP);
+    const auxPixels = await fetchNumberOfPixels(state.poiIPs.auxIP);
+    
+    if (mainPixels) {
+      state.settings.pixels = mainPixels;
+      document.getElementById('pixelInput').value = mainPixels;
+      document.getElementById('currentPx').textContent = `Current px: ${mainPixels}`;
+    }
+    
+    if (mainPixels !== auxPixels) {
+      createMessage('Warning: Main and Aux POIs have different pixel counts!', 'warning');
+    }
+  } catch (error) {
+    console.error('Error fetching initial pixels:', error);
   }
 }
 
