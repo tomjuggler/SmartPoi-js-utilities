@@ -1,8 +1,8 @@
 // State Management
 const state = {
     poiIPs: {
-        main: "192.168.1.1",
-        aux: "192.168.1.78", 
+        mainIP: "192.168.1.1",
+        auxIP: "192.168.1.78",
         routerMode: false,
         subnet: ""
     },
@@ -20,7 +20,8 @@ const state = {
         brightness: 20,
         speed: 0.5,
         stripType: "WS2812"
-    }
+    },
+    currentModalImage: null
 };
 
 // Initialize App
@@ -320,18 +321,29 @@ function savePersistedState() {
     }));
 }
 
-// Initialize event listeners
+// Unified Event Listeners
 function initializeEventListeners() {
-    // Modal controls
-    document.querySelector('.close-button').addEventListener('click', () => {
-        document.querySelector('.modal-overlay').classList.add('hidden');
+  // Pattern buttons
+  document.querySelectorAll('.pattern-buttons button').forEach(button => {
+    button.addEventListener('click', async () => {
+      const pattern = button.dataset.pattern;
+      await setPatternOnBoth(pattern);
+      highlightActiveButton(pattern);
     });
-    
-    document.querySelector('.delete-button').addEventListener('click', () => {
-        if (state.currentModalImage) {
-            deleteImage(state.currentModalImage);
-        }
-    });
+  });
+
+  // Sync button
+  document.getElementById('syncButton').addEventListener('click', async () => {
+    await Promise.all([
+      fetch(`http://${state.poiIPs.mainIP}/resetimagetouse`),
+      fetch(`http://${state.poiIPs.auxIP}/resetimagetouse`)
+    ]);
+    createMessage('Both POIs synchronized successfully');
+  });
+
+  // Danger Zone controls
+  document.getElementById('routerSubmit').addEventListener('click', submitRouter);
+  document.getElementById('channelSubmit').addEventListener('click', submitChannel);
 }
 
 // Initialize the application
