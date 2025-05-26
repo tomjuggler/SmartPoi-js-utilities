@@ -490,34 +490,59 @@ document.addEventListener('DOMContentLoaded', () => {
     speedSlider.value = valueToSlider(state.settings.speed);
     brightnessSlider.value = state.settings.brightness;
 
-    // Add fetch button handler
+// Initialize fetch button handler
+function initializeFetchButton() {
     document.getElementById('fetchBtn').addEventListener('click', async () => {
         try {
-            const [mainResponse, auxResponse] = await Promise.all([
-                fetch(`http://${state.poiIPs.mainIP}/returnsettings`),
-                fetch(`http://${state.poiIPs.auxIP}/returnsettings`)
+            createMessage('Fetching settings...', 'info');
+            
+            const [mainData, auxData] = await Promise.all([
+                fetchSettings(state.poiIPs.mainIP),
+                fetchSettings(state.poiIPs.auxIP)
             ]);
 
-            // Process main POI data
-            const mainData = await mainResponse.text();
-            const mainParts = mainData.split(',');
-            state.settings.pattern = mainParts[mainParts.length - 1].trim();
-            document.getElementById('pattern').textContent = state.settings.pattern;
+            // Update Main POI display
+            document.getElementById('router').textContent = mainData.router;
+            document.getElementById('password').textContent = mainData.password;
+            document.getElementById('channel').textContent = mainData.channel;
+            document.getElementById('pattern').textContent = mainData.pattern;
+            document.getElementById('pixels').textContent = mainData.pixels || '?';
 
-            // Process aux POI data
-            const auxData = await auxResponse.text();
-            const auxParts = auxData.split(',');
-            document.getElementById('patternTwo').textContent = auxParts[auxParts.length - 1].trim();
+            // Update Aux POI display
+            document.getElementById('routerTwo').textContent = auxData.router;
+            document.getElementById('passwordTwo').textContent = auxData.password;
+            document.getElementById('channelTwo').textContent = auxData.channel;
+            document.getElementById('patternTwo').textContent = auxData.pattern;
+            document.getElementById('pixelsTwo').textContent = auxData.pixels || '?';
 
-            // Update pixel counts
-            document.getElementById('pixels').textContent = await fetchNumberOfPixels(state.poiIPs.mainIP);
-            document.getElementById('pixelsTwo').textContent = await fetchNumberOfPixels(state.poiIPs.auxIP);
+            // Update state and UI
+            state.settings.pattern = mainData.pattern;
+            highlightActiveButton(mainData.pattern);
+            createMessage('Settings updated successfully');
 
-            highlightActiveButton(state.settings.pattern);
         } catch (error) {
-            console.error('Error fetching settings:', error);
+            console.error('Fetch error:', error);
+            createMessage('Failed to fetch settings - check POI connections', 'error');
+            updateStatusIndicators();
         }
     });
+}
+
+async function fetchSettings(ip) {
+    const response = await fetch(`http://${ip}/returnsettings`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+    const data = await response.text();
+    const parts = data.split(',');
+    
+    return {
+        router: parts[0]?.trim() || 'N/A',
+        password: parts[1]?.trim() || 'N/A',
+        channel: parts[2]?.trim() || 'N/A',
+        pattern: parts[parts.length - 1]?.trim() || 'N/A',
+        pixels: await fetchNumberOfPixels(ip)
+    };
+}
 });
 // Slider conversion functions
 function sliderToValue(sliderPercent) {
@@ -536,10 +561,21 @@ function valueToSlider(value) {
 
 // Initialize the application
 function init() {
-    loadPersistedState();
+    loadState();
     setupTabNavigation();
+    initializeNetworkDiscovery();
     initializeEventListeners();
+    initializeModal();
+    initializeFetchButton();
     checkInitialStatus();
+    
+    // Initialize slider positions from state
+    const speedSlider = document.getElementById('speedSlider');
+    const brightnessSlider = document.getElementById('brightnessSlider');
+    if (speedSlider && brightnessSlider) {
+        speedSlider.value = valueToSlider(state.settings.speed);
+        brightnessSlider.value = state.settings.brightness;
+    }
     
     // Load initial tab content
     loadTabContent(state.currentTab);
