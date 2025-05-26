@@ -500,13 +500,23 @@ async function fetchSettings(ip) {
     const data = await response.text();
     const parts = data.split(',');
     
-    return {
+    // Handle different response formats
+    const baseFields = {
         router: parts[0]?.trim() || 'N/A',
         password: parts[1]?.trim() || 'N/A',
         channel: parts[2]?.trim() || 'N/A',
-        pattern: parts[parts.length - 1]?.trim() || 'N/A',
-        pixels: await fetchNumberOfPixels(ip)
+        pattern: parts[parts.length - 1]?.trim() || 'N/A'
     };
+    
+    // Try to get pixels separately to avoid failing entire request
+    try {
+        baseFields.pixels = await fetchNumberOfPixels(ip);
+    } catch (error) {
+        console.error('Failed to fetch pixels:', error);
+        baseFields.pixels = '?';
+    }
+    
+    return baseFields;
 }
 // Slider conversion functions
 function sliderToValue(sliderPercent) {
