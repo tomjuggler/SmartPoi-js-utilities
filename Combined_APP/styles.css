@@ -402,6 +402,18 @@ body {
   border-radius: 8px;
 }
 
+#deleteAllButton {
+  width: 100%;
+  padding: 15px;
+  margin: 10px 0;
+  transition: all 0.3s ease;
+}
+
+#deleteAllButton:hover {
+  background-color: #8b4444 !important;
+  transform: scale(1.02);
+}
+
 .danger-title {
   color: #dc3545;
   font-weight: bold;
