@@ -938,6 +938,10 @@ function valueToSlider(value) {
 function initializeFetchButton() {
     document.getElementById('fetchBtn').addEventListener('click', async () => {
         try {
+            // Preserve existing input values
+            const currentRouter = document.getElementById('routerInput').value;
+            const currentPassword = document.getElementById('passwordInput').value;
+
             createMessage('Fetching settings...', 'info');
         
             const [mainData, auxData] = await Promise.all([
@@ -959,9 +963,14 @@ function initializeFetchButton() {
             document.getElementById('patternTwo').textContent = auxData.pattern;
             document.getElementById('pixelsTwo').textContent = auxData.pixels;
 
-            // Update input placeholders
-            document.getElementById('routerInput').placeholder = mainData.router;
-            document.getElementById('passwordInput').placeholder = mainData.password;
+            // Restore inputs if they were cleared
+            document.getElementById('routerInput').value = currentRouter || mainData.router;
+            document.getElementById('passwordInput').value = currentPassword || mainData.password;
+
+            // Update state with preserved values
+            state.settings.router = document.getElementById('routerInput').value;
+            state.settings.password = document.getElementById('passwordInput').value;
+            saveState();
 
             // Update Main POI display
             // Update Main POI
@@ -1210,6 +1219,11 @@ function submitRouter() {
     const routerInput = document.getElementById('routerInput').value;
     const passwordInput = document.getElementById('passwordInput').value;
 
+    // Save to state immediately
+    state.settings.router = routerInput;
+    state.settings.password = passwordInput;
+    saveState();
+
     // Handle each request independently
     sendRequest(`http://${state.poiIPs.mainIP}/setting?ssid=${routerInput}&pwd=${passwordInput}`)
         .catch(error => console.error('Main Poi router update failed:', error));
@@ -1219,6 +1233,9 @@ function submitRouter() {
 
     setTimeout(() => {
         document.getElementById('fetchBtn').click();
+        // Preserve the input values after update
+        document.getElementById('routerInput').value = routerInput;
+        document.getElementById('passwordInput').value = passwordInput;
     }, 2500);
 }
 
