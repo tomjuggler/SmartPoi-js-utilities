@@ -536,31 +536,47 @@ function initializeFetchButton() {
             ]);
 
             // Update Main POI display
-            // Update Main POI display and state
-            state.settings.router = mainData.router;
-            state.settings.password = mainData.password;
-            state.settings.channel = mainData.channel;
-            state.settings.pattern = mainData.pattern.toString();
-            state.settings.pixels = mainData.pixels;
-            
-            document.getElementById('router').textContent = state.settings.router;
-            document.getElementById('password').textContent = state.settings.password;
-            document.getElementById('channel').textContent = state.settings.channel;
-            document.getElementById('pattern').textContent = state.settings.pattern;
-            document.getElementById('pixels').textContent = state.settings.pixels || '?';
+            // Update Main POI
+            const mainData = await fetch(`http://${state.poiIPs.mainIP}/returnsettings`);
+            if (mainData.ok) {
+                const data = await mainData.text();
+                const parts = data.split(',');
+                
+                state.settings.router = parts[0].trim();
+                state.settings.password = parts[1].trim();
+                state.settings.channel = parts[2].trim();
+                state.settings.pattern = parts[parts.length-1].trim();
+                state.settings.pixels = await fetchNumberOfPixels(state.poiIPs.mainIP);
 
-            // Update Aux POI display and state
-            state.settings.routerTwo = auxData.router;
-            state.settings.passwordTwo = auxData.password;
-            state.settings.channelTwo = auxData.channel;
-            state.settings.patternTwo = auxData.pattern.toString();
-            state.settings.pixelsTwo = auxData.pixels;
+                document.getElementById('router').textContent = state.settings.router;
+                document.getElementById('password').textContent = state.settings.password;
+                document.getElementById('channel').textContent = state.settings.channel;
+                document.getElementById('pattern').textContent = state.settings.pattern;
+                document.getElementById('pixels').textContent = state.settings.pixels || '?';
+                
+                // Update input placeholders
+                document.getElementById('routerInput').placeholder = state.settings.router;
+                document.getElementById('passwordInput').placeholder = state.settings.password;
+            }
 
-            document.getElementById('routerTwo').textContent = state.settings.routerTwo;
-            document.getElementById('passwordTwo').textContent = state.settings.passwordTwo;
-            document.getElementById('channelTwo').textContent = state.settings.channelTwo;
-            document.getElementById('patternTwo').textContent = state.settings.patternTwo;
-            document.getElementById('pixelsTwo').textContent = state.settings.pixelsTwo || '?';
+            // Update Aux POI 
+            const auxData = await fetch(`http://${state.poiIPs.auxIP}/returnsettings`);
+            if (auxData.ok) {
+                const data = await auxData.text();
+                const parts = data.split(',');
+                
+                state.settings.routerTwo = parts[0].trim();
+                state.settings.passwordTwo = parts[1].trim();
+                state.settings.channelTwo = parts[2].trim();
+                state.settings.patternTwo = parts[parts.length-1].trim();
+                state.settings.pixelsTwo = await fetchNumberOfPixels(state.poiIPs.auxIP);
+
+                document.getElementById('routerTwo').textContent = state.settings.routerTwo;
+                document.getElementById('passwordTwo').textContent = state.settings.passwordTwo;
+                document.getElementById('channelTwo').textContent = state.settings.channelTwo;
+                document.getElementById('patternTwo').textContent = state.settings.patternTwo;
+                document.getElementById('pixelsTwo').textContent = state.settings.pixelsTwo || '?';
+            }
             highlightActiveButton(mainData.pattern);
             // Force UI refresh
             saveState();
