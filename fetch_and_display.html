@@ -454,54 +454,46 @@
          * @param {string} containerId - The ID of the container to append images to.
          * @param {string} ip - The IP address of the POI.
          */
-        function createBlackImages(containerId, ip) {
+        function createBlackImages(containerId) {
             const container = document.getElementById(containerId);
+            container.innerHTML = '';
 
-            // Loop through characters and create image elements
             for (let i = 0; i < 62; i++) {
                 const char = getCharFromIndex(i);
-                const fileName = char + '.bin'; // Add ".bin" extension
+                const fileName = char + '.bin';
+                
+                const imgElement = document.createElement('img');
+                imgElement.className = 'black-image';
+                imgElement.alt = fileName;
+                imgElement.style.width = `${number_of_pixels}px`;
+                imgElement.style.height = `${number_of_pixels}px`;
 
-                try {
-                    // Create image element
-                    const imgElement = document.createElement('img');
-                    imgElement.className = 'black-image'; // Add class for styling
-                    imgElement.alt = fileName; // Set alt attribute with filename
-                    imgElement.style.width = `${number_of_pixels}px`; // Set width
-                    imgElement.style.height = `${number_of_pixels}px`; // Set height
+                imgElement.addEventListener('click', function() {
+                    const targetPoiIP = containerId === 'imageContainer' 
+                        ? poi_one_ip 
+                        : poi_two_ip;
+                    decompressAndDisplay(targetPoiIP, fileName);
+                });
 
-                    // Attach click event listener to the image element
-                    imgElement.addEventListener('click', function () {
-                        decompressAndDisplay(ip, fileName);
-                        // displayImageInModal(imgElement.src, imgElement.alt);
-                    });
+                imgElement.addEventListener('dragover', function(event) {
+                    event.preventDefault();
+                });
 
-                    // Attach dragover and drop event listeners to the image element
-                    imgElement.addEventListener('dragover', function (event) {
-                        event.preventDefault();
-                    });
-
-                    imgElement.addEventListener('drop', function (event) {
-                        event.preventDefault();
-                        // Accessing the first file from the dropped files
-                        const droppedFile = event.dataTransfer.files[0];
-                        const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';
-                        const imageName = imgElement.alt;
-                        try {
-                            // uploadDraggedFile(draggedFileBlob, imageName, ip);
-                            // imgElement.src = draggedFileBlob;
-                            uploadDraggedFile(draggedFileBlob, imageName, ip).then((success) => {
-                                if (success) {
-                                    console.log("dragging succeeded? replacing image");
-                                    imgElement.src = draggedFileBlob;
-                                }
-                            }).catch((error) => {
-                                console.error('Error uploading: ', error);
-                            });
-                        } catch (error) {
-                            console.error('Error uploading: ', error);
-                        }
-                    });
+                imgElement.addEventListener('drop', function(event) {
+                    event.preventDefault();
+                    const droppedFile = event.dataTransfer.files[0];
+                    const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';
+                    const imageName = imgElement.alt;
+                    
+                    const targetPoiIP = containerId === 'imageContainer' 
+                        ? poi_one_ip 
+                        : poi_two_ip;
+                    
+                    uploadDraggedFile(draggedFileBlob, imageName, targetPoiIP)
+                        .then(success => {
+                            if (success) imgElement.src = draggedFileBlob;
+                        });
+                });
 
                     // Append image element to container
                     container.appendChild(imgElement);
@@ -512,8 +504,8 @@
         }
 
         // Call the function to create black images:
-        createBlackImages('imageContainer', poi_one_ip);
-        createBlackImages('imageContainertwo', poi_two_ip);
+        createBlackImages('imageContainer');
+        createBlackImages('imageContainertwo');
 
         /**
          * Increases the brightness of the image.
@@ -1435,19 +1427,24 @@
           const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
           const subnet = ip.split('.').slice(0, 3).join('.') + '.';
           
-          // Automatically enable router mode
+          // Update global variable immediately
+          poi_one_ip = ip;
+          
+          // Persist to storage
           localStorage.setItem('poiIPs', JSON.stringify({
             ...currentIPs,
             subnet: subnet,
             mainIP: ip,
-            routerMode: true // Add this line to force router mode
+            routerMode: true
           }));
           
-          poi_one_ip = ip;
           ipInput.placeholder = ip;
           ipInput.value = '';
           updatePoiStatus(ip, true);
           createMessage('Main IP set and router mode enabled');
+          
+          // Refresh images with new IP
+          createBlackImages('imageContainer');
         }
 
         function setAuxIp() {
@@ -1465,19 +1462,24 @@
           const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
           const subnet = ip.split('.').slice(0, 3).join('.') + '.';
           
-          // Automatically enable router mode
+          // Update global variable immediately
+          poi_two_ip = ip;
+          
+          // Persist to storage
           localStorage.setItem('poiIPs', JSON.stringify({
             ...currentIPs,
             subnet: subnet,
             auxIP: ip,
-            routerMode: true // Add this line to force router mode
+            routerMode: true
           }));
           
-          poi_two_ip = ip;
           ipInput.placeholder = ip;
           ipInput.value = '';
           updatePoiStatus(ip, true);
           createMessage('Aux IP set and router mode enabled');
+          
+          // Refresh images with new IP
+          createBlackImages('imageContainertwo');
         }
 
         // Add WS2812/APA102 toggle handler
