@@ -1040,6 +1040,36 @@ async function deleteImage(imageUrl) {
     }
 }
 
+async function deleteAllImages() {
+    if (!confirm('WARNING: This will delete ALL images from both POIs!')) return;
+    
+    try {
+        // Generate all possible image filenames
+        const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        const filenames = Array.from(characters).map(c => `${c}.bin`);
+
+        // Delete from both POIs
+        await Promise.all([
+            deleteFromPoi(state.poiIPs.mainIP, filenames),
+            deleteFromPoi(state.poiIPs.auxIP, filenames)
+        ]);
+        
+        createMessage('All images deleted from both POIs');
+        refreshAllImages(true);
+    } catch (error) {
+        console.error('Delete all failed:', error);
+        createMessage('Failed to delete all images', 'error');
+    }
+}
+
+async function deleteFromPoi(ip, filenames) {
+    return Promise.all(filenames.map(fileName => 
+        fetch(`http://${ip}/edit?path=/${fileName}`, {
+            method: 'DELETE'
+        })
+    ));
+}
+
 // Initialize the application
 function init() {
     loadState();
@@ -1192,6 +1222,7 @@ function submitRouter() {
 
 // Unified Event Listeners
 function initializeEventListeners() {
+    document.getElementById('deleteAllButton').addEventListener('click', deleteAllImages);
   // WS2812/APA102 toggle handler
   document.getElementById('ws_apaBtn').addEventListener('click', function() {
     state.wsStrip = !state.wsStrip;
