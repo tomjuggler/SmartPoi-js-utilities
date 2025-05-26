@@ -45,7 +45,7 @@
 
 .poi-images {
     background: #1a1a1a;
-    padding: 15px;
+    padding: 10px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
 }
@@ -57,8 +57,15 @@
     padding: 5px;
     max-height: 60vh;
     overflow-y: auto;
-    padding-right: 5px;
-    grid-auto-rows: minmax(120px, auto);
+    grid-auto-rows: 120px;
+}
+
+.image-grid-container > * {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    min-width: 0;
 }
 
 .poi-image {
@@ -69,6 +76,7 @@
     cursor: pointer;
     object-fit: contain;
     border-radius: 4px;
+    box-sizing: border-box;
 }
 
 .poi-image img {
