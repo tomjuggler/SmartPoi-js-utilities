@@ -52,18 +52,18 @@
 
 .image-grid-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 8px;
     padding: 5px;
     max-height: 60vh;
     overflow-y: auto;
     padding-right: 5px;
-    grid-auto-rows: minmax(80px, auto);
+    grid-auto-rows: minmax(120px, auto);
 }
 
 .poi-image {
     width: 100%;
-    height: auto;
+    height: 100%;
     background: #000;
     border: 1px solid #333;
     cursor: pointer;
