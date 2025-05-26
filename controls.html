@@ -516,22 +516,33 @@
          * Fetches the current settings and highlights the active pattern button.
          */
         document.addEventListener('DOMContentLoaded', () => {
-          // Load saved IPs from cookie
-          const savedIPs = getCookie('poiIPs');
-          if (savedIPs) {
+          const savedIPs = getCookie('poiIPs') || {};
+          
+          // Initialize router mode checkbox
+          if (savedIPs.routerMode) {
+            document.getElementById('routerModeCheckbox').checked = true;
+            
+            // Only use STA IPs if router mode is active
             if (savedIPs.mainIP) {
-              document.getElementById('manualMainIp').placeholder = savedIPs.mainIP;
               poi_one_ip = savedIPs.mainIP;
+              document.getElementById('manualMainIp').placeholder = savedIPs.mainIP;
             }
             if (savedIPs.auxIP) {
-              document.getElementById('manualAuxIp').placeholder = savedIPs.auxIP;
               poi_two_ip = savedIPs.auxIP;
+              document.getElementById('manualAuxIp').placeholder = savedIPs.auxIP;
             }
-            // Auto-fill router IP input with subnet if available
-            if (savedIPs.subnet) {
-              const baseIp = savedIPs.subnet.replace(/\.$/, '') + '.1';
-              document.getElementById('routerIpInput').value = baseIp;
-            }
+          } else {
+            // Force AP Mode defaults
+            poi_one_ip = "192.168.1.1";
+            poi_two_ip = "192.168.1.78";
+            document.getElementById('manualMainIp').placeholder = "192.168.1.x";
+            document.getElementById('manualAuxIp').placeholder = "192.168.1.x";
+          }
+
+          // Auto-fill router IP input with subnet if available
+          if (savedIPs.subnet) {
+            const baseIp = savedIPs.subnet.replace(/\.$/, '') + '.1';
+            document.getElementById('routerIpInput').value = baseIp;
           }
 
           // Fetch the current settings when the page loads
@@ -628,9 +639,29 @@
         }
 
         function submitRouterMode() {
-          const routerMode = document.getElementById('routerModeCheckbox').checked ? '1' : '0';
-          sendRequest(`http://${poi_two_ip}/router?router=${routerMode}`);
-          sendRequest(`http://${poi_one_ip}/router?router=${routerMode}`);
+          const routerMode = document.getElementById('routerModeCheckbox').checked;
+          const currentIPs = getCookie('poiIPs') || {};
+          
+          setCookie('poiIPs', {
+            ...currentIPs,
+            routerMode: routerMode,
+            // Clear STA IPs when disabling router mode
+            ...(routerMode ? {} : { mainIP: null, auxIP: null })
+          }, 365);
+
+          // Update global IPs immediately
+          if (routerMode) {
+            poi_one_ip = currentIPs.mainIP || poi_one_ip;
+            poi_two_ip = currentIPs.auxIP || poi_two_ip;
+          } else {
+            // Revert to AP Mode defaults
+            poi_one_ip = "192.168.1.1";
+            poi_two_ip = "192.168.1.78";
+          }
+
+          const routerModeValue = routerMode ? '1' : '0';
+          sendRequest(`http://${poi_two_ip}/router?router=${routerModeValue}`);
+          sendRequest(`http://${poi_one_ip}/router?router=${routerModeValue}`);
         }
 
         /**
@@ -895,8 +926,10 @@
                     setCookie('poiIPs', {
                       subnet: currentSubnet,
                       mainIP: poi_one_ip,
-                      auxIP: ip
+                      auxIP: ip,
+                      routerMode: true // Automatically enable router mode
                     }, 365);
+                    document.getElementById('routerModeCheckbox').checked = true;
                     break;
                   }
                 }
@@ -925,19 +958,21 @@
             return;
           }
 
-          poi_one_ip = ip;
-          const subnet = ip.split('.').slice(0, 3).join('.') + '.';
-
-          // Update cookie
+          // Only update if in router mode
           const currentIPs = getCookie('poiIPs') || {};
-          setCookie('poiIPs', {
-            ...currentIPs,
-            subnet: subnet,
-            mainIP: ip
-          }, 365);
-
-          ipInput.placeholder = ip;
-          ipInput.value = '';
+          if (currentIPs.routerMode) {
+            const subnet = ip.split('.').slice(0, 3).join('.') + '.';
+            setCookie('poiIPs', {
+              ...currentIPs,
+              subnet: subnet,
+              mainIP: ip
+            }, 365);
+            poi_one_ip = ip;
+            ipInput.placeholder = ip;
+            ipInput.value = '';
+          } else {
+            alert("Enable Router Mode first!");
+          }
         }
 
         function setAuxIp() {
@@ -952,19 +987,20 @@
             return;
           }
 
-          poi_two_ip = ip;
-          const subnet = ip.split('.').slice(0, 3).join('.') + '.';
-
-          // Update cookie
           const currentIPs = getCookie('poiIPs') || {};
-          setCookie('poiIPs', {
-            ...currentIPs,
-            subnet: subnet,
-            auxIP: ip
-          }, 365);
-
-          ipInput.placeholder = ip;
-          ipInput.value = '';
+          if (currentIPs.routerMode) {
+            const subnet = ip.split('.').slice(0, 3).join('.') + '.';
+            setCookie('poiIPs', {
+              ...currentIPs,
+              subnet: subnet,
+              auxIP: ip
+            }, 365);
+            poi_two_ip = ip;
+            ipInput.placeholder = ip;
+            ipInput.value = '';
+          } else {
+            alert("Enable Router Mode first!");
+          }
         }
 
         function isValidIP(ip) {
