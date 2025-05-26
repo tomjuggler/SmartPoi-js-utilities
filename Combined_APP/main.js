@@ -1188,36 +1188,19 @@ function submitChannel() {
 }
 
 function submitRouter() {
-    const ssid = document.getElementById('routerInput').value;
-    const password = document.getElementById('passwordInput').value;
-    
-    if (!ssid || !password) {
-        showError('routerError', 'Both fields required');
-        return;
-    }
+    const routerInput = document.getElementById('routerInput').value;
+    const passwordInput = document.getElementById('passwordInput').value;
 
-    const formData = new URLSearchParams();
-    formData.append('ssid', ssid);
-    formData.append('pass', password);
+    // Handle each request independently
+    sendRequest(`http://${state.poiIPs.mainIP}/setting?ssid=${routerInput}&pwd=${passwordInput}`)
+        .catch(error => console.error('Main Poi router update failed:', error));
 
-    Promise.all([
-        fetch(`http://${state.poiIPs.mainIP}/wifi`, {
-            method: 'POST',
-            body: formData,
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-        }),
-        fetch(`http://${state.poiIPs.auxIP}/wifi`, {
-            method: 'POST',
-            body: formData,
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-        })
-    ]).then(() => {
-        createMessage('Router credentials updated');
-        saveState();
-    }).catch(error => {
-        console.error('Router update failed:', error);
-        createMessage('Failed to update router', 'error');
-    });
+    sendRequest(`http://${state.poiIPs.auxIP}/setting?ssid=${routerInput}&pwd=${passwordInput}`)
+        .catch(error => console.error('Aux Poi router update failed:', error));
+
+    setTimeout(() => {
+        document.getElementById('fetchBtn').click();
+    }, 2500);
 }
 
 // Unified Event Listeners
