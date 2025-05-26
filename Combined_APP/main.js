@@ -374,13 +374,7 @@ function initializeSliders() {
     speedTooltip.textContent = `${sliderToValue(initialSpeed).toFixed(1)}s`;
     brightnessTooltip.textContent = initialBrightness;
 
-    if (!speedSlider || !brightnessSlider) {
-        console.error('Sliders not found in DOM');
-        return;
-    }
-
-
-  // Speed Slider
+    // Speed Slider
   speedSlider.addEventListener('input', (e) => {
     const value = sliderToValue(e.target.value);
     speedTooltip.textContent = `${value.toFixed(1)}s`;
