@@ -137,6 +137,37 @@
     margin: 5px 0;
     font-size: 0.9em;
 }
+
+/* Manual IP Input Styles */
+.manual-ip-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 5px 0;
+}
+
+.manual-ip-row input[type="text"] {
+    width: 140px;
+    padding: 5px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background: #333;
+    color: white;
+}
+
+/* Error Message Styles */
+.error-message {
+    color: #dc3545;
+    font-size: 0.9em;
+    margin-left: 10px;
+    display: none;
+}
+
+/* Spinner Animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 :root {
     --primary-color: #2c7a47;
     --danger-color: #dc3545;

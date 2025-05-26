@@ -121,6 +121,32 @@ function isValidIP(ip) {
 }
 
 function initializeNetworkDiscovery() {
+    document.getElementById('discoverBtn').addEventListener('click', async () => {
+        const routerIp = document.getElementById('routerIpInput').value;
+        if (!validateIP(routerIp)) {
+            showError('ipError', 'Invalid IP address format!');
+            return;
+        }
+
+        const octets = routerIp.split('.').slice(0, 3);
+        const subnet = octets.join('.') + '.';
+        state.poiIPs.subnet = subnet;
+
+        showLoadingState(true);
+        
+        try {
+            const { mainIP, auxIP } = await scanNetwork(subnet);
+            state.poiIPs.mainIP = mainIP;
+            state.poiIPs.auxIP = auxIP;
+            state.poiIPs.routerMode = true;
+            saveState();
+            updateStatusIndicators();
+        } catch (error) {
+            showError('result', 'No POI found on this subnet');
+        } finally {
+            showLoadingState(false);
+        }
+    });
   const discoverBtn = document.getElementById('discoverBtn');
   discoverBtn.addEventListener('click', async () => {
     const routerIp = document.getElementById('routerIpInput').value;
@@ -489,6 +515,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+// Slider conversion functions
+function sliderToValue(sliderPercent) {
+    if (sliderPercent <= 50) {
+        return 0.5 + Math.floor((sliderPercent / 50) * 60) * 0.5;
+    }
+    return 30 * Math.pow(1800 / 30, (sliderPercent - 50) / 50);
+}
+
+function valueToSlider(value) {
+    if (value <= 30) {
+        return ((value - 0.5) / 29.5) * 50 * (30 / 29.5);
+    }
+    return 50 + (Math.log(value / 30) / Math.log(60)) * 50;
+}
+
 // Initialize the application
 function init() {
     loadPersistedState();
