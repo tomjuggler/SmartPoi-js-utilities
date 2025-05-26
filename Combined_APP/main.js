@@ -40,6 +40,11 @@ function init() {
 function loadState() {
     const saved = JSON.parse(localStorage.getItem('poiState') || '{}');
     state.poiIPs = { ...state.poiIPs, ...saved.poiIPs };
+    state.settings = { ...state.settings, ...saved.settings };
+    
+    // Update UI elements
+    document.getElementById('routerIpInput').value = state.poiIPs.subnet + "1";
+    document.getElementById('pixelInput').value = state.settings.pixels;
 
 // Network Discovery Implementation
 function initializeNetworkDiscovery() {
@@ -118,11 +123,9 @@ function generateScanOrder(subnet) {
   }
 
   return scanOrder.map(octet => `${subnet}${octet}`);
-    state.settings = { ...state.settings, ...saved.settings };
-    
-    // Update UI elements
-    document.getElementById('routerIpInput').value = state.poiIPs.subnet + "1";
-    document.getElementById('pixelInput').value = state.settings.pixels;
+}
+
+function saveState() {
 }
 
 function saveState() {
