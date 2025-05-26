@@ -21,19 +21,19 @@ async function handleImageUpload(file, ip, targetFileName) {
         try {
             const image = await Jimp.read(event.target.result);
             
-            // Match rotation from fetch_and_display.html
-            const rotated = image.rotate(-90); // Equivalent to 270 degrees clockwise
+            // Match exact rotation and resize logic from original implementation
+            const rotatedImage = image.rotate(-90);
+            const rotatedWidth = rotatedImage.bitmap.width;
+            const rotatedHeight = rotatedImage.bitmap.height;
             
-            // Calculate dimensions using same logic as working implementation
-            const rotatedWidth = rotated.bitmap.width;
-            const rotatedHeight = rotated.bitmap.height;
+            // Original aspect ratio calculation
             const aspectRatio = rotatedWidth / (state.wsStrip ? rotatedHeight/2 : rotatedHeight);
             const targetHeight = Math.floor(state.settings.pixels / aspectRatio);
-
-            // Use same resize approach
-            const processed = rotated.resize(
-                state.settings.pixels, 
-                targetHeight
+            
+            // Match original resize approach
+            const processed = rotatedImage.resize(
+                state.settings.pixels,  // width
+                targetHeight           // height
             );
 
             const binaryData = [];
