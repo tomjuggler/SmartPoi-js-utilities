@@ -459,41 +459,42 @@
             container.innerHTML = '';
 
             for (let i = 0; i < 62; i++) {
-                const char = getCharFromIndex(i);
-                const fileName = char + '.bin';
-                
-                const imgElement = document.createElement('img');
-                imgElement.className = 'black-image';
-                imgElement.alt = fileName;
-                imgElement.style.width = `${number_of_pixels}px`;
-                imgElement.style.height = `${number_of_pixels}px`;
-
-                imgElement.addEventListener('click', function() {
-                    const targetPoiIP = containerId === 'imageContainer' 
-                        ? poi_one_ip 
-                        : poi_two_ip;
-                    decompressAndDisplay(targetPoiIP, fileName);
-                });
-
-                imgElement.addEventListener('dragover', function(event) {
-                    event.preventDefault();
-                });
-
-                imgElement.addEventListener('drop', function(event) {
-                    event.preventDefault();
-                    const droppedFile = event.dataTransfer.files[0];
-                    const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';
-                    const imageName = imgElement.alt;
+                try {
+                    const char = getCharFromIndex(i);
+                    const fileName = char + '.bin';
                     
-                    const targetPoiIP = containerId === 'imageContainer' 
-                        ? poi_one_ip 
-                        : poi_two_ip;
-                    
-                    uploadDraggedFile(draggedFileBlob, imageName, targetPoiIP)
-                        .then(success => {
-                            if (success) imgElement.src = draggedFileBlob;
-                        });
-                });
+                    const imgElement = document.createElement('img');
+                    imgElement.className = 'black-image';
+                    imgElement.alt = fileName;
+                    imgElement.style.width = `${number_of_pixels}px`;
+                    imgElement.style.height = `${number_of_pixels}px`;
+
+                    imgElement.addEventListener('click', function() {
+                        const targetPoiIP = containerId === 'imageContainer' 
+                            ? poi_one_ip 
+                            : poi_two_ip;
+                        decompressAndDisplay(targetPoiIP, fileName);
+                    });
+
+                    imgElement.addEventListener('dragover', function(event) {
+                        event.preventDefault();
+                    });
+
+                    imgElement.addEventListener('drop', function(event) {
+                        event.preventDefault();
+                        const droppedFile = event.dataTransfer.files[0];
+                        const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';
+                        const imageName = imgElement.alt;
+                        
+                        const targetPoiIP = containerId === 'imageContainer' 
+                            ? poi_one_ip 
+                            : poi_two_ip;
+                        
+                        uploadDraggedFile(draggedFileBlob, imageName, targetPoiIP)
+                            .then(success => {
+                                if (success) imgElement.src = draggedFileBlob;
+                            });
+                    });
 
                     // Append image element to container
                     container.appendChild(imgElement);
