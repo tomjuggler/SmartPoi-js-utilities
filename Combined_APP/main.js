@@ -627,9 +627,14 @@ function handleImageDrop(event) {
     event.preventDefault();
     const files = event.dataTransfer.files;
     if (files.length > 0) {
+        const targetElement = event.target.closest('.poi-image');
         const targetGrid = event.target.closest('.image-grid-container');
         const ip = targetGrid.id === 'mainImageGrid' ? state.poiIPs.mainIP : state.poiIPs.auxIP;
-        handleImageUpload(files[0], ip);
+        const targetFileName = targetElement ? 
+            targetElement.alt : 
+            files[0].name.replace(/\.[^/.]+$/, "") + '.bin';
+        
+        handleImageUpload(files[0], ip, targetFileName);
     }
 }
 
