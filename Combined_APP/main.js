@@ -548,17 +548,19 @@ function initializeFetchButton() {
             // Update Main POI display
             // Update Main POI
             if (mainData) {
+                // Direct DOM updates first
+                document.getElementById('router').textContent = mainData.router;
+                document.getElementById('password').textContent = mainData.password;
+                document.getElementById('channel').textContent = mainData.channel;
+                document.getElementById('pattern').textContent = mainData.pattern;
+                document.getElementById('pixels').textContent = mainData.pixels || '?';
+
+                // Then update state
                 state.settings.router = mainData.router;
                 state.settings.password = mainData.password;
                 state.settings.channel = mainData.channel;
                 state.settings.pattern = mainData.pattern;
                 state.settings.pixels = await fetchNumberOfPixels(state.poiIPs.mainIP);
-
-                document.getElementById('router').textContent = state.settings.router;
-                document.getElementById('password').textContent = state.settings.password;
-                document.getElementById('channel').textContent = state.settings.channel;
-                document.getElementById('pattern').textContent = state.settings.pattern;
-                document.getElementById('pixels').textContent = state.settings.pixels || '?';
                 
                 // Update input placeholders
                 document.getElementById('routerInput').placeholder = state.settings.router;
