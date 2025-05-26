@@ -226,8 +226,8 @@ function initializeSliders() {
 async function updateBothPOIs(endpoint) {
   try {
     await Promise.all([
-      fetch(`http://${state.poiIPs.main}${endpoint}`),
-      fetch(`http://${state.poiIPs.aux}${endpoint}`)
+      fetch(`http://${state.poiIPs.mainIP}${endpoint}`),
+      fetch(`http://${state.poiIPs.auxIP}${endpoint}`)
     ]);
     createMessage('Settings updated on both POIs');
   } catch (error) {
