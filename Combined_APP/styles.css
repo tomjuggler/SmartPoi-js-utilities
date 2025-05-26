@@ -359,28 +359,61 @@ body {
     text-align: center;
 }
 
-/* Slider styles */
-.slider-container {
-    position: relative;
-    width: 80%;
-    margin: 20px 0;
+/* Unified slider container styles */
+.slider-group {
+    width: 100%;
+    margin: 25px 0;
 }
 
+.slider-container {
+    position: relative;
+    width: 100%;
+    margin: 15px 0 25px;
+    --track-height: 6px;
+}
+
+/* Consistent gradient track */
 .slider-container::before {
     content: '';
     position: absolute;
     top: 50%;
     left: 0;
     right: 0;
-    height: 5px;
+    height: var(--track-height);
     transform: translateY(-50%);
-    background: linear-gradient(to right, #4CAF50, #FF5722);
-    border-radius: 5px;
+    border-radius: 4px;
     z-index: 0;
 }
 
-.brightness-slider-container::before {
+/* Specific gradient colors */
+.slider-container.speed-slider::before {
+    background: linear-gradient(to right, #4CAF50, #FF5722);
+}
+
+.slider-container.brightness-slider::before {
     background: linear-gradient(to right, #2196F3, #9C27B0);
+}
+
+/* Unified slider input styles */
+input[type="range"] {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: var(--track-height);
+    background: transparent;
+    -webkit-appearance: none;
+    margin: 0;
+    cursor: pointer;
+}
+
+/* Tooltip positioning fix */
+.tooltip {
+    transform: translateX(-50%) scale(0.9);
+    transform-origin: bottom center;
+    bottom: 125%;
+    font-size: 0.9em;
+    padding: 4px 8px;
+    white-space: nowrap;
 }
 
 /* Pattern button colors */
