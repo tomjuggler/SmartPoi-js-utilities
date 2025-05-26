@@ -1,4 +1,30 @@
 // State Management
+function checkInitialStatus() {
+    updateStatusIndicators();
+    if (!state.poiIPs.mainIP || !state.poiIPs.auxIP) {
+        createMessage('Please configure POI IP addresses first', 'warning');
+    }
+}
+
+function updateStatusIndicators() {
+    const checkStatus = async (ip) => {
+        try {
+            await fetch(`http://${ip}/status`, { timeout: 2000 });
+            return 'online';
+        } catch {
+            return 'offline';
+        }
+    };
+
+    Promise.all([
+        checkStatus(state.poiIPs.mainIP),
+        checkStatus(state.poiIPs.auxIP)
+    ]).then(([mainStatus, auxStatus]) => {
+        document.getElementById('mainStatus').className = `status-indicator ${mainStatus}`;
+        document.getElementById('auxStatus').className = `status-indicator ${auxStatus}`;
+    });
+}
+
 const state = {
     poiIPs: {
         mainIP: "192.168.1.1",
@@ -184,10 +210,22 @@ function highlightActiveButton(pattern) {
 }
 
 async function setPatternOnBoth(pattern) {
-  await Promise.all([
-    fetch(`http://${state.poiIPs.main}/pattern?patternChooserChange=${pattern}`),
-    fetch(`http://${state.poiIPs.aux}/pattern?patternChooserChange=${pattern}`)
-  ]);
+    if (!state.poiIPs.mainIP || !state.poiIPs.auxIP) {
+        createMessage('Configure IP addresses first', 'warning');
+        return;
+    }
+    
+    try {
+        await Promise.all([
+            fetch(`http://${state.poiIPs.mainIP}/pattern?patternChooserChange=${pattern}`),
+            fetch(`http://${state.poiIPs.auxIP}/pattern?patternChooserChange=${pattern}`)
+        ]);
+        createMessage(`Pattern ${pattern} activated`);
+    } catch (error) {
+        console.error('Pattern change failed:', error);
+        createMessage('Pattern change failed - check POI connections', 'error');
+        updateStatusIndicators();
+    }
 }
 
 // Sync Handling
@@ -378,23 +416,10 @@ function submitRouter() {
 
 // Unified Event Listeners
 function initializeEventListeners() {
-  // Pattern buttons
-  document.querySelectorAll('.pattern-buttons button').forEach(button => {
-    button.addEventListener('click', async () => {
-      const pattern = button.dataset.pattern;
-      await setPatternOnBoth(pattern);
-      highlightActiveButton(pattern);
-    });
-  });
-
-  // Sync button
-  document.getElementById('syncButton').addEventListener('click', async () => {
-    await Promise.all([
-      fetch(`http://${state.poiIPs.mainIP}/resetimagetouse`),
-      fetch(`http://${state.poiIPs.auxIP}/resetimagetouse`)
-    ]);
-    createMessage('Both POIs synchronized successfully');
-  });
+    // Danger Zone controls
+    document.getElementById('routerModeCheckbox').addEventListener('change', submitRouterMode);
+    document.getElementById('channelInput').nextElementSibling.addEventListener('click', submitChannel);
+    document.querySelector('[onclick="submitRouter()"]').addEventListener('click', submitRouter);
 
   // Danger Zone controls
   document.getElementById('routerModeCheckbox').addEventListener('change', submitRouterMode);
