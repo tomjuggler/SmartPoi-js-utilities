@@ -64,6 +64,10 @@ function init() {
 
 // IP Setting Functions
 function setMainIp() {
+    if (!state.poiIPs.routerMode) {
+        createMessage('Enable Router Mode first!', 'warning');
+        return;
+    }
     const ip = document.getElementById('manualMainIp').value;
     if (validateIP(ip)) {
         state.poiIPs.mainIP = ip;
@@ -76,6 +80,10 @@ function setMainIp() {
 }
 
 function setAuxIp() {
+    if (!state.poiIPs.routerMode) {
+        createMessage('Enable Router Mode first!', 'warning');
+        return;
+    }
     const ip = document.getElementById('manualAuxIp').value;
     if (validateIP(ip)) {
         state.poiIPs.auxIP = ip;
@@ -281,7 +289,9 @@ function handlePatternSelection(event) {
 
 function highlightActiveButton(pattern) {
   document.querySelectorAll('.pattern-buttons button').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.pattern === pattern);
+    if (btn && pattern && pattern >= 1 && pattern <= 7) {
+      btn.classList.toggle('active', btn.dataset.pattern === pattern.toString());
+    }
   });
 }
 
@@ -308,8 +318,8 @@ async function setPatternOnBoth(pattern) {
 function initializeSync() {
   document.getElementById('syncButton').addEventListener('click', async () => {
     await Promise.all([
-      fetch(`http://${state.poiIPs.main}/resetimagetouse`),
-      fetch(`http://${state.poiIPs.aux}/resetimagetouse`)
+      fetch(`http://${state.poiIPs.mainIP}/resetimagetouse`),
+      fetch(`http://${state.poiIPs.auxIP}/resetimagetouse`)
     ]);
     createMessage('Both POIs synchronized successfully');
   });
@@ -372,6 +382,17 @@ async function updateBothPOIs(endpoint) {
 }
 
 // Utility Functions
+function createMessage(message, type = 'info') {
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${type}`;
+  messageDiv.textContent = message;
+  
+  const container = document.getElementById('messages') || document.body;
+  container.prepend(messageDiv);
+  
+  setTimeout(() => messageDiv.remove(), 5000);
+}
+
 function showError(elementId, message) {
     const element = document.getElementById(elementId);
     element.textContent = message;
@@ -406,9 +427,12 @@ async function sendRequest(url, retries = 3) {
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            return;
+            return await response.text();
         } catch (error) {
-            if (attempt === retries) throw error;
+            if (attempt === retries) {
+                createMessage(`Request failed: ${error.message}`, 'error');
+                throw error;
+            }
             await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
         }
     }
