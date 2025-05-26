@@ -369,6 +369,10 @@ function loadState() {
     state.poiIPs = { ...state.poiIPs, ...saved.poiIPs };
     state.settings = { ...state.settings, ...saved.settings };
     
+    // Load credentials from saved state
+    document.getElementById('routerInput').value = saved.settings?.router || '';
+    document.getElementById('passwordInput').value = saved.settings?.password || '';
+    
     // Initialize WS/APA indicator
     document.getElementById('ws_apa_indicator').textContent = 
         `Current: ${state.wsStrip ? 'WS2812' : 'APA102'}`;
@@ -873,6 +877,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function fetchSettings(ip) {
     try {
+        // Preserve existing credentials if available
+        const currentRouter = document.getElementById('routerInput').value || state.settings.router;
+        const currentPassword = document.getElementById('passwordInput').value || state.settings.password;
+
         const response = await fetch(`http://${ip}/returnsettings`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
@@ -883,8 +891,8 @@ async function fetchSettings(ip) {
         const pixels = await fetchNumberOfPixels(ip);
         
         return {
-            router: parts[0] || 'N/A',
-            password: parts[1] || 'N/A',
+            router: parts[0] || currentRouter,
+            password: parts[1] || currentPassword,
             channel: parts[2] || 'N/A',
             pattern: parts[parts.length - 1] || 'N/A',
             pixels: pixels || '?'
