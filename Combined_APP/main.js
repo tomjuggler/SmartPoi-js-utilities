@@ -1,4 +1,9 @@
 // Image Management Functions
+function refreshAllImages() {
+    createBlackImages('mainImageGrid', state.poiIPs.mainIP);
+    createBlackImages('auxImageGrid', state.poiIPs.auxIP);
+}
+
 function createBlackImages(containerId, ip) {
     const container = document.getElementById(containerId);
     
