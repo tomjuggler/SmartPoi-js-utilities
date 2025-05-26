@@ -143,25 +143,32 @@ function initializeNetworkDiscovery() {
 }
 
 async function scanNetwork(subnet) {
-  const scanOrder = generateScanOrder(subnet);
-  let foundDevices = [];
-
-  for (const ip of scanOrder) {
-    try {
-      const response = await fetch(`http://${ip}/`, { timeout: 1500 });
-      if (response.ok) {
-        foundDevices.push(ip);
-        if (foundDevices.length === 2) break;
-      }
-    } catch (error) {
-      // Continue scanning on error
+    const scanOrder = generateScanOrder(subnet);
+    let foundDevices = [];
+    
+    for (const ip of scanOrder) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1500);
+            const response = await fetch(`http://${ip}/`, { 
+                signal: controller.signal,
+                mode: 'no-cors'
+            });
+            clearTimeout(timeoutId);
+            
+            if (response.ok) {
+                foundDevices.push(ip);
+                if (foundDevices.length === 2) break;
+            }
+        } catch (error) {
+            // Continue scanning on error
+        }
     }
-  }
-  
-  return {
-    mainIP: foundDevices[0] || state.poiIPs.mainIP,
-    auxIP: foundDevices[1] || state.poiIPs.auxIP
-  };
+    
+    return {
+        mainIP: foundDevices[0] || state.poiIPs.mainIP,
+        auxIP: foundDevices[1] || state.poiIPs.auxIP
+    };
 }
 
 function generateScanOrder(subnet) {
@@ -262,10 +269,14 @@ async function submitPattern(pattern) {
 
 function initializePatternControls() {
   document.querySelectorAll('.pattern-buttons button').forEach(button => {
-    button.addEventListener('click', (e) => {
-      submitPattern(e.target.dataset.pattern);
-    });
+    button.addEventListener('click', handlePatternSelection);
   });
+}
+
+function handlePatternSelection(event) {
+    const pattern = event.target.dataset.pattern;
+    submitPattern(pattern);
+    highlightActiveButton(pattern);
 }
 
 function highlightActiveButton(pattern) {
@@ -306,19 +317,26 @@ function initializeSync() {
 
 // Slider Controls
 function initializeSliders() {
-  const speedSlider = document.getElementById('speedSlider');
-  const brightnessSlider = document.getElementById('brightnessSlider');
-  const speedTooltip = document.getElementById('speedTooltip');
-  const brightnessTooltip = document.getElementById('brightnessTooltip');
+    const speedSlider = document.getElementById('speedSlider');
+    const brightnessSlider = document.getElementById('brightnessSlider');
+    const speedTooltip = document.getElementById('speedTooltip');
+    const brightnessTooltip = document.getElementById('brightnessTooltip');
 
-  if (!speedSlider || !brightnessSlider) {
-    console.error('Sliders not found in DOM');
-    return;
-  }
+    if (!speedSlider || !brightnessSlider) {
+        console.error('Sliders not found in DOM');
+        return;
+    }
 
-  // Set initial values from state
-  speedSlider.value = state.settings.speed * 100;
-  brightnessSlider.value = state.settings.brightness;
+    // Convert stored values to slider positions
+    const initialSpeed = valueToSlider(state.settings.speed);
+    const initialBrightness = state.settings.brightness;
+
+    speedSlider.value = initialSpeed;
+    brightnessSlider.value = initialBrightness;
+
+    // Set initial tooltip values
+    speedTooltip.textContent = `${sliderToValue(initialSpeed).toFixed(1)}s`;
+    brightnessTooltip.textContent = initialBrightness;
 
   // Speed Slider
   speedSlider.addEventListener('input', (e) => {
@@ -354,6 +372,12 @@ async function updateBothPOIs(endpoint) {
 }
 
 // Utility Functions
+function showError(elementId, message) {
+    const element = document.getElementById(elementId);
+    element.textContent = message;
+    element.style.display = 'block';
+    setTimeout(() => element.style.display = 'none', 3000);
+}
 async function fetchNumberOfPixels(ip) {
     try {
         const response = await fetch(`http://${ip}/get-pixels`);
@@ -415,13 +439,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add fetch button handler
     document.getElementById('fetchBtn').addEventListener('click', async () => {
         try {
-            const [mainData, auxData] = await Promise.all([
+            const [mainResponse, auxResponse] = await Promise.all([
                 fetch(`http://${state.poiIPs.mainIP}/returnsettings`),
                 fetch(`http://${state.poiIPs.auxIP}/returnsettings`)
             ]);
-            
-            // Process and display settings data
-            // ... (implementation from controls.html)
+
+            // Process main POI data
+            const mainData = await mainResponse.text();
+            const mainParts = mainData.split(',');
+            state.settings.pattern = mainParts[mainParts.length - 1].trim();
+            document.getElementById('pattern').textContent = state.settings.pattern;
+
+            // Process aux POI data
+            const auxData = await auxResponse.text();
+            const auxParts = auxData.split(',');
+            document.getElementById('patternTwo').textContent = auxParts[auxParts.length - 1].trim();
+
+            // Update pixel counts
+            document.getElementById('pixels').textContent = await fetchNumberOfPixels(state.poiIPs.mainIP);
+            document.getElementById('pixelsTwo').textContent = await fetchNumberOfPixels(state.poiIPs.auxIP);
+
+            highlightActiveButton(state.settings.pattern);
         } catch (error) {
             console.error('Error fetching settings:', error);
         }
@@ -493,16 +531,24 @@ function submitRouterMode() {
     const routerMode = document.getElementById('routerModeCheckbox').checked;
     state.poiIPs.routerMode = routerMode;
     
+    // Clear STA IPs when disabling router mode
+    if (!routerMode) {
+        state.poiIPs.mainIP = "192.168.1.1";
+        state.poiIPs.auxIP = "192.168.1.78";
+    }
+
+    localStorage.setItem('poiIPs', JSON.stringify(state.poiIPs));
+    
     // Send to both POIs
     Promise.all([
-        fetch(`http://${state.poiIPs.mainIP}/mode?router=${routerMode ? 1 : 0}`),
-        fetch(`http://${state.poiIPs.auxIP}/mode?router=${routerMode ? 1 : 0}`)
+        fetch(`http://${state.poiIPs.mainIP}/router?router=${routerMode ? 1 : 0}`),
+        fetch(`http://${state.poiIPs.auxIP}/router?router=${routerMode ? 1 : 0}`)
     ]).then(() => {
-        createMessage('Router mode updated successfully');
-        saveState();
+        createMessage('Router mode updated');
+        updateStatusIndicators();
     }).catch(error => {
         console.error('Error updating router mode:', error);
-        createMessage('Failed to update router mode', 'error');
+        createMessage('Router mode update failed', 'error');
     });
 }
 
