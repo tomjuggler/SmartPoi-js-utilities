@@ -58,23 +58,28 @@
     max-height: 60vh;
     overflow-y: auto;
     padding-right: 5px;
+    grid-auto-rows: minmax(80px, auto);
 }
 
 .poi-image {
     width: 100%;
     height: auto;
-    aspect-ratio: 1/1;
     background: #000;
     border: 1px solid #333;
     cursor: pointer;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: 4px;
 }
 
 .poi-image img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    display: block;
+}
+
+.image-grid-container {
+    grid-auto-rows: minmax(80px, auto);
 }
 
 .current-px {
