@@ -1,3 +1,73 @@
+// Image Upload Handler
+async function handleImageUpload(file, ip) {
+    const fileName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+    const reader = new FileReader();
+    
+    // Store original pattern and turn off LEDs for upload
+    let originalPattern;
+    try {
+        originalPattern = await fetch(`http://${ip}/returnsettings`)
+            .then(res => res.text())
+            .then(data => data.split(',').pop().trim());
+        
+        await fetch(`http://${ip}/pattern?patternChooserChange=7`);
+    } catch (error) {
+        console.error('Error preparing for upload:', error);
+        createMessage('Failed to initialize upload', 'error');
+        return;
+    }
+
+    reader.onload = async (event) => {
+        try {
+            const image = await Jimp.read(event.target.result);
+            const rotated = image.rotate(-90);
+            const targetHeight = Math.floor(state.settings.pixels / 
+                (state.wsStrip ? 2 : 1));
+            
+            const processed = rotated.resize(
+                state.settings.pixels, 
+                targetHeight
+            );
+
+            const binaryData = [];
+            processed.scan(0, 0, processed.bitmap.width, processed.bitmap.height, 
+                (x, y, idx) => {
+                    const r = processed.bitmap.data[idx];
+                    const g = processed.bitmap.data[idx + 1];
+                    const b = processed.bitmap.data[idx + 2];
+                    const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6));
+                    binaryData.push(encoded);
+                }
+            );
+
+            const formData = new FormData();
+            formData.append('file', new Blob([new Uint8Array(binaryData)], {
+                type: 'application/octet-stream'
+            }), `${fileName}.bin`);
+
+            await fetch(`http://${ip}/edit`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            createMessage(`Image ${fileName} uploaded successfully`);
+            decompressAndDisplay(ip, `${fileName}.bin`);
+        } catch (error) {
+            console.error('Upload failed:', error);
+            createMessage(`Upload failed: ${error.message}`, 'error');
+        } finally {
+            // Restore original pattern
+            try {
+                await fetch(`http://${ip}/pattern?patternChooserChange=${originalPattern}`);
+            } catch (error) {
+                console.error('Failed to restore pattern:', error);
+            }
+        }
+    };
+
+    reader.readAsDataURL(file);
+}
+
 // Image Management Functions
 function refreshAllImages(fullRefresh = false) {
     if (fullRefresh) {
@@ -518,7 +588,7 @@ function handleImageDrop(event) {
     const files = event.dataTransfer.files;
     if (files.length > 0) {
         const targetGrid = event.target.closest('.image-grid-container');
-        const ip = targetGrid.id === 'mainImageGrid' ? state.poiIPs.main : state.poiIPs.aux;
+        const ip = targetGrid.id === 'mainImageGrid' ? state.poiIPs.mainIP : state.poiIPs.auxIP;
         handleImageUpload(files[0], ip);
     }
 }
