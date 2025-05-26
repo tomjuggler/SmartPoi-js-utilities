@@ -394,6 +394,7 @@ function loadState() {
 function showLoadingState(show) {
   document.getElementById('spinner').style.display = show ? 'block' : 'none';
   document.getElementById('counter').style.display = show ? 'block' : 'none';
+  if (!show) document.getElementById('currentIP').textContent = '0'; // Reset counter when done
 }
 
 function isValidIP(ip) {
@@ -441,6 +442,9 @@ function initializeNetworkDiscovery() {
 
     showLoadingState(true);
     
+    // Add slight delay to allow UI to update
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
     try {
       const { mainIP, auxIP } = await scanNetwork(subnet);
       state.poiIPs.mainIP = mainIP;
@@ -459,8 +463,12 @@ function initializeNetworkDiscovery() {
 async function scanNetwork(subnet) {
     const scanOrder = generateScanOrder(subnet);
     let foundDevices = [];
+    const currentIPElement = document.getElementById('currentIP');
     
     for (const ip of scanOrder) {
+        // Update UI with current IP being scanned
+        currentIPElement.textContent = ip.split('.').pop(); // Show last octet
+        
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 1500);
