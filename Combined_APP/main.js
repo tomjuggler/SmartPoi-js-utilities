@@ -466,7 +466,7 @@ async function sendRequest(url, retries = 3) {
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
-    const savedIPs = JSON.parse(localStorage.getItem('poiIPs') || {};
+    const savedIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
     
     if (savedIPs.routerMode) {
         document.getElementById('routerModeCheckbox').checked = true;

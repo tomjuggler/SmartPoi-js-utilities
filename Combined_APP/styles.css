@@ -314,6 +314,39 @@ body {
     text-align: center;
 }
 
+/* Slider styles */
+.slider-container {
+    position: relative;
+    width: 80%;
+    margin: 20px 0;
+}
+
+.slider-container::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 5px;
+    transform: translateY(-50%);
+    background: linear-gradient(to right, #4CAF50, #FF5722);
+    border-radius: 5px;
+    z-index: 0;
+}
+
+.brightness-slider-container::before {
+    background: linear-gradient(to right, #2196F3, #9C27B0);
+}
+
+/* Pattern button colors */
+.pattern-buttons button:nth-child(1) { background-color: #ff0000 !important; }
+.pattern-buttons button:nth-child(2) { background-color: #00ff00 !important; }
+.pattern-buttons button:nth-child(3) { background-color: #0000ff !important; }
+.pattern-buttons button:nth-child(4) { background-color: #ffff00 !important; }
+.pattern-buttons button:nth-child(5) { background-color: #ff00ff !important; }
+.pattern-buttons button:nth-child(6) { background-color: #00e1ff !important; }
+.pattern-buttons button:nth-child(7) { background-color: #3c3f3f !important; }
+
 .status-indicator.online { 
     background: #1a472a;
     border: 1px solid #2c7a47;
