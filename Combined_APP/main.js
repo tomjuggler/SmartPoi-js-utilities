@@ -258,12 +258,25 @@ function updateStatusIndicators() {
         mainStatus = mainResult.status === 'fulfilled' && mainResult.value === 'online' ? 'online' : 'offline';
         auxStatus = auxResult.status === 'fulfilled' && auxResult.value === 'online' ? 'online' : 'offline';
         
-        document.getElementById('mainStatus').className = `status-indicator ${mainStatus}`;
-        document.getElementById('auxStatus').className = `status-indicator ${auxStatus}`;
+        // Update both class and text content
+        const mainElement = document.getElementById('mainStatus');
+        const auxElement = document.getElementById('auxStatus');
+        
+        mainElement.className = `status-indicator ${mainStatus}`;
+        mainElement.textContent = `Main POI: ${mainStatus === 'online' ? 'Online' : 'Offline'}`;
+        
+        auxElement.className = `status-indicator ${auxStatus}`;
+        auxElement.textContent = `Aux POI: ${auxStatus === 'online' ? 'Online' : 'Offline'}`;
     }).catch(() => {
         // Fallback error handling
-        document.getElementById('mainStatus').className = 'status-indicator offline';
-        document.getElementById('auxStatus').className = 'status-indicator offline';
+        const mainElement = document.getElementById('mainStatus');
+        const auxElement = document.getElementById('auxStatus');
+        
+        mainElement.className = 'status-indicator offline';
+        mainElement.textContent = 'Main POI: Offline';
+        
+        auxElement.className = 'status-indicator offline';
+        auxElement.textContent = 'Aux POI: Offline';
     });
 }
 
