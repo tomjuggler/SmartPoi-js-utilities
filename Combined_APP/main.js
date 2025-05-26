@@ -1,6 +1,6 @@
 // Image Upload Handler
-async function handleImageUpload(file, ip) {
-    const fileName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+async function handleImageUpload(file, ip, targetFileName) {
+    const fileName = targetFileName.replace(/\.bin$/, ""); // Ensure no .bin duplication
     const reader = new FileReader();
     
     // Store original pattern and turn off LEDs for upload
@@ -43,7 +43,7 @@ async function handleImageUpload(file, ip) {
             const formData = new FormData();
             formData.append('file', new Blob([new Uint8Array(binaryData)], {
                 type: 'application/octet-stream'
-            }), `${fileName}.bin`);
+            }), `${fileName}.bin`); // Server expects .bin extension
 
             await fetch(`http://${ip}/edit`, {
                 method: 'POST',
@@ -208,7 +208,9 @@ function handleImageDrop(event, ip) {
     event.preventDefault();
     const files = event.dataTransfer.files;
     if (files.length > 0) {
-        handleImageUpload(files[0], ip);
+        const targetElement = event.target.closest('.poi-image');
+        const targetFileName = targetElement ? targetElement.alt : files[0].name.replace(/\.[^/.]+$/, "") + '.bin';
+        handleImageUpload(files[0], ip, targetFileName);
     }
 }
 
