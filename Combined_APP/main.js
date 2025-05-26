@@ -490,7 +490,40 @@ document.addEventListener('DOMContentLoaded', () => {
     speedSlider.value = valueToSlider(state.settings.speed);
     brightnessSlider.value = state.settings.brightness;
 
-// Initialize fetch button handler
+
+async function fetchSettings(ip) {
+    const response = await fetch(`http://${ip}/returnsettings`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+    const data = await response.text();
+    const parts = data.split(',');
+    
+    return {
+        router: parts[0]?.trim() || 'N/A',
+        password: parts[1]?.trim() || 'N/A',
+        channel: parts[2]?.trim() || 'N/A',
+        pattern: parts[parts.length - 1]?.trim() || 'N/A',
+        pixels: await fetchNumberOfPixels(ip)
+    };
+}
+});
+// Slider conversion functions
+function sliderToValue(sliderPercent) {
+    if (sliderPercent <= 50) {
+        return 0.5 + Math.floor((sliderPercent / 50) * 60) * 0.5;
+    }
+    return 30 * Math.pow(1800 / 30, (sliderPercent - 50) / 50);
+}
+
+function valueToSlider(value) {
+    if (value <= 30) {
+        return ((value - 0.5) / 29.5) * 50 * (30 / 29.5);
+    }
+    return 50 + (Math.log(value / 30) / Math.log(60)) * 50;
+}
+
+// Modal Dialog Functions
+// Fetch Button Handler
 function initializeFetchButton() {
     document.getElementById('fetchBtn').addEventListener('click', async () => {
         try {
@@ -528,38 +561,6 @@ function initializeFetchButton() {
     });
 }
 
-async function fetchSettings(ip) {
-    const response = await fetch(`http://${ip}/returnsettings`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    
-    const data = await response.text();
-    const parts = data.split(',');
-    
-    return {
-        router: parts[0]?.trim() || 'N/A',
-        password: parts[1]?.trim() || 'N/A',
-        channel: parts[2]?.trim() || 'N/A',
-        pattern: parts[parts.length - 1]?.trim() || 'N/A',
-        pixels: await fetchNumberOfPixels(ip)
-    };
-}
-});
-// Slider conversion functions
-function sliderToValue(sliderPercent) {
-    if (sliderPercent <= 50) {
-        return 0.5 + Math.floor((sliderPercent / 50) * 60) * 0.5;
-    }
-    return 30 * Math.pow(1800 / 30, (sliderPercent - 50) / 50);
-}
-
-function valueToSlider(value) {
-    if (value <= 30) {
-        return ((value - 0.5) / 29.5) * 50 * (30 / 29.5);
-    }
-    return 50 + (Math.log(value / 30) / Math.log(60)) * 50;
-}
-
-// Modal Dialog Functions
 function initializeModal() {
     document.querySelectorAll('.poi-image').forEach(img => {
         img.addEventListener('click', () => showModal(img.querySelector('img').src));
