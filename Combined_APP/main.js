@@ -20,10 +20,17 @@ async function handleImageUpload(file, ip, targetFileName) {
     reader.onload = async (event) => {
         try {
             const image = await Jimp.read(event.target.result);
-            const rotated = image.rotate(-90);
-            const targetHeight = Math.floor(state.settings.pixels / 
-                (state.wsStrip ? 2 : 1));
             
+            // Match rotation from fetch_and_display.html
+            const rotated = image.rotate(-90); // Equivalent to 270 degrees clockwise
+            
+            // Calculate dimensions using same logic as working implementation
+            const rotatedWidth = rotated.bitmap.width;
+            const rotatedHeight = rotated.bitmap.height;
+            const aspectRatio = rotatedWidth / (state.wsStrip ? rotatedHeight/2 : rotatedHeight);
+            const targetHeight = Math.floor(state.settings.pixels / aspectRatio);
+
+            // Use same resize approach
             const processed = rotated.resize(
                 state.settings.pixels, 
                 targetHeight
