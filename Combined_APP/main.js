@@ -225,18 +225,28 @@ function checkInitialStatus() {
 
 function updateStatusIndicators() {
     const checkStatus = async (ip) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        
         try {
-            await fetch(`http://${ip}/status`, { mode: 'no-cors' });
-            return 'online';
-        } catch {
+            const response = await fetch(`http://${ip}/get-pixels`, {
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            return response.ok ? 'online' : 'offline';
+        } catch (error) {
+            clearTimeout(timeoutId);
             return 'offline';
         }
     };
 
-    Promise.all([
+    Promise.allSettled([
         checkStatus(state.poiIPs.mainIP),
         checkStatus(state.poiIPs.auxIP)
-    ]).then(([mainStatus, auxStatus]) => {
+    ]).then(([mainResult, auxResult]) => {
+        const mainStatus = mainResult.status === 'fulfilled' ? mainResult.value : 'offline';
+        const auxStatus = auxResult.status === 'fulfilled' ? auxResult.value : 'offline';
+        
         document.getElementById('mainStatus').className = `status-indicator ${mainStatus}`;
         document.getElementById('auxStatus').className = `status-indicator ${auxStatus}`;
     });
