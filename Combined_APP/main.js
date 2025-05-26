@@ -1,4 +1,58 @@
-const { app, BrowserWindow, Menu, screen } = require('electron'); // Updated import
+// State Management
+const state = {
+    poiIPs: {
+        main: "192.168.1.1",
+        aux: "192.168.1.78", 
+        routerMode: false,
+        subnet: ""
+    },
+    currentTab: "controls",
+    patterns: {
+        current: 1,
+        available: 7
+    },
+    images: {
+        main: [],
+        aux: []
+    },
+    settings: {
+        pixels: 120,
+        brightness: 20,
+        speed: 0.5,
+        stripType: "WS2812"
+    }
+};
+
+// Initialize App
+function init() {
+    loadState();
+    setupTabNavigation();
+    setupEventListeners();
+    initializeNetworkDiscovery();
+    setupImageHandlers();
+    checkInitialStatus();
+}
+
+// State Persistence
+function loadState() {
+    const saved = JSON.parse(localStorage.getItem('poiState') || '{}');
+    state.poiIPs = { ...state.poiIPs, ...saved.poiIPs };
+    state.settings = { ...state.settings, ...saved.settings };
+    
+    // Update UI elements
+    document.getElementById('routerIpInput').value = state.poiIPs.subnet + "1";
+    document.getElementById('pixelInput').value = state.settings.pixels;
+}
+
+function saveState() {
+    localStorage.setItem('poiState', JSON.stringify({
+        poiIPs: state.poiIPs,
+        settings: state.settings
+    }));
+}
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', init);
 app.setName('smartPoi-js-utilities');
 const fs = require('fs');
 const path = require('path');

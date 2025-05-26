@@ -1,1 +1,45 @@
- 
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartPoi Controls</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="ic_launcher-web.png">
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <img src="smaller-logo.jpg" alt="POI Logo" class="logo">
+            <div class="tabs">
+                <button class="tab-button active" data-tab="controls">Controls</button>
+                <button class="tab-button" data-tab="images">Image Management</button>
+            </div>
+        </div>
+
+        <!-- Controls Tab -->
+        <div id="controls" class="tab-content active">
+            <!-- Content from controls.html will go here -->
+        </div>
+
+        <!-- Images Tab -->
+        <div id="images" class="tab-content">
+            <!-- Content from fetch_and_display.html will go here -->
+        </div>
+
+        <!-- Modal -->
+        <div class="modal-overlay hidden">
+            <div class="modal-content">
+                <img class="modal-image" alt="Enlarged View">
+                <div class="modal-footer">
+                    <span class="filename"></span>
+                    <button class="delete-button">Delete</button>
+                    <button class="close-button">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

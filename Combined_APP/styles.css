@@ -7,6 +7,95 @@
     --border-color: #5e5858;
 }
 
+/* Image Management Styles */
+.image-management {
+    padding: 20px;
+}
+
+.image-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.image-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    padding: 10px;
+    background: #1a1a1a;
+    border-radius: 8px;
+}
+
+.poi-image {
+    position: relative;
+    cursor: pointer;
+    aspect-ratio: 1;
+    background: #000;
+    border: 2px solid #333;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.poi-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Network Discovery Enhancements */
+.discovery-section {
+    background: #1a1a1a;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.manual-ip-section {
+    margin-top: 15px;
+    border-top: 1px solid #333;
+    padding-top: 15px;
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 0.9em;
+    margin-left: 10px;
+}
+
+/* Status Indicators */
+.status-indicators {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.status-indicator {
+    padding: 12px;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.status-indicator.online {
+    background: #1a472a;
+    border: 1px solid #2c7a47;
+}
+
+.status-indicator.offline {
+    background: #4a1e1e;
+    border: 1px solid #8b4444;
+}
+:root {
+    --primary-color: #2c7a47;
+    --danger-color: #dc3545;
+    --dark-bg: #222;
+    --light-text: #fff;
+    --border-color: #5e5858;
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
