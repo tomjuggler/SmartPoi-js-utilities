@@ -559,6 +559,43 @@ function valueToSlider(value) {
     return 50 + (Math.log(value / 30) / Math.log(60)) * 50;
 }
 
+// Modal Dialog Functions
+function initializeModal() {
+    document.querySelectorAll('.poi-image').forEach(img => {
+        img.addEventListener('click', () => showModal(img.querySelector('img').src));
+    });
+
+    document.querySelector('.close-button').addEventListener('click', () => {
+        document.querySelector('.modal-overlay').classList.add('hidden');
+    });
+
+    document.querySelector('.delete-button').addEventListener('click', async () => {
+        const imageUrl = document.querySelector('.modal-image').src;
+        await deleteImage(imageUrl);
+        document.querySelector('.modal-overlay').classList.add('hidden');
+        refreshAllImages();
+    });
+}
+
+function showModal(imageSrc) {
+    const modal = document.querySelector('.modal-overlay');
+    const modalImg = modal.querySelector('.modal-image');
+    modalImg.src = imageSrc;
+    modal.querySelector('.filename').textContent = imageSrc.split('/').pop();
+    modal.classList.remove('hidden');
+}
+
+async function deleteImage(imageUrl) {
+    try {
+        const response = await fetch(imageUrl, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Delete failed');
+        createMessage('Image deleted successfully');
+    } catch (error) {
+        console.error('Delete error:', error);
+        createMessage('Failed to delete image', 'error');
+    }
+}
+
 // Initialize the application
 function init() {
     loadState();
