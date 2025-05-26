@@ -335,17 +335,6 @@ app.on('activate', () => {
     createWindow();
   }
 });
-// Shared application state
-const state = {
-    poiOneIP: "192.168.1.1",
-    poiTwoIP: "192.168.1.78",
-    routerMode: false,
-    currentTab: "controls",
-    numberOfPixels: 120,
-    wsStrip: true,
-    currentModalImage: null
-};
-
 // Initialize the application
 function init() {
     loadPersistedState();
