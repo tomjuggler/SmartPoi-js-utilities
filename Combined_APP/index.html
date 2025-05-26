@@ -1,5 +1,6 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <link rel="icon" type="image/png" href="ic_launcher-web.png">
     <script src="jimp.min.js"></script>
 </head>
+
 <body>
     <div class="app-container">
         <div class="header">
@@ -22,7 +24,7 @@
         <div id="controls" class="tab-content active">
             <div class="control-block">
                 <h2 class="section-title">Poi Controls</h2>
-                    
+
                 <div class="status-indicators">
                     <div id="mainStatus" class="status-indicator online">Main POI: Online</div>
                     <div id="auxStatus" class="status-indicator online">Aux POI: Online</div>
@@ -54,7 +56,7 @@
                             <input type="range" id="speedSlider" min="0" max="100" value="0">
                             <div id="speedTooltip" class="tooltip"></div>
                         </div>
-                        
+
                         <div class="slider-container brightness-slider">
                             <label>Brightness (20-255)</label>
                             <input type="range" id="brightnessSlider" min="20" max="255" value="20">
@@ -87,11 +89,11 @@
                                 </div>
                             </div>
                         </div>
-            
+
                         <!-- Add Spinner and Counter -->
                         <div class="spinner" id="spinner"></div>
                         <p id="counter">Scanning IP: <span id="currentIP">0</span> for poi!</p>
-            
+
                         <!-- Add Status Section -->
                         <div class="status-section">
                             <h3 class="section-title">Poi Status</h3>
@@ -117,14 +119,11 @@
                     </div>
                 </div>
 
-                
+
 
                 <div class="control-block danger-zone">
                     <h3 class="danger-title">DANGER ZONE</h3>
-                    <button id="deleteAllButton" class="dark-button" style="background-color: #4a1e1e;">
-                        ! DELETE ALL IMAGES ON BOTH POIs !
-                    </button>
-                    <p><i>This will permanently remove all images from both POIs!</i></p>
+
                     <div>
                         <label>
                             Update Router Name and Password:
@@ -168,27 +167,31 @@
                     <div class="fetch-buttons">
                         <button class="dark-button" onclick="getFilesOne()">Fetch Main Poi Images</button>
                         <span class="alert-indicator" id="get-files-one-indicator"></span>
-                        <button class="dark-button" onclick="getFilesTwo()">Fetch Aux Poi Images</button> 
+                        <button class="dark-button" onclick="getFilesTwo()">Fetch Aux Poi Images</button>
                         <span class="alert-indicator" id="get-files-two-indicator"></span>
                         <button class="dark-button" id="ws_apaBtn">WS2812?</button>
                         <span class="alert-indicator" id="ws_apa_indicator">Current: WS2812</span>
                     </div>
                     <p><i>Default is WS2812, click to change to APA102 (raw mode)</i></p>
                 </div>
-                
-                
-                    <div class="image-grid">
-                        <div class="poi-images">
-                            <h3 class="section-title">Main Poi</h3>
-                            <div id="mainImageGrid" class="image-grid-container"></div>
-                        </div>
-                        <div class="poi-images">
-                            <h3 class="section-title">Aux Poi</h3>
-                            <div id="auxImageGrid" class="image-grid-container"></div>
-                        </div>
+
+
+                <div class="image-grid">
+                    <div class="poi-images">
+                        <h3 class="section-title">Main Poi</h3>
+                        <div id="mainImageGrid" class="image-grid-container"></div>
                     </div>
-                
+                    <div class="poi-images">
+                        <h3 class="section-title">Aux Poi</h3>
+                        <div id="auxImageGrid" class="image-grid-container"></div>
+                    </div>
+                </div>
+
             </div>
+            <button id="deleteAllButton" class="dark-button" style="background-color: #4a1e1e;">
+                ! DELETE ALL IMAGES ON BOTH POIs !
+            </button>
+            <p><i>This will permanently remove all images from both POIs!</i></p>
         </div>
 
         <!-- Modal -->
@@ -210,4 +213,5 @@
 
     <script src="main.js"></script>
 </body>
+
 </html>
