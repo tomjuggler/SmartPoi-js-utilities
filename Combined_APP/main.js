@@ -45,6 +45,7 @@ function loadState() {
     // Update UI elements
     document.getElementById('routerIpInput').value = state.poiIPs.subnet + "1";
     document.getElementById('pixelInput').value = state.settings.pixels;
+}
 
 // Network Discovery Implementation
 function initializeNetworkDiscovery() {
@@ -74,7 +75,7 @@ function initializeNetworkDiscovery() {
     } finally {
       showLoadingState(false);
     }
-  }
+  });
 }
 
 async function scanNetwork(subnet) {
@@ -236,7 +237,7 @@ async function updateBothPOIs(endpoint) {
   } catch (error) {
     console.error('Error updating POIs:', error);
     createMessage('Error updating settings', 'error');
-  });
+  }
 }
 
 // Initialize the application
