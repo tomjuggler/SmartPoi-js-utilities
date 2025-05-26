@@ -103,6 +103,15 @@ function loadState() {
 }
 
 // Network Discovery Implementation
+function showLoadingState(show) {
+  document.getElementById('spinner').style.display = show ? 'block' : 'none';
+  document.getElementById('counter').style.display = show ? 'block' : 'none';
+}
+
+function isValidIP(ip) {
+  return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip);
+}
+
 function initializeNetworkDiscovery() {
   const discoverBtn = document.getElementById('discoverBtn');
   discoverBtn.addEventListener('click', async () => {
@@ -189,6 +198,21 @@ function saveState() {
 }
 
 // Image handling core functions
+async function updatePixelsOnBoth() {
+  const pixels = document.getElementById('pixelInput').value;
+  try {
+    await Promise.all([
+      fetch(`http://${state.poiIPs.mainIP}/pixels?num=${pixels}`),
+      fetch(`http://${state.poiIPs.auxIP}/pixels?num=${pixels}`)
+    ]);
+    createMessage(`Pixels updated to ${pixels}`);
+    refreshAllImages();
+  } catch (error) {
+    console.error('Pixel update failed:', error);
+    createMessage('Failed to update pixels', 'error');
+  }
+}
+
 function setupImageHandlers() {
     // Initialize image grids
     createBlackImages('mainImageGrid', state.poiIPs.main);
@@ -222,12 +246,24 @@ function handleDragOver(event) {
 }
 
 // Pattern Handling
+async function submitPattern(pattern) {
+  try {
+    await Promise.all([
+      fetch(`http://${state.poiIPs.mainIP}/pattern?patternChooserChange=${pattern}`),
+      fetch(`http://${state.poiIPs.auxIP}/pattern?patternChooserChange=${pattern}`)
+    ]);
+    highlightActiveButton(pattern);
+    createMessage(`Pattern ${pattern} activated`);
+  } catch (error) {
+    console.error('Pattern change failed:', error);
+    createMessage('Pattern sync failed', 'error');
+  }
+}
+
 function initializePatternControls() {
   document.querySelectorAll('.pattern-buttons button').forEach(button => {
-    button.addEventListener('click', async () => {
-      const pattern = button.dataset.pattern;
-      await setPatternOnBoth(pattern);
-      highlightActiveButton(pattern);
+    button.addEventListener('click', (e) => {
+      submitPattern(e.target.dataset.pattern);
     });
   });
 }
@@ -270,34 +306,38 @@ function initializeSync() {
 
 // Slider Controls
 function initializeSliders() {
-    const speedSlider = document.getElementById('speedSlider');
-    const brightnessSlider = document.getElementById('brightnessSlider');
+  const speedSlider = document.getElementById('speedSlider');
+  const brightnessSlider = document.getElementById('brightnessSlider');
+  const speedTooltip = document.getElementById('speedTooltip');
+  const brightnessTooltip = document.getElementById('brightnessTooltip');
 
-    if (!speedSlider || !brightnessSlider) {
-        console.error('Sliders not found in DOM');
-        return;
-    }
-
-    // Set initial values from state
-    speedSlider.value = state.settings.speed * 100;
-    brightnessSlider.value = state.settings.brightness;
-  
-  function debounce(func, timeout = 500) {
-    let timer;
-    return (...args) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => { func.apply(this, args); }, timeout);
-    };
+  if (!speedSlider || !brightnessSlider) {
+    console.error('Sliders not found in DOM');
+    return;
   }
 
-  speedSlider.addEventListener('input', debounce(async (e) => {
-    const value = sliderToValue(e.target.value);
-    await updateBothPOIs(`/intervalChange?interval=${value}`);
-  }));
+  // Set initial values from state
+  speedSlider.value = state.settings.speed * 100;
+  brightnessSlider.value = state.settings.brightness;
 
-  brightnessSlider.addEventListener('input', debounce(async (e) => {
-    await updateBothPOIs(`/brightness?brt=${e.target.value}`);
-  }));
+  // Speed Slider
+  speedSlider.addEventListener('input', (e) => {
+    const value = sliderToValue(e.target.value);
+    speedTooltip.textContent = `${value.toFixed(1)}s`;
+    speedTooltip.style.opacity = '1';
+    const percent = (e.target.value / 100);
+    speedTooltip.style.left = `calc(${percent * 100}% - ${percent * 20}px)`;
+    updateBothPOIs(`/intervalChange?interval=${value}`);
+  });
+
+  // Brightness Slider
+  brightnessSlider.addEventListener('input', (e) => {
+    brightnessTooltip.textContent = e.target.value;
+    brightnessTooltip.style.opacity = '1';
+    const percent = ((e.target.value - 20) / (255 - 20)) * 100;
+    brightnessTooltip.style.left = `calc(${percent}% - ${percent * 0.2}px)`;
+    updateBothPOIs(`/brightness?brt=${e.target.value}`);
+  });
 }
 
 async function updateBothPOIs(endpoint) {
@@ -520,6 +560,14 @@ function submitRouter() {
 
 // Unified Event Listeners
 function initializeEventListeners() {
+  // Add manual IP handlers
+  document.getElementById('manualMainIp').addEventListener('change', setMainIp);
+  document.getElementById('manualAuxIp').addEventListener('change', setAuxIp);
+  
+  // Add pattern button handlers
+  document.querySelectorAll('.pattern-buttons button').forEach(button => {
+    button.addEventListener('click', handlePatternSelection);
+  });
     // Danger Zone controls
     document.getElementById('routerModeCheckbox').addEventListener('change', submitRouterMode);
     document.getElementById('channelInput').nextElementSibling.addEventListener('click', submitChannel);
