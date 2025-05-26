@@ -101,8 +101,6 @@ function createBlackImages(containerId, ip) {
         
         const imgElement = document.createElement('img');
         imgElement.className = 'poi-image';
-        imgElement.style.width = `${state.settings.pixels}px`;
-        imgElement.style.height = `${state.settings.pixels}px`;
         imgElement.alt = fileName;
 
         imgElement.addEventListener('click', function() {
@@ -139,8 +137,6 @@ async function decompressAndDisplay(ip, fileName) {
         imgElement.className = 'poi-image';
         imgElement.src = rotatedImageUrl;
         imgElement.alt = fileName;
-        imgElement.style.width = `${state.settings.pixels}px`;
-        imgElement.style.height = `${state.settings.pixels}px`;
 
         // Find and replace existing image
         const containerId = ip === state.poiIPs.mainIP ? 'mainImageGrid' : 'auxImageGrid';
