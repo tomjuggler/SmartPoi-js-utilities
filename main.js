@@ -87,3 +87,89 @@ app.on('activate', () => {
     createWindow();
   }
 });
+// Shared application state
+const state = {
+    poiOneIP: "192.168.1.1",
+    poiTwoIP: "192.168.1.78",
+    routerMode: false,
+    currentTab: "controls",
+    numberOfPixels: 120,
+    wsStrip: true,
+    currentModalImage: null
+};
+
+// Initialize the application
+function init() {
+    loadPersistedState();
+    setupTabNavigation();
+    initializeEventListeners();
+    checkInitialStatus();
+    
+    // Load initial tab content
+    loadTabContent(state.currentTab);
+}
+
+// Tab management
+function setupTabNavigation() {
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', () => {
+            // Update active tab button
+            document.querySelectorAll('.tab-button').forEach(btn => 
+                btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            // Update tab content
+            state.currentTab = button.dataset.tab;
+            document.querySelectorAll('.tab-content').forEach(content => 
+                content.classList.remove('active'));
+            document.getElementById(state.currentTab).classList.add('active');
+            
+            // Load content if needed
+            loadTabContent(state.currentTab);
+        });
+    });
+}
+
+// Load tab-specific content
+function loadTabContent(tabName) {
+    if (tabName === 'controls') {
+        loadControlsTab();
+    } else if (tabName === 'images') {
+        loadImagesTab();
+    }
+}
+
+// State management
+function loadPersistedState() {
+    const savedState = JSON.parse(localStorage.getItem('poiState'));
+    if (savedState) {
+        Object.assign(state, savedState);
+    }
+}
+
+function savePersistedState() {
+    localStorage.setItem('poiState', JSON.stringify({
+        poiOneIP: state.poiOneIP,
+        poiTwoIP: state.poiTwoIP,
+        routerMode: state.routerMode,
+        numberOfPixels: state.numberOfPixels,
+        wsStrip: state.wsStrip
+    }));
+}
+
+// Initialize event listeners
+function initializeEventListeners() {
+    // Modal controls
+    document.querySelector('.close-button').addEventListener('click', () => {
+        document.querySelector('.modal-overlay').classList.add('hidden');
+    });
+    
+    document.querySelector('.delete-button').addEventListener('click', () => {
+        if (state.currentModalImage) {
+            deleteImage(state.currentModalImage);
+        }
+    });
+}
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', init);
