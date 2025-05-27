@@ -627,6 +627,76 @@ body {
     background: rgba(220, 53, 69, 0.1);
 }
 
+/* About Tab Styles */
+.about-container {
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    background: var(--dark-bg); /* Add dark background */
+    border-radius: 8px; /* Match other tab containers */
+}
+
+.about-title {
+    text-align: center;
+    color: var(--primary-color);
+    margin-bottom: 30px;
+}
+
+.about-section {
+    background: #2a2a2a; /* Darker gray instead of white */
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    color: var(--light-text); /* White text */
+}
+
+.about-collab {
+    background: #333; /* Dark gray instead of light */
+    border-left: 4px solid var(--primary-color); /* Use theme color */
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 4px;
+    color: var(--light-text);
+}
+
+.about-commitment {
+    text-align: center;
+    margin-top: 30px;
+    padding: 20px;
+    background: #2a2a2a; /* Dark gray instead of light */
+    border-radius: 8px;
+    color: var(--light-text);
+}
+
+.about-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.about-link:hover {
+    text-decoration: underline;
+}
+
+.about-logo {
+    height: 60px;
+    margin: 15px 0;
+    display: block;
+}
+
+.about-button {
+    background: var(--primary-color);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
 /* Unified slider container styles */
 .slider-group {
     width: 100%;
