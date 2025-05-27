@@ -244,8 +244,20 @@
          */
         function updatePixelSize() {
             const pixelInput = document.getElementById('pixelInput').value;
-            number_of_pixels = parseInt(pixelInput, 10);
-            document.getElementById('currentPx').textContent = `Current px: ${number_of_pixels}`;
+            const uploadPixelInput = document.getElementById('uploadPixelInput').value;
+    
+            // Use the upload input value if it's different from main input
+            const newValue = uploadPixelInput !== pixelInput ? uploadPixelInput : pixelInput;
+    
+            state.settings.pixels = parseInt(newValue, 10);
+    
+            // Update both displays
+            document.getElementById('pixelInput').value = state.settings.pixels;
+            document.getElementById('uploadPixelInput').value = state.settings.pixels;
+            document.getElementById('currentPx').textContent = `Current px: ${state.settings.pixels}`;
+            document.getElementById('uploadCurrentPx').textContent = `Current px: ${state.settings.pixels}`;
+    
+            saveState();
         }
 
         /**

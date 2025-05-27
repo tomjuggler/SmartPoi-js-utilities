@@ -598,8 +598,12 @@ function loadState() {
     // Update manual IP inputs
     mainIpInput.placeholder = state.poiIPs.mainIP || '192.168.1.x';
     auxIpInput.placeholder = state.poiIPs.auxIP || '192.168.1.x';
+    
+    // Update both pixel inputs and displays
     document.getElementById('pixelInput').value = state.settings.pixels;
+    document.getElementById('uploadPixelInput').value = state.settings.pixels;
     document.getElementById('currentPx').textContent = `Current px: ${state.settings.pixels}`;
+    document.getElementById('uploadCurrentPx').textContent = `Current px: ${state.settings.pixels}`;
 }
 
 // Network Discovery Implementation
@@ -1192,6 +1196,10 @@ async function sendRequest(url, retries = 3) {
 }
 
 function initializeUploadHandlers() {
+    // Initialize upload tab inputs with current state
+    document.getElementById('uploadPixelInput').value = state.settings.pixels;
+    document.getElementById('uploadCurrentPx').textContent = `Current px: ${state.settings.pixels}`;
+
     // File input handler
     document.getElementById('uploadFileInput').addEventListener('change', function(e) {
         const container = document.getElementById('fileListContainer');
@@ -1218,7 +1226,7 @@ function initializeUploadHandlers() {
     document.getElementById('uploadUpdatePixelButton').addEventListener('click', function() {
         const pixelInput = document.getElementById('uploadPixelInput').value;
         state.settings.pixels = parseInt(pixelInput, 10);
-        document.getElementById('uploadCurrentPx').textContent = `Current px: ${state.settings.pixels}`;
+        updatePixelSize(); // Use the unified update function
         saveState();
     });
 }
