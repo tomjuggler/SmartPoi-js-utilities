@@ -307,7 +307,13 @@ function validateFileName(name) {
 }
 
 const MAX_RETRY_COUNT = 3;
+const UPLOAD_BIN_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 let retryCount = 0;
+
+function generateUploadBinFilename(index) {
+    const char = UPLOAD_BIN_CHARS.charAt(index);
+    return `${char}.bin`;
+}
 
 // Upload Bin Handlers
 async function verifyPoiConnection(ip) {
@@ -370,64 +376,68 @@ async function fetchWithTimeout(resource, timeout=5000) {
 
 // Upload Bin Handlers
 async function handleUpload() {
-  if (!state.upload.orderedFiles.length) {
-    createMessage('Please select at least one file', 'warning');
-    return;
-  }
-
-  try {
-    createMessage('Starting upload process...', 'info');
-    
-    // Verify POI connections using current IPs from state
-    const [mainAvailable, auxAvailable] = await Promise.all([
-      verifyPoiConnection(state.poiIPs.mainIP),
-      verifyPoiConnection(state.poiIPs.auxIP)
-    ]);
-
-    if (!mainAvailable && !auxAvailable) {
-      throw new Error("Both POIs are unavailable - upload cannot proceed");
+    if (!state.upload.orderedFiles.length) {
+        createMessage('Please select at least one file', 'warning');
+        return;
     }
 
-    // Store original patterns
-    await fetchOriginalPattern();
+    try {
+        createMessage('Starting upload process...', 'info');
+        
+        // Verify POI connections
+        const [mainAvailable, auxAvailable] = await Promise.all([
+            verifyPoiConnection(state.poiIPs.mainIP),
+            verifyPoiConnection(state.poiIPs.auxIP)
+        ]);
 
-    // Set upload patterns
-    const patternTasks = [];
-    if (mainAvailable) patternTasks.push(setPatternSafe(7, state.poiIPs.mainIP));
-    if (auxAvailable) patternTasks.push(setPatternSafe(7, state.poiIPs.auxIP));
-    await Promise.all(patternTasks);
-    await delay(state.upload.config.INTER_POI_DELAY);
+        if (!mainAvailable && !auxAvailable) {
+            throw new Error("Both POIs are unavailable - upload cannot proceed");
+        }
 
-    // Process files for available POIs
-    const uploadTasks = [];
-    if (mainAvailable) {
-      uploadTasks.push(
-        processPoiWithBackoff(state.upload.orderedFiles, state.poiIPs.mainIP, "Main POI")
-          .then(() => createMessage("Main POI upload complete"))
-      );
+        // Store original patterns
+        await fetchOriginalPattern();
+
+        // Set upload patterns
+        const patternTasks = [];
+        if (mainAvailable) patternTasks.push(setPatternSafe(7, state.poiIPs.mainIP));
+        if (auxAvailable) patternTasks.push(setPatternSafe(7, state.poiIPs.auxIP));
+        await Promise.all(patternTasks);
+        await delay(state.upload.config.INTER_POI_DELAY);
+
+        // Process files with new naming convention
+        const uploadTasks = [];
+        const filesToUpload = state.upload.orderedFiles.map((file, index) => ({
+            file,
+            targetName: generateUploadBinFilename(index)
+        }));
+
+        if (mainAvailable) {
+            uploadTasks.push(
+                processPoiWithBackoff(filesToUpload, state.poiIPs.mainIP, "Main POI")
+                    .then(() => createMessage("Main POI upload complete"))
+            );
+        }
+        if (auxAvailable) {
+            uploadTasks.push(
+                processPoiWithBackoff(filesToUpload, state.poiIPs.auxIP, "Aux POI")
+                    .then(() => createMessage("Aux POI upload complete"))
+            );
+        }
+
+        await Promise.all(uploadTasks);
+        
+        // Restore original patterns
+        await restoreOriginalPatterns(mainAvailable, auxAvailable);
+        
+        createMessage(`Upload completed to ${mainAvailable ? 'Main POI' : ''}${auxAvailable ? ' and Aux POI' : ''}`);
+
+    } catch (error) {
+        handleCriticalError(error);
+    } finally {
+        state.upload.orderedFiles = [];
+        document.getElementById('fileListContainer').innerHTML = '';
+        document.getElementById('uploadFileInput').value = '';
     }
-    if (auxAvailable) {
-      uploadTasks.push(
-        processPoiWithBackoff(state.upload.orderedFiles, state.poiIPs.auxIP, "Aux POI")
-          .then(() => createMessage("Aux POI upload complete"))
-      );
-    }
-
-    await Promise.all(uploadTasks);
-    
-    // Restore original patterns
-    await restoreOriginalPatterns(mainAvailable, auxAvailable);
-    
-    createMessage(`Upload completed to ${mainAvailable ? 'Main POI' : ''}${auxAvailable ? ' and Aux POI' : ''}`);
-
-  } catch (error) {
-    handleCriticalError(error);
-  } finally {
-    // Clear files after upload
-    state.upload.orderedFiles = [];
-    document.getElementById('fileListContainer').innerHTML = '';
-    document.getElementById('uploadFileInput').value = '';
-  }
 }
 
 function logBatchCompletion(batchNumber, totalBatches, label) {
@@ -435,29 +445,29 @@ function logBatchCompletion(batchNumber, totalBatches, label) {
   createMessage(`${label}: Completed ${progress} (${batchNumber * state.upload.config.BATCH_SIZE} files)`);
 }
 
-async function processPoiWithBackoff(files, ip, label) {
-  const batchCount = Math.ceil(files.length / state.upload.config.BATCH_SIZE);
-  
-  for(let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
-    const batchStart = batchIndex * state.upload.config.BATCH_SIZE;
-    const batchFiles = files.slice(batchStart, batchStart + state.upload.config.BATCH_SIZE);
+async function processPoiWithBackoff(filesToUpload, ip, label) {
+    const batchCount = Math.ceil(filesToUpload.length / state.upload.config.BATCH_SIZE);
     
-    await processBatch(batchFiles, ip, label, batchIndex+1, batchCount);
-    
-    if(batchIndex < batchCount - 1) {
-      await delay(state.upload.config.INTER_BATCH_DELAY);
+    for(let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
+        const batchStart = batchIndex * state.upload.config.BATCH_SIZE;
+        const batchFiles = filesToUpload.slice(batchStart, batchStart + state.upload.config.BATCH_SIZE);
+        
+        await processBatch(batchFiles, ip, label, batchIndex+1, batchCount);
+        
+        if(batchIndex < batchCount - 1) {
+            await delay(state.upload.config.INTER_BATCH_DELAY);
+        }
     }
-  }
 }
 
 async function processBatch(batchFiles, ip, label, batchNumber, totalBatches) {
-  const batchPromises = batchFiles.map(async (file, fileIndex) => {
-    await processFileWithRetry(file, ip, label);
-    await delay(state.upload.config.INTER_FILE_DELAY);
-  });
-  
-  await Promise.allSettled(batchPromises);
-  logBatchCompletion(batchNumber, totalBatches, label);
+    const batchPromises = batchFiles.map(async (fileData, fileIndex) => {
+        await processFileWithRetry(fileData, ip);
+        await delay(state.upload.config.INTER_FILE_DELAY);
+    });
+    
+    await Promise.allSettled(batchPromises);
+    logBatchCompletion(batchNumber, totalBatches, label);
 }
 
 async function processFileWithRetry(file, ip, label) {
