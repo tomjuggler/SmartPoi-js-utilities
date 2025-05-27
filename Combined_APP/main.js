@@ -1,11 +1,7 @@
 // Image Upload Handler
 async function handleImageUpload(file, ip, targetFileName) {
-    // Validate filename matches grid format
-    const fileName = validateFileName(targetFileName);
-    if (!fileName) {
-        createMessage('Invalid filename - must be a-z, A-Z, 0-9.bin', 'error');
-        return;
-    }
+    // Use grid filename directly
+    const fileName = targetFileName;
     const reader = new FileReader();
     
     // Store original pattern and turn off LEDs for upload
@@ -55,7 +51,7 @@ async function handleImageUpload(file, ip, targetFileName) {
             const formData = new FormData();
             formData.append('file', new Blob([new Uint8Array(binaryData)], {
                 type: 'application/octet-stream'
-            }), `${fileName}.bin`); // Server expects .bin extension
+            }), fileName); // Use filename as-is
 
             await fetch(`http://${ip}/edit`, {
                 method: 'POST',
