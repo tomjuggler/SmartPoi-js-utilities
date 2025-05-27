@@ -248,8 +248,11 @@ function handleImageDrop(event, ip) {
         const container = event.target.closest('.image-grid-container');
         
         // Use the grid's filename if dropping on existing image, otherwise generate new
-        const targetFileName = targetWrapper?.dataset.fileName || 
-                             generateNewFilename(ip, container);
+        let targetFileName = targetWrapper?.dataset.fileName || 
+                           generateNewFilename(ip, container);
+        
+        // Sanitize the filename before use
+        targetFileName = sanitizeFilename(targetFileName);
         
         if (targetFileName) {
             handleImageUpload(files[0], ip, targetFileName);
@@ -276,6 +279,12 @@ function generateNewFilename(ip, container) {
         }
     }
     return 'a.bin'; // fallback
+}
+
+function sanitizeFilename(name) {
+    // Remove any existing .bin extension and non-alphanumeric chars
+    const base = name.replace(/\.bin$/i, '').replace(/[^a-zA-Z0-9]/g, '');
+    return base ? `${base}.bin` : 'a.bin';
 }
 
 function validateFileName(name) {
