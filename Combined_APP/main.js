@@ -50,7 +50,8 @@ async function handleImageUpload(file, ip, targetFileName) {
 
             const formData = new FormData();
             // Ensure filename is valid format before upload
-            const validFilename = /^[a-zA-Z0-9]\.bin$/.test(fileName) ? fileName : 'a.bin';
+            // Keep original filename if valid, else use a.bin
+            const validFilename = /^[a-z0-9]\.bin$/i.test(fileName) ? fileName : 'a.bin';
             
             formData.append('file', new Blob([new Uint8Array(binaryData)], {
                 type: 'application/octet-stream'
@@ -154,10 +155,15 @@ function handleDragOver(e) {
 
   const afterElement = getDragAfterElement(container, e.clientY);
   
-  if (afterElement && afterElement.parentNode === container) {
-    container.insertBefore(dragging, afterElement);
-  } else if (dragging.parentNode !== container) {
-    container.appendChild(dragging);
+  if (container && dragging) {
+    if (afterElement && afterElement.parentNode === container) {
+      container.insertBefore(dragging, afterElement);
+    } else if (dragging.parentNode !== container) {
+      // Ensure we only try to append valid elements
+      if (dragging instanceof Node && container instanceof Node) {
+        container.appendChild(dragging);
+      }
+    }
   }
 }
 
