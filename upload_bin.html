@@ -471,62 +471,63 @@
          * Handles the file upload process with optimized timing and retries
          */
         async function handleUpload() {
-          // Get files in displayed order
-          if (!orderedFilesList.length) {
-            alert("Please select at least one file.");
+          if (!state.upload.orderedFiles.length) {
+            createMessage('Please select at least one file', 'warning');
             return;
           }
 
           try {
-            createMessage('Starting connectivity checks...');
+            createMessage('Starting upload process...', 'info');
             
-            // 1. Check POI availability
+            // Verify POI connections using current IPs from state
             const [mainAvailable, auxAvailable] = await Promise.all([
-              verifyPoiConnection(poi_one_ip),
-              verifyPoiConnection(poi_two_ip)
+              verifyPoiConnection(state.poiIPs.mainIP),
+              verifyPoiConnection(state.poiIPs.auxIP)
             ]);
 
-            // Use the orderedFilesList directly
-            const files = orderedFilesList;
-
-            if(!mainAvailable) {
-              throw new Error("Main POI unavailable - upload cannot proceed");
+            if (!mainAvailable && !auxAvailable) {
+              throw new Error("Both POIs are unavailable - upload cannot proceed");
             }
 
-            // 2. Store original patterns only on available POIs
+            // Store original patterns
             await fetchOriginalPattern();
-            
-            // 3. Set upload patterns conditionally
-            const patternTasks = [];
-            if(mainAvailable) patternTasks.push(setPatternSafe(7, poi_one_ip));
-            if(auxAvailable) patternTasks.push(setPatternSafe(7, poi_two_ip));
-            await Promise.all(patternTasks);
-            await delay(UPLOAD_CONFIG.INTER_POI_DELAY);
 
-            // 4. Process available POIs
+            // Set upload patterns
+            const patternTasks = [];
+            if (mainAvailable) patternTasks.push(setPatternSafe(7, state.poiIPs.mainIP));
+            if (auxAvailable) patternTasks.push(setPatternSafe(7, state.poiIPs.auxIP));
+            await Promise.all(patternTasks);
+            await delay(state.upload.config.INTER_POI_DELAY);
+
+            // Process files for available POIs
             const uploadTasks = [];
-            if(mainAvailable) {
+            if (mainAvailable) {
               uploadTasks.push(
-                processPoiWithBackoff(files, poi_one_ip, "Main Poi")
+                processPoiWithBackoff(state.upload.orderedFiles, state.poiIPs.mainIP, "Main POI")
                   .then(() => createMessage("Main POI upload complete"))
               );
             }
-            if(auxAvailable) {
+            if (auxAvailable) {
               uploadTasks.push(
-                processPoiWithBackoff(files, poi_two_ip, "Aux Poi")
+                processPoiWithBackoff(state.upload.orderedFiles, state.poiIPs.auxIP, "Aux POI")
                   .then(() => createMessage("Aux POI upload complete"))
               );
             }
 
             await Promise.all(uploadTasks);
             
-            // 5. Restore patterns only where needed
+            // Restore original patterns
             await restoreOriginalPatterns(mainAvailable, auxAvailable);
             
-            createMessage(`Successfully updated ${mainAvailable ? 'Main POI' : ''}${auxAvailable ? ' and Aux POI' : ''}`);
+            createMessage(`Upload completed to ${mainAvailable ? 'Main POI' : ''}${auxAvailable ? ' and Aux POI' : ''}`);
 
-          } catch(error) {
+          } catch (error) {
             handleCriticalError(error);
+          } finally {
+            // Clear files after upload
+            state.upload.orderedFiles = [];
+            document.getElementById('fileListContainer').innerHTML = '';
+            document.getElementById('uploadFileInput').value = '';
           }
         }
 
@@ -663,7 +664,7 @@
           div.draggable = true;
           div.dataset.index = index;
           div.dataset.fileName = file.name;
-          
+
           // Preview image
           const img = document.createElement('img');
           img.src = URL.createObjectURL(file);
@@ -685,6 +686,7 @@
           div.addEventListener('dragstart', handleDragStart);
           div.addEventListener('dragover', handleDragOver);
           div.addEventListener('drop', handleDrop);
+          div.addEventListener('dragend', handleDragEnd);
           
           return div;
         }
@@ -696,45 +698,85 @@
 
         function handleDragOver(e) {
           e.preventDefault();
+          const dragging = document.querySelector('.dragging');
           const container = document.getElementById('fileListContainer');
-          const dragging = container.querySelector('.dragging');
-          const files = [...container.children];
-          const target = files.find(child => {
-            const rect = child.getBoundingClientRect();
-            return e.clientY < rect.top + rect.height / 2;
-          });
+          const afterElement = getDragAfterElement(container, e.clientY);
           
-          if (target && target !== dragging) {
-            container.insertBefore(dragging, target);
+          if (afterElement) {
+            container.insertBefore(dragging, afterElement);
+          } else {
+            container.appendChild(dragging);
           }
         }
 
         function handleDrop(e) {
           e.preventDefault();
-          e.target.classList.remove('dragging');
           updateFilesOrder();
+        }
+
+        function handleDragEnd(e) {
+          e.target.classList.remove('dragging');
+        }
+
+        function getDragAfterElement(container, y) {
+          const draggableElements = [...container.querySelectorAll('.draggable-file:not(.dragging)')];
+          
+          return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+              return { offset: offset, element: child };
+            } else {
+              return closest;
+            }
+          }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
         function updateFilesOrder() {
           const container = document.getElementById('fileListContainer');
           const currentOrderNames = Array.from(container.children).map(item => item.dataset.fileName);
-          orderedFilesList = currentOrderNames.map(name => 
-            orderedFilesList.find(file => file.name === name)
+          state.upload.orderedFiles = currentOrderNames.map(name => 
+            state.upload.orderedFiles.find(file => file.name === name)
           ).filter(file => file !== undefined);
         }
 
-        // Update the file input handler
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-          const container = document.getElementById('fileListContainer');
-          container.innerHTML = '';
-          orderedFilesList = Array.from(e.target.files); // Store original files
-  
-          orderedFilesList.forEach((file, index) => {
-            container.appendChild(createFileListItem(file, index));
+        function initializeUploadHandlers() {
+          document.getElementById('uploadFileInput').addEventListener('change', function(e) {
+            const container = document.getElementById('fileListContainer');
+            container.innerHTML = '';
+            state.upload.orderedFiles = Array.from(e.target.files);
+            
+            state.upload.orderedFiles.forEach((file, index) => {
+              const listItem = createFileListItem(file, index);
+              container.appendChild(listItem);
+            });
+            
+            // Initialize drag events on new items
+            Array.from(container.children).forEach(item => {
+              item.addEventListener('dragstart', handleDragStart);
+              item.addEventListener('dragover', handleDragOver);
+              item.addEventListener('drop', handleDrop);
+              item.addEventListener('dragend', handleDragEnd);
+            });
           });
-  
-          updateFilesOrder();
-        });
+
+          // Keep existing button handlers...
+          document.getElementById('uploadButton').addEventListener('click', handleUpload);
+          document.getElementById('uploadWsApaBtn').addEventListener('click', function() {
+              state.wsStrip = !state.wsStrip;
+              const indicator = document.getElementById('uploadWsApaIndicator');
+              indicator.textContent = `Current: ${state.wsStrip ? 'WS2812' : 'APA102'}`;
+              createMessage(`Switched to ${state.wsStrip ? 'WS2812 (compressed)' : 'APA102 (raw)'} mode`);
+              saveState();
+          });
+          document.getElementById('uploadUpdatePixelButton').addEventListener('click', function() {
+              const pixelInput = document.getElementById('uploadPixelInput').value;
+              state.settings.pixels = parseInt(pixelInput, 10);
+              document.getElementById('uploadCurrentPx').textContent = `Current px: ${state.settings.pixels}`;
+              saveState();
+          });
+        }
 
         window.addEventListener('load', () => {
             updateNumberOfPixels(poi_one_ip);

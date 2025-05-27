@@ -421,6 +421,53 @@ body {
 }
 
 /* File List Styles */
+#fileListContainer {
+  margin: 15px 0;
+  border: 2px dashed var(--border-color);
+  min-height: 50px;
+  padding: 10px;
+  background: #1a1a1a;
+}
+
+.draggable-file {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  margin: 5px 0;
+  background: #333;
+  border: 1px solid var(--border-color);
+  cursor: move;
+  transition: all 0.3s ease;
+}
+
+.draggable-file.dragging {
+  opacity: 0.5;
+  background: #444;
+}
+
+.draggable-file img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  margin-right: 10px;
+  border-radius: 4px;
+}
+
+.draggable-file span {
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--light-text);
+}
+
+.drag-handle {
+  padding: 0 10px;
+  color: #666;
+  cursor: move;
+  user-select: none;
+}
+
 .file-list-section {
     padding: 15px;
 }
