@@ -467,69 +467,6 @@
         }
 
 
-        /**
-         * Handles the file upload process with optimized timing and retries
-         */
-        async function handleUpload() {
-          if (!state.upload.orderedFiles.length) {
-            createMessage('Please select at least one file', 'warning');
-            return;
-          }
-
-          try {
-            createMessage('Starting upload process...', 'info');
-            
-            // Verify POI connections using current IPs from state
-            const [mainAvailable, auxAvailable] = await Promise.all([
-              verifyPoiConnection(state.poiIPs.mainIP),
-              verifyPoiConnection(state.poiIPs.auxIP)
-            ]);
-
-            if (!mainAvailable && !auxAvailable) {
-              throw new Error("Both POIs are unavailable - upload cannot proceed");
-            }
-
-            // Store original patterns
-            await fetchOriginalPattern();
-
-            // Set upload patterns
-            const patternTasks = [];
-            if (mainAvailable) patternTasks.push(setPatternSafe(7, state.poiIPs.mainIP));
-            if (auxAvailable) patternTasks.push(setPatternSafe(7, state.poiIPs.auxIP));
-            await Promise.all(patternTasks);
-            await delay(state.upload.config.INTER_POI_DELAY);
-
-            // Process files for available POIs
-            const uploadTasks = [];
-            if (mainAvailable) {
-              uploadTasks.push(
-                processPoiWithBackoff(state.upload.orderedFiles, state.poiIPs.mainIP, "Main POI")
-                  .then(() => createMessage("Main POI upload complete"))
-              );
-            }
-            if (auxAvailable) {
-              uploadTasks.push(
-                processPoiWithBackoff(state.upload.orderedFiles, state.poiIPs.auxIP, "Aux POI")
-                  .then(() => createMessage("Aux POI upload complete"))
-              );
-            }
-
-            await Promise.all(uploadTasks);
-            
-            // Restore original patterns
-            await restoreOriginalPatterns(mainAvailable, auxAvailable);
-            
-            createMessage(`Upload completed to ${mainAvailable ? 'Main POI' : ''}${auxAvailable ? ' and Aux POI' : ''}`);
-
-          } catch (error) {
-            handleCriticalError(error);
-          } finally {
-            // Clear files after upload
-            state.upload.orderedFiles = [];
-            document.getElementById('fileListContainer').innerHTML = '';
-            document.getElementById('uploadFileInput').value = '';
-          }
-        }
 
         /**
          * Processes files for a single POI with retry and batch control
