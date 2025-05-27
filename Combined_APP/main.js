@@ -1,6 +1,12 @@
 // Image Upload Handler
 async function handleImageUpload(file, ip, targetFileName) {
-    const fileName = targetFileName.replace(/\.bin$/, ""); // Ensure no .bin duplication
+    // Validate target filename first
+    if (!/^[a-zA-Z0-9-_.]{1,50}\.bin$/i.test(targetFileName)) {
+        createMessage('Invalid target tile filename', 'error');
+        return;
+    }
+    
+    const fileName = targetFileName; // Use validated grid filename
     const reader = new FileReader();
     
     // Store original pattern and turn off LEDs for upload
@@ -48,17 +54,24 @@ async function handleImageUpload(file, ip, targetFileName) {
             );
 
             const formData = new FormData();
+            // Use the provided filename directly (already validated from tile)
+            const validFilename = fileName;
+            
             formData.append('file', new Blob([new Uint8Array(binaryData)], {
                 type: 'application/octet-stream'
-            }), `${fileName}.bin`); // Server expects .bin extension
+            }), validFilename);
 
-            await fetch(`http://${ip}/edit`, {
+            const uploadResponse = await fetch(`http://${ip}/edit`, {
                 method: 'POST',
                 body: formData
             });
             
-            createMessage(`Image ${fileName} uploaded successfully`);
-            decompressAndDisplay(ip, `${fileName}.bin`);
+            if (!uploadResponse.ok) {
+                throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+            }
+            
+            createMessage(`Image ${validFilename} uploaded successfully`);
+            decompressAndDisplay(ip, validFilename);
         } catch (error) {
             console.error('Upload failed:', error);
             createMessage(`Upload failed: ${error.message}`, 'error');
@@ -91,26 +104,42 @@ function refreshAllImages(fullRefresh = false) {
 
 function createBlackImages(containerId, ip) {
     const container = document.getElementById(containerId);
-    
-    // Clear existing images
     container.innerHTML = '';
 
     for (let i = 0; i < 62; i++) {
         const char = getCharFromIndex(i);
         const fileName = char + '.bin';
         
+        const wrapper = document.createElement('div');
+        wrapper.className = 'image-wrapper draggable-file';
+        wrapper.draggable = true;
+        wrapper.dataset.fileName = fileName;
+        
         const imgElement = document.createElement('img');
         imgElement.className = 'poi-image';
         imgElement.alt = fileName;
+        imgElement.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+        imgElement.title = fileName;
 
-        imgElement.addEventListener('click', function() {
+        const fileNameSpan = document.createElement('span');
+        fileNameSpan.className = 'bin-filename';
+        fileNameSpan.textContent = fileName;
+
+        wrapper.appendChild(imgElement);
+        wrapper.appendChild(fileNameSpan);
+        
+        // Drag handlers
+        wrapper.addEventListener('dragstart', handleDragStart);
+        wrapper.addEventListener('dragover', handleDragOver);
+        wrapper.addEventListener('drop', handleDrop);
+        wrapper.addEventListener('dragend', handleDragEnd);
+
+        // Click handler for preview
+        wrapper.addEventListener('click', function() {
             decompressAndDisplay(ip, fileName);
         });
 
-        imgElement.addEventListener('dragover', handleDragOver);
-        imgElement.addEventListener('drop', (event) => handleImageDrop(event, ip));
-
-        container.appendChild(imgElement);
+        container.appendChild(wrapper);
     }
 }
 
@@ -119,14 +148,36 @@ function getCharFromIndex(index) {
     return characters.charAt(index);
 }
 
-function handleDragOver(event) {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'copy';
+function handleDragOver(e) {
+  e.preventDefault();
+  const dragging = document.querySelector('.dragging');
+  if (!dragging) return;
+
+  // Get the closest valid drop container
+  const container = e.currentTarget.closest('.image-grid-container, #fileListContainer');
+  if (!container || !container.appendChild) return;
+
+  const afterElement = getDragAfterElement(container, e.clientY);
+  
+  if (container && dragging && container instanceof Node && dragging instanceof Node) {
+    if (afterElement && afterElement.parentNode === container) {
+      container.insertBefore(dragging, afterElement);
+    } else if (dragging.parentNode !== container) {
+      container.appendChild(dragging);
+    }
+  }
 }
 
 async function decompressAndDisplay(ip, fileName) {
     try {
-        const response = await fetch(`http://${ip}/edit?file=${fileName}`);
+        // Update validation to match filename rules exactly
+        if (!/^[a-zA-Z0-9-_.]{1,50}\.bin$/i.test(fileName)) {
+            console.error(`Invalid filename format: ${fileName}`);
+            createMessage('Invalid image filename format', 'error');
+            return;
+        }
+        
+        const response = await fetch(`http://${ip}/edit?file=${encodeURIComponent(fileName)}`);
         const arrayBuffer = await response.arrayBuffer();
         const binaryData = new Uint8Array(arrayBuffer);
         const imageUrl = await decompress(binaryData);
@@ -211,14 +262,217 @@ function handleImageDrop(event, ip) {
     event.preventDefault();
     const files = event.dataTransfer.files;
     if (files.length > 0) {
-        const targetElement = event.target.closest('.poi-image');
-        const targetFileName = targetElement ? targetElement.alt : files[0].name.replace(/\.[^/.]+$/, "") + '.bin';
-        handleImageUpload(files[0], ip, targetFileName);
+        // Get the closest image-wrapper ancestor of the drop target
+        const dropTarget = event.target.closest('.image-wrapper');
+        let targetFileName = dropTarget?.dataset?.fileName;
+
+        // Only use tile filename if dropping on a valid tile
+        if (dropTarget && targetFileName) {
+            handleImageUpload(files[0], ip, targetFileName);
+        }
+        // Optional: Add else case here if you want different behavior for grid drops
     }
+}
+
+function generateNewFilename(containerId) {
+    // This function is only used for initial grid creation now
+    const container = document.getElementById(containerId);
+    const existingFiles = new Set(
+        Array.from(container.querySelectorAll('.image-wrapper'))
+            .map(el => el.dataset.fileName)
+            .filter(Boolean)
+    );
+    
+    // Only create numbered names if the title starts with a number
+    const numbers = Array.from({length: 100}, (_, i) => i);
+    for (const num of numbers) {
+        const testName = `${num}.bin`;
+        if (!existingFiles.has(testName)) {
+            return testName;
+        }
+    }
+    return `${Date.now()}.bin`; // fallback with timestamp
+}
+
+function sanitizeFileName(name) {
+    // Only sanitize - keep original numbers and names
+    const base = name.replace(/\.bin$/i, '')
+                     .replace(/[^a-zA-Z0-9-_.]/g, '') // Allow periods
+                     .substring(0, 50);
+    return `${base}.bin`;
+}
+
+function validateFileName(name) {
+    return /^[a-zA-Z0-9-_.]{1,50}\.bin$/i.test(name) ? name : null;
 }
 
 const MAX_RETRY_COUNT = 3;
 let retryCount = 0;
+
+// Upload Bin Handlers
+async function verifyPoiConnection(ip) {
+  for(let attempt = 1; attempt <= state.upload.config.POI_CHECK_RETRIES; attempt++) {
+    try {
+      const response = await fetchWithTimeout(
+        `http://${ip}/get-pixels`,
+        state.upload.config.POI_CHECK_TIMEOUT
+      );
+      
+      if(response.ok) {
+        return true;
+      }
+    } catch(error) {
+      if(attempt === state.upload.config.POI_CHECK_RETRIES) {
+        return false;
+      }
+      await delay(state.upload.config.RETRY_BACKOFF[attempt-1]);
+    }
+  }
+  return false;
+}
+
+async function restoreOriginalPatterns(mainAvailable = true, auxAvailable = true) {
+  const restoreTasks = [];
+  if(mainAvailable) restoreTasks.push(setPatternSafe(originalPattern, state.poiIPs.mainIP));
+  if(auxAvailable) restoreTasks.push(setPatternSafe(originalPattern, state.poiIPs.auxIP));
+  
+  await Promise.allSettled(restoreTasks);
+  await delay(1000); // Final safety delay
+}
+
+let originalPattern; // Will store the original pattern during upload
+
+async function fetchOriginalPattern() {
+  try {
+    const response = await fetch(`http://${state.poiIPs.mainIP}/returnsettings`);
+    if (response.ok) {
+      const data = await response.text();
+      const parts = data.split(',');
+      originalPattern = parts[parts.length - 1].trim();
+    }
+  } catch (error) {
+    originalPattern = 1;
+  }
+}
+
+async function setPatternSafe(pattern, ip) {
+  await fetchWithTimeout(`http://${ip}/pattern?patternChooserChange=${pattern}`, 5000);
+  await delay(500); // Allow flash write cycle
+}
+
+async function fetchWithTimeout(resource, timeout=5000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  const response = await fetch(resource, { signal: controller.signal });
+  clearTimeout(id);
+  return response;
+}
+
+// Upload Bin Handlers
+async function handleUpload() {
+  if (!state.upload.orderedFiles.length) {
+    createMessage('Please select at least one file', 'warning');
+    return;
+  }
+
+  try {
+    createMessage('Starting upload process...', 'info');
+    
+    // Verify POI connections using current IPs from state
+    const [mainAvailable, auxAvailable] = await Promise.all([
+      verifyPoiConnection(state.poiIPs.mainIP),
+      verifyPoiConnection(state.poiIPs.auxIP)
+    ]);
+
+    if (!mainAvailable && !auxAvailable) {
+      throw new Error("Both POIs are unavailable - upload cannot proceed");
+    }
+
+    // Store original patterns
+    await fetchOriginalPattern();
+
+    // Set upload patterns
+    const patternTasks = [];
+    if (mainAvailable) patternTasks.push(setPatternSafe(7, state.poiIPs.mainIP));
+    if (auxAvailable) patternTasks.push(setPatternSafe(7, state.poiIPs.auxIP));
+    await Promise.all(patternTasks);
+    await delay(state.upload.config.INTER_POI_DELAY);
+
+    // Process files for available POIs
+    const uploadTasks = [];
+    if (mainAvailable) {
+      uploadTasks.push(
+        processPoiWithBackoff(state.upload.orderedFiles, state.poiIPs.mainIP, "Main POI")
+          .then(() => createMessage("Main POI upload complete"))
+      );
+    }
+    if (auxAvailable) {
+      uploadTasks.push(
+        processPoiWithBackoff(state.upload.orderedFiles, state.poiIPs.auxIP, "Aux POI")
+          .then(() => createMessage("Aux POI upload complete"))
+      );
+    }
+
+    await Promise.all(uploadTasks);
+    
+    // Restore original patterns
+    await restoreOriginalPatterns(mainAvailable, auxAvailable);
+    
+    createMessage(`Upload completed to ${mainAvailable ? 'Main POI' : ''}${auxAvailable ? ' and Aux POI' : ''}`);
+
+  } catch (error) {
+    handleCriticalError(error);
+  } finally {
+    // Clear files after upload
+    state.upload.orderedFiles = [];
+    document.getElementById('fileListContainer').innerHTML = '';
+    document.getElementById('uploadFileInput').value = '';
+  }
+}
+
+function logBatchCompletion(batchNumber, totalBatches, label) {
+  const progress = `${batchNumber}/${totalBatches} batches`;
+  createMessage(`${label}: Completed ${progress} (${batchNumber * state.upload.config.BATCH_SIZE} files)`);
+}
+
+async function processPoiWithBackoff(files, ip, label) {
+  const batchCount = Math.ceil(files.length / state.upload.config.BATCH_SIZE);
+  
+  for(let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
+    const batchStart = batchIndex * state.upload.config.BATCH_SIZE;
+    const batchFiles = files.slice(batchStart, batchStart + state.upload.config.BATCH_SIZE);
+    
+    await processBatch(batchFiles, ip, label, batchIndex+1, batchCount);
+    
+    if(batchIndex < batchCount - 1) {
+      await delay(state.upload.config.INTER_BATCH_DELAY);
+    }
+  }
+}
+
+async function processBatch(batchFiles, ip, label, batchNumber, totalBatches) {
+  const batchPromises = batchFiles.map(async (file, fileIndex) => {
+    await processFileWithRetry(file, ip, label);
+    await delay(state.upload.config.INTER_FILE_DELAY);
+  });
+  
+  await Promise.allSettled(batchPromises);
+  logBatchCompletion(batchNumber, totalBatches, label);
+}
+
+async function processFileWithRetry(file, ip, label) {
+  for(let attempt = 1; attempt <= state.upload.config.MAX_RETRIES; attempt++) {
+    try {
+      await processSingleFile(file, ip);
+      return; // Success - exit retry loop
+    } catch(error) {
+      if(attempt === state.upload.config.MAX_RETRIES) {
+        throw new Error(`Failed after ${attempt} attempts: ${error.message}`);
+      }
+      await delay(state.upload.config.RETRY_BACKOFF[attempt-1]);
+    }
+  }
+}
 
 // State Management
 function checkInitialStatus() {
@@ -279,6 +533,19 @@ function updateStatusIndicators() {
 
 const state = {
     wsStrip: true,
+    upload: {
+        orderedFiles: [],
+        config: {
+            BATCH_SIZE: 2,
+            INTER_FILE_DELAY: 750,
+            INTER_BATCH_DELAY: 1500,
+            INTER_POI_DELAY: 3000,
+            MAX_RETRIES: 3,
+            RETRY_BACKOFF: [500, 1500, 3000],
+            POI_CHECK_RETRIES: 2,
+            POI_CHECK_TIMEOUT: 3000
+        }
+    },
     poiIPs: {
         mainIP: "192.168.1.1", 
         auxIP: "192.168.1.78",
@@ -310,6 +577,7 @@ const state = {
 // Initialize App
 function init() {
     loadState();
+    initializeUploadHandlers();
     setupTabNavigation();
     initializeNetworkDiscovery();
     setupImageHandlers();
@@ -419,8 +687,12 @@ function loadState() {
     // Update manual IP inputs
     mainIpInput.placeholder = state.poiIPs.mainIP || '192.168.1.x';
     auxIpInput.placeholder = state.poiIPs.auxIP || '192.168.1.x';
+    
+    // Update both pixel inputs and displays
     document.getElementById('pixelInput').value = state.settings.pixels;
+    document.getElementById('uploadPixelInput').value = state.settings.pixels;
     document.getElementById('currentPx').textContent = `Current px: ${state.settings.pixels}`;
+    document.getElementById('uploadCurrentPx').textContent = `Current px: ${state.settings.pixels}`;
 }
 
 // Network Discovery Implementation
@@ -656,37 +928,33 @@ async function fetchInitialPixels() {
 }
 
 function setupImageHandlers() {
-    // Initialize image grids with current IPs
-    createBlackImages('mainImageGrid', state.poiIPs.mainIP);
-    createBlackImages('auxImageGrid', state.poiIPs.auxIP);
+  // Remove existing drag handlers first
+  document.querySelectorAll('.image-grid-container').forEach(grid => {
+    grid.removeEventListener('dragover', handleDragOver);
+    grid.removeEventListener('drop', handleImageDrop);
+  });
 
-    // Add drag/drop handlers to containers
-    document.querySelectorAll('.image-grid-container').forEach(grid => {
-        grid.addEventListener('dragover', handleDragOver);
-        grid.addEventListener('drop', (event) => handleImageDrop(event, 
-            grid.id === 'mainImageGrid' ? state.poiIPs.mainIP : state.poiIPs.auxIP
-        ));
+  // Initialize image grids with current IPs
+  createBlackImages('mainImageGrid', state.poiIPs.mainIP);
+  createBlackImages('auxImageGrid', state.poiIPs.auxIP);
+
+  // Add new drag handlers to containers
+  document.querySelectorAll('.image-grid-container').forEach(grid => {
+    grid.addEventListener('dragover', handleDragOver);
+    grid.addEventListener('drop', (event) => {
+      // Use our primary handler that checks for valid tiles
+      handleImageDrop(event, grid.id === 'mainImageGrid' 
+        ? state.poiIPs.mainIP 
+        : state.poiIPs.auxIP
+      );
     });
-    
-    // Button handlers
-    document.getElementById('refreshImages').addEventListener('click', refreshAllImages);
-    document.getElementById('updatePixels').addEventListener('click', updatePixelsOnBoth);
+  });
+  
+  // Button handlers
+  document.getElementById('refreshImages').addEventListener('click', refreshAllImages);
+  document.getElementById('updatePixels').addEventListener('click', updatePixelsOnBoth);
 }
 
-function handleImageDrop(event) {
-    event.preventDefault();
-    const files = event.dataTransfer.files;
-    if (files.length > 0) {
-        const targetElement = event.target.closest('.poi-image');
-        const targetGrid = event.target.closest('.image-grid-container');
-        const ip = targetGrid.id === 'mainImageGrid' ? state.poiIPs.mainIP : state.poiIPs.auxIP;
-        const targetFileName = targetElement ? 
-            targetElement.alt : 
-            files[0].name.replace(/\.[^/.]+$/, "") + '.bin';
-        
-        handleImageUpload(files[0], ip, targetFileName);
-    }
-}
 
 function handleDragOver(event) {
     event.preventDefault();
@@ -825,6 +1093,125 @@ async function updateBothPOIs(endpoint) {
 }
 
 // Utility Functions
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function createFileListItem(file, index) {
+    const div = document.createElement('div');
+    div.className = 'draggable-file';
+    div.draggable = true;
+    div.dataset.index = index;
+    div.dataset.fileName = file.name;
+
+    // Preview image
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    
+    // Filename
+    const span = document.createElement('span');
+    span.textContent = file.name;
+    
+    // Drag handle
+    const handle = document.createElement('div');
+    handle.className = 'drag-handle';
+    handle.innerHTML = '☰';
+    
+    div.appendChild(img);
+    div.appendChild(span);
+    div.appendChild(handle);
+    
+    // Drag & drop handlers
+    div.addEventListener('dragstart', handleDragStart);
+    div.addEventListener('dragover', handleDragOver);
+    div.addEventListener('drop', handleDrop);
+    div.addEventListener('dragend', handleDragEnd);
+    
+    return div;
+}
+
+function handleDragStart(e) {
+  e.dataTransfer.setData('text/plain', e.target.dataset.index);
+  e.target.classList.add('dragging');
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  const dragging = document.querySelector('.dragging');
+  const container = document.getElementById('fileListContainer');
+  const afterElement = getDragAfterElement(container, e.clientY);
+  
+  if (afterElement) {
+    container.insertBefore(dragging, afterElement);
+  } else {
+    // container.appendChild(dragging);
+  }
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  updateFilesOrder();
+}
+
+function handleDragEnd(e) {
+  e.target.classList.remove('dragging');
+}
+
+function updateFilesOrder() {
+  const container = document.getElementById('fileListContainer');
+  const currentOrderNames = Array.from(container.children).map(item => item.dataset.fileName);
+  state.upload.orderedFiles = currentOrderNames.map(name => 
+    state.upload.orderedFiles.find(file => file.name === name)
+  ).filter(file => file !== undefined);
+}
+
+function getDragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll('.draggable-file:not(.dragging)')];
+  
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function handleFileInput(e) {
+  const container = document.getElementById('fileListContainer');
+  container.innerHTML = '';
+  state.upload.orderedFiles = Array.from(e.target.files);
+  
+  state.upload.orderedFiles.forEach((file, index) => {
+    const listItem = createFileListItem(file, index);
+    container.appendChild(listItem);
+  });
+}
+
+function initializeDragAndDrop() {
+  const container = document.getElementById('fileListContainer');
+  
+  container.addEventListener('dragover', e => {
+    e.preventDefault();
+    const dragging = document.querySelector('.dragging');
+    const afterElement = getDragAfterElement(container, e.clientY);
+    
+    if(afterElement) {
+      container.insertBefore(dragging, afterElement);
+    } else {
+      container.appendChild(dragging);
+    }
+  });
+
+  container.addEventListener('drop', e => {
+    e.preventDefault();
+    updateFilesOrder();
+  });
+}
+
 function createMessage(message, type = 'info') {
     const modal = document.getElementById('messageModal');
     modal.textContent = message;
@@ -837,6 +1224,15 @@ function createMessage(message, type = 'info') {
     setTimeout(() => {
         modal.classList.remove('active');
     }, 2000);
+}
+
+function handleCriticalError(error) {
+    console.error('Critical Error:', error);
+    createMessage(`Upload failed: ${error.message}`, 'error');
+    // Attempt to restore original patterns even on failure
+    restoreOriginalPatterns().catch(err => {
+        console.error('Failed to restore patterns:', err);
+    });
 }
 
 function showError(elementId, message) {
@@ -882,6 +1278,42 @@ async function sendRequest(url, retries = 3) {
             await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
         }
     }
+}
+
+function initializeUploadHandlers() {
+    // Initialize upload tab inputs with current state
+    document.getElementById('uploadPixelInput').value = state.settings.pixels;
+    document.getElementById('uploadCurrentPx').textContent = `Current px: ${state.settings.pixels}`;
+
+    // File input handler
+    document.getElementById('uploadFileInput').addEventListener('change', function(e) {
+        const container = document.getElementById('fileListContainer');
+        container.innerHTML = '';
+        state.upload.orderedFiles = Array.from(e.target.files);
+        state.upload.orderedFiles.forEach((file, index) => {
+            container.appendChild(createFileListItem(file, index));
+        });
+    });
+
+    // Upload button handler - updated to use correct ID
+    document.getElementById('uploadBinButton').addEventListener('click', handleUpload);
+
+    // WS/APA toggle handler
+    document.getElementById('uploadWsApaBtn').addEventListener('click', function() {
+        state.wsStrip = !state.wsStrip;
+        const indicator = document.getElementById('uploadWsApaIndicator');
+        indicator.textContent = `Current: ${state.wsStrip ? 'WS2812' : 'APA102'}`;
+        createMessage(`Switched to ${state.wsStrip ? 'WS2812 (compressed)' : 'APA102 (raw)'} mode`);
+        saveState();
+    });
+
+    // Pixel update handler
+    document.getElementById('uploadUpdatePixelButton').addEventListener('click', function() {
+        const pixelInput = document.getElementById('uploadPixelInput').value;
+        state.settings.pixels = parseInt(pixelInput, 10);
+        updatePixelSize(); // Use the unified update function
+        saveState();
+    });
 }
 
 // Initialize the application
@@ -1169,6 +1601,11 @@ function init() {
     initializeModal();
     initializeFetchButton();
     checkInitialStatus();
+    
+    // Initialize upload tab
+    document.getElementById('uploadFileInput').addEventListener('change', handleFileInput);
+    document.getElementById('uploadBinButton').addEventListener('click', handleUpload);
+    initializeDragAndDrop();
     
     // Initialize slider positions from state
     const speedSlider = document.getElementById('speedSlider');
