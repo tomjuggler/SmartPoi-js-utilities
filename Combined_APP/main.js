@@ -973,6 +973,48 @@ function createFileListItem(file, index) {
     return div;
 }
 
+function handleDragStart(e) {
+  e.dataTransfer.setData('text/plain', e.target.dataset.index);
+  e.target.classList.add('dragging');
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  const dragging = document.querySelector('.dragging');
+  const container = document.getElementById('fileListContainer');
+  const afterElement = getDragAfterElement(container, e.clientY);
+  
+  if (afterElement) {
+    container.insertBefore(dragging, afterElement);
+  } else {
+    container.appendChild(dragging);
+  }
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  updateFilesOrder();
+}
+
+function handleDragEnd(e) {
+  e.target.classList.remove('dragging');
+}
+
+function getDragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll('.draggable-file:not(.dragging)')];
+  
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
 function handleFileInput(e) {
   const container = document.getElementById('fileListContainer');
   container.innerHTML = '';
