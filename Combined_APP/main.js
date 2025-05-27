@@ -386,6 +386,15 @@ function loadState() {
         state.poiIPs.auxIP = "192.168.1.78";
     }
 
+    // Initialize manual IP inputs with current values
+    const mainIpInput = document.getElementById('manualMainIp');
+    const auxIpInput = document.getElementById('manualAuxIp');
+    
+    mainIpInput.value = state.poiIPs.mainIP;
+    mainIpInput.placeholder = state.poiIPs.mainIP;
+    auxIpInput.value = state.poiIPs.auxIP;
+    auxIpInput.placeholder = state.poiIPs.auxIP;
+
     // Update UI elements
     document.getElementById('routerModeCheckbox').checked = state.poiIPs.routerMode;
     updateNetworkModeDisplay();
@@ -1243,10 +1252,17 @@ async function submitRouterMode() {
         // Update local state
         state.poiIPs.routerMode = routerMode;
         
+        const mainIpInput = document.getElementById('manualMainIp');
+        const auxIpInput = document.getElementById('manualAuxIp');
+        
         if (routerMode) {
             // Restore saved router mode IPs
             state.poiIPs.mainIP = state.poiIPs.savedRouterIPs.main || "192.168.1.1";
             state.poiIPs.auxIP = state.poiIPs.savedRouterIPs.aux || "192.168.1.78";
+            
+            // Update inputs with saved values
+            mainIpInput.value = state.poiIPs.mainIP;
+            auxIpInput.value = state.poiIPs.auxIP;
         } else {
             // Save current IPs before switching to AP mode
             state.poiIPs.savedRouterIPs = {
@@ -1256,6 +1272,10 @@ async function submitRouterMode() {
             // Set hardcoded AP mode IPs
             state.poiIPs.mainIP = "192.168.1.1";
             state.poiIPs.auxIP = "192.168.1.78";
+            
+            // Clear and reset input fields to defaults
+            mainIpInput.value = "192.168.1.1";
+            auxIpInput.value = "192.168.1.78";
         }
 
         saveState();
@@ -1279,7 +1299,11 @@ function updateNetworkModeDisplay() {
     } else {
         modeIndicator.textContent = "AP Mode";
         modeIndicator.className = "status-indicator offline";
-        ipInputs.forEach(input => input.disabled = true);
+        ipInputs.forEach(input => {
+            input.disabled = true;
+            // Force display of default values
+            input.value = input.placeholder;
+        });
     }
 }
 
