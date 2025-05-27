@@ -262,14 +262,15 @@ function handleImageDrop(event, ip) {
         const dropTarget = event.target.closest('.image-wrapper') || event.currentTarget;
         let targetFileName = dropTarget?.dataset?.fileName;
         
+        // Use exact tile filename if available, otherwise use sanitized original name
         if (!targetFileName) {
-            // Get the container based on IP
-            const containerId = ip === state.poiIPs.mainIP ? 'mainImageGrid' : 'auxImageGrid';
-            targetFileName = generateNewFilename(containerId);
+            targetFileName = sanitizeFileName(files[0].name);
         }
         
-        // Ensure filename is valid
-        targetFileName = validateFileName(targetFileName) || sanitizeFileName(files[0].name);
+        // Ensure we use the EXACT tile filename when dropping on a tile
+        if (dropTarget?.dataset?.fileName) {
+            targetFileName = dropTarget.dataset.fileName;
+        }
         
         if (targetFileName) {
             handleImageUpload(files[0], ip, targetFileName);
@@ -278,39 +279,31 @@ function handleImageDrop(event, ip) {
 }
 
 function generateNewFilename(containerId) {
+    // This function is only used for initial grid creation now
     const container = document.getElementById(containerId);
     const existingFiles = new Set(
         Array.from(container.querySelectorAll('.image-wrapper'))
             .map(el => el.dataset.fileName)
             .filter(Boolean)
     );
-
-    // Find first available filename using all valid characters
-    const validChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    for (const char of validChars) {
-        // Try single character first
-        const testName = `${char}.bin`;
+    
+    // Only create numbered names if the title starts with a number
+    const numbers = Array.from({length: 100}, (_, i) => i);
+    for (const num of numbers) {
+        const testName = `${num}.bin`;
         if (!existingFiles.has(testName)) {
             return testName;
         }
-        
-        // Then try numbered versions
-        for (let i = 1; i < 100; i++) {
-            const numberedName = `${char}${i}.bin`;
-            if (!existingFiles.has(numberedName)) {
-                return numberedName;
-            }
-        }
     }
-    return `file_${Date.now()}.bin`; // fallback with timestamp
+    return `${Date.now()}.bin`; // fallback with timestamp
 }
 
 function sanitizeFileName(name) {
-    // Keep up to 50 characters, allow -_ characters
+    // Only sanitize - keep original numbers and names
     const base = name.replace(/\.bin$/i, '')
-                     .replace(/[^a-zA-Z0-9-_]/g, '')
+                     .replace(/[^a-zA-Z0-9-_.]/g, '') // Allow periods
                      .substring(0, 50);
-    return base ? `${base}.bin` : generateNewFilename('mainImageGrid');
+    return `${base}.bin`;
 }
 
 function validateFileName(name) {
