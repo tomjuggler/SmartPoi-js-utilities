@@ -821,14 +821,17 @@ async function updateBothPOIs(endpoint) {
 
 // Utility Functions
 function createMessage(message, type = 'info') {
-  const messageDiv = document.createElement('div');
-  messageDiv.className = `message ${type}`;
-  messageDiv.textContent = message;
-  
-  const container = document.getElementById('messages') || document.body;
-  container.prepend(messageDiv);
-  
-  setTimeout(() => messageDiv.remove(), 5000);
+    const modal = document.getElementById('messageModal');
+    modal.textContent = message;
+    modal.className = `message-modal ${type}`;
+    
+    // Add active class with slight delay for transition
+    setTimeout(() => modal.classList.add('active'), 10);
+    
+    // Remove after 2 seconds
+    setTimeout(() => {
+        modal.classList.remove('active');
+    }, 2000);
 }
 
 function showError(elementId, message) {

@@ -429,6 +429,47 @@ body {
     text-align: center;
 }
 
+/* Message Modal */
+.message-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    border: 1px solid #2c7a47;
+    max-width: 80%;
+    text-align: center;
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    font-size: 1.1rem;
+}
+
+.message-modal.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) translateY(-20px);
+}
+
+.message-modal.info {
+    border-color: #2c7a47;
+}
+
+.message-modal.warning {
+    border-color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.message-modal.error {
+    border-color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
 /* Unified slider container styles */
 .slider-group {
     width: 100%;
