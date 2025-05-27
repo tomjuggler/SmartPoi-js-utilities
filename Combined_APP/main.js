@@ -148,17 +148,15 @@ function handleDragOver(e) {
   const dragging = document.querySelector('.dragging');
   if (!dragging) return;
 
-  // Handle both upload container and image grids
-  const container = e.currentTarget.closest('.image-grid-container') || 
-                   document.getElementById('fileListContainer');
-  
-  if (!container || !container?.appendChild) return;
+  // Get the closest valid drop container
+  const container = e.currentTarget.closest('.image-grid-container, #fileListContainer');
+  if (!container || !container.appendChild) return;
 
   const afterElement = getDragAfterElement(container, e.clientY);
   
-  if (afterElement?.parentNode) {
+  if (afterElement && afterElement.parentNode === container) {
     container.insertBefore(dragging, afterElement);
-  } else if (dragging?.parentNode) {
+  } else if (dragging.parentNode !== container) {
     container.appendChild(dragging);
   }
 }
@@ -257,16 +255,18 @@ function handleImageDrop(event, ip) {
     event.preventDefault();
     const files = event.dataTransfer.files;
     if (files.length > 0) {
-        // Get the target filename from the closest image wrapper or container
-        const targetWrapper = event.target.closest('.image-wrapper');
-        const container = event.target.closest('.image-grid-container');
+        // Get the actual drop target element
+        const dropTarget = event.currentTarget;
+        let targetFileName;
         
-        // Use the grid's filename if dropping on existing image, otherwise generate new
-        let targetFileName = targetWrapper?.dataset.fileName || 
-                           generateNewFilename(ip, container);
-        
-        // Sanitize the filename before use
-        targetFileName = sanitizeFilename(targetFileName);
+        if (dropTarget.classList.contains('image-wrapper')) {
+            // Dropped directly on an image wrapper
+            targetFileName = dropTarget.dataset.fileName;
+        } else {
+            // Dropped in container space - use existing filename if available
+            const wrapper = event.target.closest('.image-wrapper');
+            targetFileName = wrapper?.dataset.fileName || generateNewFilename(ip, dropTarget);
+        }
         
         if (targetFileName) {
             handleImageUpload(files[0], ip, targetFileName);
