@@ -17,6 +17,7 @@
             <div class="tabs">
                 <button class="tab-button active" data-tab="controls">Controls</button>
                 <button class="tab-button" data-tab="images">Image Management</button>
+                <button class="tab-button" data-tab="files">File Lists</button>
             </div>
             <div id="networkModeIndicator" class="status-indicator"></div>
         </div>
@@ -205,6 +206,29 @@
                         <input type="number" id="brightnessAdjust" min="-1" max="1" step="0.1" value="0">
                         <button onclick="applyBrightness()">Adjust Brightness</button>
                         <button class="close-button">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- File Lists Tab -->
+        <div id="files" class="tab-content">
+            <div class="file-list-section">
+                <h2 class="section-title">POI File Lists</h2>
+                
+                <div class="list-controls">
+                    <button class="dark-button" onclick="getFileList()">Get Main POI Files</button>
+                    <button class="dark-button" onclick="getFileListTwo()">Get Aux POI Files</button>
+                </div>
+
+                <div class="list-containers">
+                    <div class="list-box">
+                        <h3>Main POI Files</h3>
+                        <textarea id="fileListTextArea" readonly></textarea>
+                    </div>
+                    <div class="list-box">
+                        <h3>Aux POI Files</h3>
+                        <textarea id="fileListTextAreatwo" readonly></textarea>
                     </div>
                 </div>
             </div>
