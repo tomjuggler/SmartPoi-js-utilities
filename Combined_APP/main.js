@@ -341,6 +341,11 @@ async function handleUpload() {
   }
 }
 
+function logBatchCompletion(batchNumber, totalBatches, label) {
+  const progress = `${batchNumber}/${totalBatches} batches`;
+  createMessage(`${label}: Completed ${progress} (${batchNumber * state.upload.config.BATCH_SIZE} files)`);
+}
+
 async function processPoiWithBackoff(files, ip, label) {
   const batchCount = Math.ceil(files.length / state.upload.config.BATCH_SIZE);
   
