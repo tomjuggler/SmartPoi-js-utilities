@@ -49,9 +49,10 @@ async function handleImageUpload(file, ip, targetFileName) {
             );
 
             const formData = new FormData();
-            // Ensure filename is valid format before upload
-            // Keep original filename if valid, else use a.bin
-            const validFilename = /^[a-z0-9]\.bin$/i.test(fileName) ? fileName : 'a.bin';
+            // Validate filename format with more flexible rules
+            const validFilename = validateFileName(fileName) || generateNewFilename(
+                ip === state.poiIPs.mainIP ? 'mainImageGrid' : 'auxImageGrid'
+            );
             
             formData.append('file', new Blob([new Uint8Array(binaryData)], {
                 type: 'application/octet-stream'
@@ -155,14 +156,11 @@ function handleDragOver(e) {
 
   const afterElement = getDragAfterElement(container, e.clientY);
   
-  if (container && dragging) {
+  if (container && dragging && container instanceof Node && dragging instanceof Node) {
     if (afterElement && afterElement.parentNode === container) {
       container.insertBefore(dragging, afterElement);
     } else if (dragging.parentNode !== container) {
-      // Ensure we only try to append valid elements
-      if (dragging instanceof Node && container instanceof Node) {
-        container.appendChild(dragging);
-      }
+      container.appendChild(dragging);
     }
   }
 }
@@ -261,18 +259,17 @@ function handleImageDrop(event, ip) {
     event.preventDefault();
     const files = event.dataTransfer.files;
     if (files.length > 0) {
-        // Get the actual drop target element
-        const dropTarget = event.currentTarget;
-        let targetFileName;
+        const dropTarget = event.target.closest('.image-wrapper') || event.currentTarget;
+        let targetFileName = dropTarget?.dataset?.fileName;
         
-        if (dropTarget.classList.contains('image-wrapper')) {
-            // Dropped directly on an image wrapper
-            targetFileName = dropTarget.dataset.fileName;
-        } else {
-            // Dropped in container space - use existing filename if available
-            const wrapper = event.target.closest('.image-wrapper');
-            targetFileName = wrapper?.dataset.fileName || generateNewFilename(ip, dropTarget);
+        if (!targetFileName) {
+            // Get the container based on IP
+            const containerId = ip === state.poiIPs.mainIP ? 'mainImageGrid' : 'auxImageGrid';
+            targetFileName = generateNewFilename(containerId);
         }
+        
+        // Ensure filename is valid
+        targetFileName = validateFileName(targetFileName) || sanitizeFileName(files[0].name);
         
         if (targetFileName) {
             handleImageUpload(files[0], ip, targetFileName);
@@ -280,41 +277,44 @@ function handleImageDrop(event, ip) {
     }
 }
 
-function generateNewFilename(ip, container) {
-    // Determine which container to use
-    const containerId = ip === state.poiIPs.mainIP ? 'mainImageGrid' : 'auxImageGrid';
-    const targetContainer = container?.id === containerId ? container : document.getElementById(containerId);
-    
-    // Get all existing filenames in the container
+function generateNewFilename(containerId) {
+    const container = document.getElementById(containerId);
     const existingFiles = new Set(
-        Array.from(targetContainer.querySelectorAll('.image-wrapper'))
+        Array.from(container.querySelectorAll('.image-wrapper'))
             .map(el => el.dataset.fileName)
             .filter(Boolean)
     );
 
-    // Find first available filename in standard sequence
+    // Find first available filename using all valid characters
     const validChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     for (const char of validChars) {
+        // Try single character first
         const testName = `${char}.bin`;
         if (!existingFiles.has(testName)) {
             return testName;
         }
+        
+        // Then try numbered versions
+        for (let i = 1; i < 100; i++) {
+            const numberedName = `${char}${i}.bin`;
+            if (!existingFiles.has(numberedName)) {
+                return numberedName;
+            }
+        }
     }
-    return 'a.bin'; // fallback if all slots are full
+    return `file_${Date.now()}.bin`; // fallback with timestamp
 }
 
-function sanitizeFilename(name) {
-    // Remove any existing .bin extension and non-alphanumeric chars
-    const base = name.replace(/\.bin$/i, '').replace(/[^a-zA-Z0-9]/g, '');
-    return base ? `${base}.bin` : 'a.bin';
+function sanitizeFileName(name) {
+    // Keep up to 50 characters, allow -_ characters
+    const base = name.replace(/\.bin$/i, '')
+                     .replace(/[^a-zA-Z0-9-_]/g, '')
+                     .substring(0, 50);
+    return base ? `${base}.bin` : generateNewFilename('mainImageGrid');
 }
 
 function validateFileName(name) {
-    const validChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    const baseName = name.replace(/\.bin$/i, '');
-    return baseName.split('').every(c => validChars.includes(c)) ? 
-        `${baseName}.bin` : 
-        null;
+    return /^[a-zA-Z0-9-_.]{1,50}\.bin$/i.test(name) ? name : null;
 }
 
 const MAX_RETRY_COUNT = 3;
