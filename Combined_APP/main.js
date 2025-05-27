@@ -135,9 +135,24 @@ function getCharFromIndex(index) {
     return characters.charAt(index);
 }
 
-function handleDragOver(event) {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'copy';
+function handleDragOver(e) {
+  e.preventDefault();
+  const dragging = document.querySelector('.dragging');
+  if (!dragging) return;
+
+  // Handle both upload container and image grids
+  const container = e.currentTarget.closest('.image-grid-container') || 
+                   document.getElementById('fileListContainer');
+  
+  if (!container) return;
+
+  const afterElement = getDragAfterElement(container, e.clientY);
+  
+  if (afterElement) {
+    container.insertBefore(dragging, afterElement);
+  } else {
+    container.appendChild(dragging);
+  }
 }
 
 async function decompressAndDisplay(ip, fileName) {
