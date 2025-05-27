@@ -999,6 +999,10 @@ async function updateBothPOIs(endpoint) {
 }
 
 // Utility Functions
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function createFileListItem(file, index) {
     const div = document.createElement('div');
     div.className = 'draggable-file';
