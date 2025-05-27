@@ -1,7 +1,12 @@
 // Image Upload Handler
 async function handleImageUpload(file, ip, targetFileName) {
-    // Use grid filename directly
-    const fileName = targetFileName;
+    // Validate target filename first
+    if (!/^[a-zA-Z0-9-_.]{1,50}\.bin$/i.test(targetFileName)) {
+        createMessage('Invalid target tile filename', 'error');
+        return;
+    }
+    
+    const fileName = targetFileName; // Use validated grid filename
     const reader = new FileReader();
     
     // Store original pattern and turn off LEDs for upload
@@ -936,9 +941,13 @@ function setupImageHandlers() {
   // Add new drag handlers to containers
   document.querySelectorAll('.image-grid-container').forEach(grid => {
     grid.addEventListener('dragover', handleDragOver);
-    grid.addEventListener('drop', (event) => handleImageDrop(event, 
-      grid.id === 'mainImageGrid' ? state.poiIPs.mainIP : state.poiIPs.auxIP
-    ));
+    grid.addEventListener('drop', (event) => {
+      // Use our primary handler that checks for valid tiles
+      handleImageDrop(event, grid.id === 'mainImageGrid' 
+        ? state.poiIPs.mainIP 
+        : state.poiIPs.auxIP
+      );
+    });
   });
   
   // Button handlers
@@ -946,20 +955,6 @@ function setupImageHandlers() {
   document.getElementById('updatePixels').addEventListener('click', updatePixelsOnBoth);
 }
 
-function handleImageDrop(event) {
-    event.preventDefault();
-    const files = event.dataTransfer.files;
-    if (files.length > 0) {
-        const targetElement = event.target.closest('.poi-image');
-        const targetGrid = event.target.closest('.image-grid-container');
-        const ip = targetGrid.id === 'mainImageGrid' ? state.poiIPs.mainIP : state.poiIPs.auxIP;
-        const targetFileName = targetElement ? 
-            targetElement.alt : 
-            files[0].name.replace(/\.[^/.]+$/, "") + '.bin';
-        
-        handleImageUpload(files[0], ip, targetFileName);
-    }
-}
 
 function handleDragOver(event) {
     event.preventDefault();
