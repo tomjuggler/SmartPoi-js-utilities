@@ -1,6 +1,11 @@
 // Image Upload Handler
 async function handleImageUpload(file, ip, targetFileName) {
-    const fileName = targetFileName.replace(/\.bin$/, ""); // Ensure no .bin duplication
+    // Validate filename matches grid format
+    const fileName = validateFileName(targetFileName);
+    if (!fileName) {
+        createMessage('Invalid filename - must be a-z, A-Z, 0-9.bin', 'error');
+        return;
+    }
     const reader = new FileReader();
     
     // Store original pattern and turn off LEDs for upload
@@ -242,10 +247,41 @@ function handleImageDrop(event, ip) {
     event.preventDefault();
     const files = event.dataTransfer.files;
     if (files.length > 0) {
-        const targetElement = event.target.closest('.poi-image');
-        const targetFileName = targetElement ? targetElement.alt : files[0].name.replace(/\.[^/.]+$/, "") + '.bin';
+        // Get the target filename from the closest image wrapper
+        const targetWrapper = event.target.closest('.image-wrapper');
+        // Use the grid's filename if dropping on existing image,
+        // otherwise generate from first available slot
+        const targetFileName = targetWrapper ? 
+            targetWrapper.dataset.fileName : 
+            generateNewFilename(ip);
+        
         handleImageUpload(files[0], ip, targetFileName);
     }
+}
+
+function generateNewFilename(ip) {
+    const containerId = ip === state.poiIPs.mainIP ? 'mainImageGrid' : 'auxImageGrid';
+    const container = document.getElementById(containerId);
+    const existingFiles = Array.from(container.querySelectorAll('.image-wrapper'))
+        .map(el => el.dataset.fileName);
+    
+    // Find first unused filename in standard sequence
+    const validChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    for (let i = 0; i < validChars.length; i++) {
+        const testName = `${validChars[i]}.bin`;
+        if (!existingFiles.includes(testName)) {
+            return testName;
+        }
+    }
+    return 'a.bin'; // fallback
+}
+
+function validateFileName(name) {
+    const validChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const baseName = name.replace(/\.bin$/i, '');
+    return baseName.split('').every(c => validChars.includes(c)) ? 
+        `${baseName}.bin` : 
+        null;
 }
 
 const MAX_RETRY_COUNT = 3;
