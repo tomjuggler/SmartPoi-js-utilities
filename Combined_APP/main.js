@@ -145,13 +145,13 @@ function handleDragOver(e) {
   const container = e.currentTarget.closest('.image-grid-container') || 
                    document.getElementById('fileListContainer');
   
-  if (!container) return;
+  if (!container || !container?.appendChild) return;
 
   const afterElement = getDragAfterElement(container, e.clientY);
   
-  if (afterElement) {
+  if (afterElement?.parentNode) {
     container.insertBefore(dragging, afterElement);
-  } else {
+  } else if (dragging?.parentNode) {
     container.appendChild(dragging);
   }
 }
@@ -243,24 +243,30 @@ function handleImageDrop(event, ip) {
     event.preventDefault();
     const files = event.dataTransfer.files;
     if (files.length > 0) {
-        // Get the target filename from the closest image wrapper
+        // Get the target filename from the closest image wrapper or container
         const targetWrapper = event.target.closest('.image-wrapper');
-        // Use the grid's filename if dropping on existing image,
-        // otherwise generate from first available slot
-        const targetFileName = targetWrapper ? 
-            targetWrapper.dataset.fileName : 
-            generateNewFilename(ip);
+        const container = event.target.closest('.image-grid-container');
         
-        handleImageUpload(files[0], ip, targetFileName);
+        // Use the grid's filename if dropping on existing image, otherwise generate new
+        const targetFileName = targetWrapper?.dataset.fileName || 
+                             generateNewFilename(ip, container);
+        
+        if (targetFileName) {
+            handleImageUpload(files[0], ip, targetFileName);
+        }
     }
 }
 
-function generateNewFilename(ip) {
-    const containerId = ip === state.poiIPs.mainIP ? 'mainImageGrid' : 'auxImageGrid';
-    const container = document.getElementById(containerId);
-    const existingFiles = Array.from(container.querySelectorAll('.image-wrapper'))
-        .map(el => el.dataset.fileName);
+function generateNewFilename(ip, container) {
+    if (!container) {
+        const containerId = ip === state.poiIPs.mainIP ? 'mainImageGrid' : 'auxImageGrid';
+        container = document.getElementById(containerId);
+    }
     
+    const existingFiles = Array.from(container?.querySelectorAll('.image-wrapper') || [])
+        .map(el => el.dataset.fileName)
+        .filter(Boolean);
+
     // Find first unused filename in standard sequence
     const validChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     for (let i = 0; i < validChars.length; i++) {
