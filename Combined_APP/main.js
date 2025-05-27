@@ -49,10 +49,8 @@ async function handleImageUpload(file, ip, targetFileName) {
             );
 
             const formData = new FormData();
-            // Validate filename format with more flexible rules
-            const validFilename = validateFileName(fileName) || generateNewFilename(
-                ip === state.poiIPs.mainIP ? 'mainImageGrid' : 'auxImageGrid'
-            );
+            // Use the provided filename directly (already validated from tile)
+            const validFilename = fileName;
             
             formData.append('file', new Blob([new Uint8Array(binaryData)], {
                 type: 'application/octet-stream'
@@ -167,8 +165,8 @@ function handleDragOver(e) {
 
 async function decompressAndDisplay(ip, fileName) {
     try {
-        // Validate filename format before making request
-        if (!/^[a-zA-Z0-9]\.bin$/.test(fileName)) {
+        // Update validation to match filename rules exactly
+        if (!/^[a-zA-Z0-9-_.]{1,50}\.bin$/i.test(fileName)) {
             console.error(`Invalid filename format: ${fileName}`);
             createMessage('Invalid image filename format', 'error');
             return;
@@ -259,22 +257,15 @@ function handleImageDrop(event, ip) {
     event.preventDefault();
     const files = event.dataTransfer.files;
     if (files.length > 0) {
-        const dropTarget = event.target.closest('.image-wrapper') || event.currentTarget;
+        // Get the closest image-wrapper ancestor of the drop target
+        const dropTarget = event.target.closest('.image-wrapper');
         let targetFileName = dropTarget?.dataset?.fileName;
-        
-        // Use exact tile filename if available, otherwise use sanitized original name
-        if (!targetFileName) {
-            targetFileName = sanitizeFileName(files[0].name);
-        }
-        
-        // Ensure we use the EXACT tile filename when dropping on a tile
-        if (dropTarget?.dataset?.fileName) {
-            targetFileName = dropTarget.dataset.fileName;
-        }
-        
-        if (targetFileName) {
+
+        // Only use tile filename if dropping on a valid tile
+        if (dropTarget && targetFileName) {
             handleImageUpload(files[0], ip, targetFileName);
         }
+        // Optional: Add else case here if you want different behavior for grid drops
     }
 }
 
