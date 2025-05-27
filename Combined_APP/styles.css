@@ -420,6 +420,40 @@ body {
   margin-bottom: 15px;
 }
 
+/* Upload Bin Tab Styles */
+#upload .container {
+  background: #2a2a2a;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px auto;
+  max-width: 600px;
+}
+
+#upload .input-container {
+  margin-bottom: 20px;
+}
+
+#upload .note {
+  color: #90c695;
+  font-size: 0.9em;
+  display: block;
+  text-align: center;
+  margin-top: 8px;
+}
+
+#upload #fileListContainer {
+  background: #333;
+}
+
+#upload .draggable-file {
+  background: #2a2a2a;
+  border-color: #404040;
+}
+
+#upload .draggable-file span {
+  color: #fff;
+}
+
 /* File List Styles */
 #fileListContainer {
   margin: 15px 0;

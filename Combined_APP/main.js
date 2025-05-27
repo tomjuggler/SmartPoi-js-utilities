@@ -283,7 +283,7 @@ const state = {
         orderedFiles: [],
         config: {
             BATCH_SIZE: 2,
-            INTER_FILE_DELAY: 750, 
+            INTER_FILE_DELAY: 750,
             INTER_BATCH_DELAY: 1500,
             INTER_POI_DELAY: 3000,
             MAX_RETRIES: 3,
@@ -839,6 +839,38 @@ async function updateBothPOIs(endpoint) {
 }
 
 // Utility Functions
+function handleFileInput(e) {
+  const container = document.getElementById('fileListContainer');
+  container.innerHTML = '';
+  state.upload.orderedFiles = Array.from(e.target.files);
+  
+  state.upload.orderedFiles.forEach((file, index) => {
+    const listItem = createFileListItem(file, index);
+    container.appendChild(listItem);
+  });
+}
+
+function initializeDragAndDrop() {
+  const container = document.getElementById('fileListContainer');
+  
+  container.addEventListener('dragover', e => {
+    e.preventDefault();
+    const dragging = document.querySelector('.dragging');
+    const afterElement = getDragAfterElement(container, e.clientY);
+    
+    if(afterElement) {
+      container.insertBefore(dragging, afterElement);
+    } else {
+      container.appendChild(dragging);
+    }
+  });
+
+  container.addEventListener('drop', e => {
+    e.preventDefault();
+    updateFilesOrder();
+  });
+}
+
 function createMessage(message, type = 'info') {
     const modal = document.getElementById('messageModal');
     modal.textContent = message;
@@ -1215,6 +1247,11 @@ function init() {
     initializeModal();
     initializeFetchButton();
     checkInitialStatus();
+    
+    // Initialize upload tab
+    document.getElementById('uploadFileInput').addEventListener('change', handleFileInput);
+    document.getElementById('uploadBinButton').addEventListener('click', handleUpload);
+    initializeDragAndDrop();
     
     // Initialize slider positions from state
     const speedSlider = document.getElementById('speedSlider');
