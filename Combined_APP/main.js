@@ -416,9 +416,7 @@ function loadState() {
         routerInput.value = state.poiIPs.subnet + "1";
     }
     
-    // Initialize manual IP inputs
-    const mainIpInput = document.getElementById('manualMainIp');
-    const auxIpInput = document.getElementById('manualAuxIp');
+    // Update manual IP inputs
     mainIpInput.placeholder = state.poiIPs.mainIP || '192.168.1.x';
     auxIpInput.placeholder = state.poiIPs.auxIP || '192.168.1.x';
     document.getElementById('pixelInput').value = state.settings.pixels;
