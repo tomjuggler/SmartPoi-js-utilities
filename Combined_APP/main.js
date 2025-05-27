@@ -228,60 +228,52 @@ function checkInitialStatus() {
     }
 }
 
-function updateStatusIndicators() {
-    const checkStatus = async (ip) => {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
-        
-        try {
-            const response = await fetch(`http://${ip}/get-pixels`, {
-                signal: controller.signal,
-                mode: 'cors',
-                redirect: 'error'
-            });
-            clearTimeout(timeoutId);
-            
-            if (!response.ok || response.type === 'error') {
-                return 'offline';
-            }
-            return 'online';
-        } catch (error) {
-            clearTimeout(timeoutId);
-            return 'offline';
-        }
-    };
+function checkStatus(ip) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500); // Shorter timeout
+    
+    return fetch(`http://${ip}/get-pixels`, {
+        signal: controller.signal,
+        mode: 'cors',
+        redirect: 'error'
+    })
+    .then(response => {
+        clearTimeout(timeoutId);
+        if (!response.ok) return 'offline';
+        return response.text().then(text => {
+            // Verify we actually got pixel data
+            const pixels = parseInt(text, 10);
+            return !isNaN(pixels) && pixels > 0 ? 'online' : 'offline';
+        });
+    })
+    .catch(error => {
+        clearTimeout(timeoutId);
+        return 'offline';
+    });
+}
 
-    // Default to offline before checking
-    let mainStatus = 'offline';
-    let auxStatus = 'offline';
+function updateStatusIndicators() {
+    // Set initial state to offline
+    const mainElement = document.getElementById('mainStatus');
+    const auxElement = document.getElementById('auxStatus');
+    
+    mainElement.className = 'status-indicator offline';
+    mainElement.textContent = 'Main POI: Checking...';
+    auxElement.className = 'status-indicator offline';
+    auxElement.textContent = 'Aux POI: Checking...';
 
     Promise.allSettled([
         checkStatus(state.poiIPs.mainIP),
         checkStatus(state.poiIPs.auxIP)
     ]).then(([mainResult, auxResult]) => {
-        // Only set to online if we get explicit confirmation
-        mainStatus = mainResult.status === 'fulfilled' && mainResult.value === 'online' ? 'online' : 'offline';
-        auxStatus = auxResult.status === 'fulfilled' && auxResult.value === 'online' ? 'online' : 'offline';
-        
-        // Update both class and text content
-        const mainElement = document.getElementById('mainStatus');
-        const auxElement = document.getElementById('auxStatus');
-        
+        const mainStatus = mainResult.status === 'fulfilled' ? mainResult.value : 'offline';
+        const auxStatus = auxResult.status === 'fulfilled' ? auxResult.value : 'offline';
+
         mainElement.className = `status-indicator ${mainStatus}`;
         mainElement.textContent = `Main POI: ${mainStatus === 'online' ? 'Online' : 'Offline'}`;
         
         auxElement.className = `status-indicator ${auxStatus}`;
         auxElement.textContent = `Aux POI: ${auxStatus === 'online' ? 'Online' : 'Offline'}`;
-    }).catch(() => {
-        // Fallback error handling
-        const mainElement = document.getElementById('mainStatus');
-        const auxElement = document.getElementById('auxStatus');
-        
-        mainElement.className = 'status-indicator offline';
-        mainElement.textContent = 'Main POI: Offline';
-        
-        auxElement.className = 'status-indicator offline';
-        auxElement.textContent = 'Aux POI: Offline';
     });
 }
 
@@ -327,6 +319,12 @@ function init() {
     checkInitialStatus();
     fetchInitialPixels();
     refreshAllImages();
+    
+    // Add periodic status checks
+    setInterval(updateStatusIndicators, 10000); // Check every 10 seconds
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) updateStatusIndicators();
+    });
 }
 
 // IP Setting Functions
