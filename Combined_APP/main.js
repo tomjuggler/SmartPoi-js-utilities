@@ -1069,6 +1069,15 @@ function createMessage(message, type = 'info') {
     }, 2000);
 }
 
+function handleCriticalError(error) {
+    console.error('Critical Error:', error);
+    createMessage(`Upload failed: ${error.message}`, 'error');
+    // Attempt to restore original patterns even on failure
+    restoreOriginalPatterns().catch(err => {
+        console.error('Failed to restore patterns:', err);
+    });
+}
+
 function showError(elementId, message) {
     const element = document.getElementById(elementId);
     element.textContent = message;
