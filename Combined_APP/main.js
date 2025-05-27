@@ -940,6 +940,39 @@ async function updateBothPOIs(endpoint) {
 }
 
 // Utility Functions
+function createFileListItem(file, index) {
+    const div = document.createElement('div');
+    div.className = 'draggable-file';
+    div.draggable = true;
+    div.dataset.index = index;
+    div.dataset.fileName = file.name;
+
+    // Preview image
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    
+    // Filename
+    const span = document.createElement('span');
+    span.textContent = file.name;
+    
+    // Drag handle
+    const handle = document.createElement('div');
+    handle.className = 'drag-handle';
+    handle.innerHTML = '☰';
+    
+    div.appendChild(img);
+    div.appendChild(span);
+    div.appendChild(handle);
+    
+    // Drag & drop handlers
+    div.addEventListener('dragstart', handleDragStart);
+    div.addEventListener('dragover', handleDragOver);
+    div.addEventListener('drop', handleDrop);
+    div.addEventListener('dragend', handleDragEnd);
+    
+    return div;
+}
+
 function handleFileInput(e) {
   const container = document.getElementById('fileListContainer');
   container.innerHTML = '';
