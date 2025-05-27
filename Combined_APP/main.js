@@ -1,3 +1,43 @@
+// Shared Image Processing Function
+async function processImageFile(file) {
+    const reader = new FileReader();
+    
+    return new Promise((resolve, reject) => {
+        reader.onload = async (event) => {
+            try {
+                const image = await Jimp.read(event.target.result);
+                const rotatedImage = image.rotate(-90);
+                const rotatedWidth = rotatedImage.bitmap.width;
+                const rotatedHeight = rotatedImage.bitmap.height;
+                
+                const aspectRatio = rotatedWidth / (state.wsStrip ? rotatedHeight/2 : rotatedHeight);
+                const targetHeight = Math.floor(state.settings.pixels / aspectRatio);
+                
+                const processed = rotatedImage.resize(
+                    state.settings.pixels,  // width
+                    targetHeight            // height
+                );
+
+                const binaryData = [];
+                processed.scan(0, 0, processed.bitmap.width, processed.bitmap.height, 
+                    (x, y, idx) => {
+                        const r = processed.bitmap.data[idx];
+                        const g = processed.bitmap.data[idx + 1];
+                        const b = processed.bitmap.data[idx + 2];
+                        const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6));
+                        binaryData.push(encoded);
+                    }
+                );
+
+                resolve(new Uint8Array(binaryData));
+            } catch (error) {
+                reject(error);
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
 // Image Upload Handler
 async function handleImageUpload(file, ip, targetFileName) {
     // Validate target filename first
@@ -6,9 +46,11 @@ async function handleImageUpload(file, ip, targetFileName) {
         return;
     }
     
-    const fileName = targetFileName; // Use validated grid filename
-    const reader = new FileReader();
-    
+    if (!/^[a-zA-Z0-9-_.]{1,50}\.bin$/i.test(targetFileName)) {
+        createMessage('Invalid target tile filename', 'error');
+        return;
+    }
+
     // Store original pattern and turn off LEDs for upload
     let originalPattern;
     try {
@@ -23,69 +65,36 @@ async function handleImageUpload(file, ip, targetFileName) {
         return;
     }
 
-    reader.onload = async (event) => {
-        try {
-            const image = await Jimp.read(event.target.result);
-            
-            // Match exact rotation and resize logic from original implementation
-            const rotatedImage = image.rotate(-90);
-            const rotatedWidth = rotatedImage.bitmap.width;
-            const rotatedHeight = rotatedImage.bitmap.height;
-            
-            // Original aspect ratio calculation
-            const aspectRatio = rotatedWidth / (state.wsStrip ? rotatedHeight/2 : rotatedHeight);
-            const targetHeight = Math.floor(state.settings.pixels / aspectRatio);
-            
-            // Match original resize approach
-            const processed = rotatedImage.resize(
-                state.settings.pixels,  // width
-                targetHeight           // height
-            );
+    try {
+        const binaryData = await processImageFile(file);
+        
+        const formData = new FormData();
+        formData.append('file', new Blob([binaryData], {
+            type: 'application/octet-stream'
+        }), targetFileName);
 
-            const binaryData = [];
-            processed.scan(0, 0, processed.bitmap.width, processed.bitmap.height, 
-                (x, y, idx) => {
-                    const r = processed.bitmap.data[idx];
-                    const g = processed.bitmap.data[idx + 1];
-                    const b = processed.bitmap.data[idx + 2];
-                    const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6));
-                    binaryData.push(encoded);
-                }
-            );
-
-            const formData = new FormData();
-            // Use the provided filename directly (already validated from tile)
-            const validFilename = fileName;
-            
-            formData.append('file', new Blob([new Uint8Array(binaryData)], {
-                type: 'application/octet-stream'
-            }), validFilename);
-
-            const uploadResponse = await fetch(`http://${ip}/edit`, {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (!uploadResponse.ok) {
-                throw new Error(`Upload failed: ${uploadResponse.statusText}`);
-            }
-            
-            createMessage(`Image ${validFilename} uploaded successfully`);
-            decompressAndDisplay(ip, validFilename);
-        } catch (error) {
-            console.error('Upload failed:', error);
-            createMessage(`Upload failed: ${error.message}`, 'error');
-        } finally {
-            // Restore original pattern
-            try {
-                await fetch(`http://${ip}/pattern?patternChooserChange=${originalPattern}`);
-            } catch (error) {
-                console.error('Failed to restore pattern:', error);
-            }
+        const uploadResponse = await fetch(`http://${ip}/edit`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!uploadResponse.ok) {
+            throw new Error(`Upload failed: ${uploadResponse.statusText}`);
         }
-    };
-
-    reader.readAsDataURL(file);
+        
+        createMessage(`Image ${targetFileName} uploaded successfully`);
+        decompressAndDisplay(ip, targetFileName);
+    } catch (error) {
+        console.error('Upload failed:', error);
+        createMessage(`Upload failed: ${error.message}`, 'error');
+    } finally {
+        // Restore original pattern
+        try {
+            await fetch(`http://${ip}/pattern?patternChooserChange=${originalPattern}`);
+        } catch (error) {
+            console.error('Failed to restore pattern:', error);
+        }
+    }
 }
 
 // Image Management Functions
@@ -307,7 +316,13 @@ function validateFileName(name) {
 }
 
 const MAX_RETRY_COUNT = 3;
+const UPLOAD_BIN_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 let retryCount = 0;
+
+function generateUploadBinFilename(index) {
+    const char = UPLOAD_BIN_CHARS.charAt(index);
+    return `${char}.bin`;
+}
 
 // Upload Bin Handlers
 async function verifyPoiConnection(ip) {
@@ -370,64 +385,68 @@ async function fetchWithTimeout(resource, timeout=5000) {
 
 // Upload Bin Handlers
 async function handleUpload() {
-  if (!state.upload.orderedFiles.length) {
-    createMessage('Please select at least one file', 'warning');
-    return;
-  }
-
-  try {
-    createMessage('Starting upload process...', 'info');
-    
-    // Verify POI connections using current IPs from state
-    const [mainAvailable, auxAvailable] = await Promise.all([
-      verifyPoiConnection(state.poiIPs.mainIP),
-      verifyPoiConnection(state.poiIPs.auxIP)
-    ]);
-
-    if (!mainAvailable && !auxAvailable) {
-      throw new Error("Both POIs are unavailable - upload cannot proceed");
+    if (!state.upload.orderedFiles.length) {
+        createMessage('Please select at least one file', 'warning');
+        return;
     }
 
-    // Store original patterns
-    await fetchOriginalPattern();
+    try {
+        createMessage('Starting upload process...', 'info');
+        
+        // Verify POI connections
+        const [mainAvailable, auxAvailable] = await Promise.all([
+            verifyPoiConnection(state.poiIPs.mainIP),
+            verifyPoiConnection(state.poiIPs.auxIP)
+        ]);
 
-    // Set upload patterns
-    const patternTasks = [];
-    if (mainAvailable) patternTasks.push(setPatternSafe(7, state.poiIPs.mainIP));
-    if (auxAvailable) patternTasks.push(setPatternSafe(7, state.poiIPs.auxIP));
-    await Promise.all(patternTasks);
-    await delay(state.upload.config.INTER_POI_DELAY);
+        if (!mainAvailable && !auxAvailable) {
+            throw new Error("Both POIs are unavailable - upload cannot proceed");
+        }
 
-    // Process files for available POIs
-    const uploadTasks = [];
-    if (mainAvailable) {
-      uploadTasks.push(
-        processPoiWithBackoff(state.upload.orderedFiles, state.poiIPs.mainIP, "Main POI")
-          .then(() => createMessage("Main POI upload complete"))
-      );
+        // Store original patterns
+        await fetchOriginalPattern();
+
+        // Set upload patterns
+        const patternTasks = [];
+        if (mainAvailable) patternTasks.push(setPatternSafe(7, state.poiIPs.mainIP));
+        if (auxAvailable) patternTasks.push(setPatternSafe(7, state.poiIPs.auxIP));
+        await Promise.all(patternTasks);
+        await delay(state.upload.config.INTER_POI_DELAY);
+
+        // Process files with new naming convention
+        const uploadTasks = [];
+        const filesToUpload = state.upload.orderedFiles.map((file, index) => ({
+            file,
+            targetName: generateUploadBinFilename(index)
+        }));
+
+        if (mainAvailable) {
+            uploadTasks.push(
+                processPoiWithBackoff(filesToUpload, state.poiIPs.mainIP, "Main POI")
+                    .then(() => createMessage("Main POI upload complete"))
+            );
+        }
+        if (auxAvailable) {
+            uploadTasks.push(
+                processPoiWithBackoff(filesToUpload, state.poiIPs.auxIP, "Aux POI")
+                    .then(() => createMessage("Aux POI upload complete"))
+            );
+        }
+
+        await Promise.all(uploadTasks);
+        
+        // Restore original patterns
+        await restoreOriginalPatterns(mainAvailable, auxAvailable);
+        
+        createMessage(`Upload completed to ${mainAvailable ? 'Main POI' : ''}${auxAvailable ? ' and Aux POI' : ''}`);
+
+    } catch (error) {
+        handleCriticalError(error);
+    } finally {
+        state.upload.orderedFiles = [];
+        document.getElementById('fileListContainer').innerHTML = '';
+        document.getElementById('uploadFileInput').value = '';
     }
-    if (auxAvailable) {
-      uploadTasks.push(
-        processPoiWithBackoff(state.upload.orderedFiles, state.poiIPs.auxIP, "Aux POI")
-          .then(() => createMessage("Aux POI upload complete"))
-      );
-    }
-
-    await Promise.all(uploadTasks);
-    
-    // Restore original patterns
-    await restoreOriginalPatterns(mainAvailable, auxAvailable);
-    
-    createMessage(`Upload completed to ${mainAvailable ? 'Main POI' : ''}${auxAvailable ? ' and Aux POI' : ''}`);
-
-  } catch (error) {
-    handleCriticalError(error);
-  } finally {
-    // Clear files after upload
-    state.upload.orderedFiles = [];
-    document.getElementById('fileListContainer').innerHTML = '';
-    document.getElementById('uploadFileInput').value = '';
-  }
 }
 
 function logBatchCompletion(batchNumber, totalBatches, label) {
@@ -435,43 +454,68 @@ function logBatchCompletion(batchNumber, totalBatches, label) {
   createMessage(`${label}: Completed ${progress} (${batchNumber * state.upload.config.BATCH_SIZE} files)`);
 }
 
-async function processPoiWithBackoff(files, ip, label) {
-  const batchCount = Math.ceil(files.length / state.upload.config.BATCH_SIZE);
-  
-  for(let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
-    const batchStart = batchIndex * state.upload.config.BATCH_SIZE;
-    const batchFiles = files.slice(batchStart, batchStart + state.upload.config.BATCH_SIZE);
+async function processPoiWithBackoff(filesToUpload, ip, label) {
+    const batchCount = Math.ceil(filesToUpload.length / state.upload.config.BATCH_SIZE);
     
-    await processBatch(batchFiles, ip, label, batchIndex+1, batchCount);
-    
-    if(batchIndex < batchCount - 1) {
-      await delay(state.upload.config.INTER_BATCH_DELAY);
+    for(let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
+        const batchStart = batchIndex * state.upload.config.BATCH_SIZE;
+        const batchFiles = filesToUpload.slice(batchStart, batchStart + state.upload.config.BATCH_SIZE);
+        
+        await processBatch(batchFiles, ip, label, batchIndex+1, batchCount);
+        
+        if(batchIndex < batchCount - 1) {
+            await delay(state.upload.config.INTER_BATCH_DELAY);
+        }
     }
-  }
 }
 
 async function processBatch(batchFiles, ip, label, batchNumber, totalBatches) {
-  const batchPromises = batchFiles.map(async (file, fileIndex) => {
-    await processFileWithRetry(file, ip, label);
-    await delay(state.upload.config.INTER_FILE_DELAY);
-  });
-  
-  await Promise.allSettled(batchPromises);
-  logBatchCompletion(batchNumber, totalBatches, label);
+    const batchPromises = batchFiles.map(async (fileData, fileIndex) => {
+        await processFileWithRetry(fileData, ip);
+        await delay(state.upload.config.INTER_FILE_DELAY);
+    });
+    
+    await Promise.allSettled(batchPromises);
+    logBatchCompletion(batchNumber, totalBatches, label);
 }
 
-async function processFileWithRetry(file, ip, label) {
-  for(let attempt = 1; attempt <= state.upload.config.MAX_RETRIES; attempt++) {
+async function processSingleFile(fileData, ip) {
     try {
-      await processSingleFile(file, ip);
-      return; // Success - exit retry loop
-    } catch(error) {
-      if(attempt === state.upload.config.MAX_RETRIES) {
-        throw new Error(`Failed after ${attempt} attempts: ${error.message}`);
-      }
-      await delay(state.upload.config.RETRY_BACKOFF[attempt-1]);
+        const binaryData = await processImageFile(fileData.file);
+        
+        const formData = new FormData();
+        const blob = new Blob([binaryData], { 
+            type: 'application/octet-stream' 
+        });
+        
+        formData.append('file', blob, fileData.targetName);
+
+        const response = await fetch(`http://${ip}/edit`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`Upload failed: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('File processing failed:', error);
+        throw error;
     }
-  }
+}
+
+async function processFileWithRetry(fileData, ip, label) {
+    for(let attempt = 1; attempt <= state.upload.config.MAX_RETRIES; attempt++) {
+        try {
+            await processSingleFile(fileData, ip);
+            return; // Success - exit retry loop
+        } catch(error) {
+            if (attempt === state.upload.config.MAX_RETRIES) {
+                throw new Error(`Failed after ${attempt} attempts: ${error.message}`);
+            }
+            await delay(state.upload.config.RETRY_BACKOFF[attempt-1]);
+        }
+    }
 }
 
 // State Management
