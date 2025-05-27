@@ -320,8 +320,12 @@
          * Optimized single-file processing with resource cleanup
          */
         async function processSingleFile(file, ip) {
+          // Get character index from ordered files list
+          const charAtIndex = getCharFromIndex(state.upload.orderedFiles.indexOf(file));
+          const fileName = `${charAtIndex}.bin`;
+  
           let reader = null;
-          
+  
           try {
             reader = new FileReader();
             const fileData = await new Promise((resolve, reject) => {

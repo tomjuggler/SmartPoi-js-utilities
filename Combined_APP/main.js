@@ -855,21 +855,27 @@ async function fetchInitialPixels() {
 }
 
 function setupImageHandlers() {
-    // Initialize image grids with current IPs
-    createBlackImages('mainImageGrid', state.poiIPs.mainIP);
-    createBlackImages('auxImageGrid', state.poiIPs.auxIP);
+  // Remove existing drag handlers first
+  document.querySelectorAll('.image-grid-container').forEach(grid => {
+    grid.removeEventListener('dragover', handleDragOver);
+    grid.removeEventListener('drop', handleImageDrop);
+  });
 
-    // Add drag/drop handlers to containers
-    document.querySelectorAll('.image-grid-container').forEach(grid => {
-        grid.addEventListener('dragover', handleDragOver);
-        grid.addEventListener('drop', (event) => handleImageDrop(event, 
-            grid.id === 'mainImageGrid' ? state.poiIPs.mainIP : state.poiIPs.auxIP
-        ));
-    });
-    
-    // Button handlers
-    document.getElementById('refreshImages').addEventListener('click', refreshAllImages);
-    document.getElementById('updatePixels').addEventListener('click', updatePixelsOnBoth);
+  // Initialize image grids with current IPs
+  createBlackImages('mainImageGrid', state.poiIPs.mainIP);
+  createBlackImages('auxImageGrid', state.poiIPs.auxIP);
+
+  // Add new drag handlers to containers
+  document.querySelectorAll('.image-grid-container').forEach(grid => {
+    grid.addEventListener('dragover', handleDragOver);
+    grid.addEventListener('drop', (event) => handleImageDrop(event, 
+      grid.id === 'mainImageGrid' ? state.poiIPs.mainIP : state.poiIPs.auxIP
+    ));
+  });
+  
+  // Button handlers
+  document.getElementById('refreshImages').addEventListener('click', refreshAllImages);
+  document.getElementById('updatePixels').addEventListener('click', updatePixelsOnBoth);
 }
 
 function handleImageDrop(event) {
