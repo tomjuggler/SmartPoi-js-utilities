@@ -17,6 +17,7 @@
             <div class="tabs">
                 <button class="tab-button active" data-tab="controls">Controls</button>
                 <button class="tab-button" data-tab="images">Image Management</button>
+                <button class="tab-button" data-tab="upload">Upload Bin</button>
                 <button class="tab-button" data-tab="files">File Lists</button>
             </div>
             <div id="networkModeIndicator" class="status-indicator"></div>
@@ -209,6 +210,33 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Upload Bin Tab -->
+        <div id="upload" class="tab-content">
+          <div class="upload-container">
+            <h1>Upload Pics</h1>
+            <div class="input-container">
+              <input type="file" id="uploadFileInput" accept="image/*" multiple>
+              <div id="fileListContainer"></div>
+              <button id="uploadButton" class="dark-button">Upload and convert</button>
+            </div>
+            <div class="input-container">
+              <h4>LED Strip Type</h4>
+              <button id="uploadWsApaBtn" class="dark-button">Toggle WS2812/APA102</button>
+              <span id="uploadWsApaIndicator" class="current-px">Current: WS2812</span>
+            </div>
+            <div class="input-container">
+              <h4>Number of Pixels</h4>
+              <input type="number" id="uploadPixelInput" value="120" min="1" max="1000">
+              <button id="uploadUpdatePixelButton" class="dark-button">Update manually</button>
+              <span class="current-px" id="uploadCurrentPx">Current px: 120</span>
+            </div>
+            <div class="input-container">
+              <span class="note">1. Select files 2. Drag to reorder 3. Click upload</span>
+              <span class="note">Correct number of pixels should be updated from poi.</span>
+            </div>
+          </div>
         </div>
 
         <!-- File Lists Tab -->

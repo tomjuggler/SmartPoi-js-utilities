@@ -279,6 +279,19 @@ function updateStatusIndicators() {
 
 const state = {
     wsStrip: true,
+    upload: {
+        orderedFiles: [],
+        config: {
+            BATCH_SIZE: 2,
+            INTER_FILE_DELAY: 750, 
+            INTER_BATCH_DELAY: 1500,
+            INTER_POI_DELAY: 3000,
+            MAX_RETRIES: 3,
+            RETRY_BACKOFF: [500, 1500, 3000],
+            POI_CHECK_RETRIES: 2,
+            POI_CHECK_TIMEOUT: 3000
+        }
+    },
     poiIPs: {
         mainIP: "192.168.1.1", 
         auxIP: "192.168.1.78",
@@ -310,6 +323,7 @@ const state = {
 // Initialize App
 function init() {
     loadState();
+    initializeUploadHandlers();
     setupTabNavigation();
     initializeNetworkDiscovery();
     setupImageHandlers();
@@ -882,6 +896,38 @@ async function sendRequest(url, retries = 3) {
             await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
         }
     }
+}
+
+function initializeUploadHandlers() {
+    // File input handler
+    document.getElementById('uploadFileInput').addEventListener('change', function(e) {
+        const container = document.getElementById('fileListContainer');
+        container.innerHTML = '';
+        state.upload.orderedFiles = Array.from(e.target.files);
+        state.upload.orderedFiles.forEach((file, index) => {
+            container.appendChild(createFileListItem(file, index));
+        });
+    });
+
+    // Upload button handler
+    document.getElementById('uploadButton').addEventListener('click', handleUpload);
+
+    // WS/APA toggle handler
+    document.getElementById('uploadWsApaBtn').addEventListener('click', function() {
+        state.wsStrip = !state.wsStrip;
+        const indicator = document.getElementById('uploadWsApaIndicator');
+        indicator.textContent = `Current: ${state.wsStrip ? 'WS2812' : 'APA102'}`;
+        createMessage(`Switched to ${state.wsStrip ? 'WS2812 (compressed)' : 'APA102 (raw)'} mode`);
+        saveState();
+    });
+
+    // Pixel update handler
+    document.getElementById('uploadUpdatePixelButton').addEventListener('click', function() {
+        const pixelInput = document.getElementById('uploadPixelInput').value;
+        state.settings.pixels = parseInt(pixelInput, 10);
+        document.getElementById('uploadCurrentPx').textContent = `Current px: ${state.settings.pixels}`;
+        saveState();
+    });
 }
 
 // Initialize the application

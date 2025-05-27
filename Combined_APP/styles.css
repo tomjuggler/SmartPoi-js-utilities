@@ -460,6 +460,19 @@ body {
     font-family: monospace;
 }
 
+/* Upload Container */
+.upload-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #2a2a2a;
+    border-radius: 8px;
+}
+
+.upload-container .input-container {
+    margin-bottom: 20px;
+}
+
 /* Status indicators */
 .status-indicator {
     padding: 8px;
