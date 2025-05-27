@@ -1,3 +1,43 @@
+// Shared Image Processing Function
+async function processImageFile(file) {
+    const reader = new FileReader();
+    
+    return new Promise((resolve, reject) => {
+        reader.onload = async (event) => {
+            try {
+                const image = await Jimp.read(event.target.result);
+                const rotatedImage = image.rotate(-90);
+                const rotatedWidth = rotatedImage.bitmap.width;
+                const rotatedHeight = rotatedImage.bitmap.height;
+                
+                const aspectRatio = rotatedWidth / (state.wsStrip ? rotatedHeight/2 : rotatedHeight);
+                const targetHeight = Math.floor(state.settings.pixels / aspectRatio);
+                
+                const processed = rotatedImage.resize(
+                    state.settings.pixels,  // width
+                    targetHeight            // height
+                );
+
+                const binaryData = [];
+                processed.scan(0, 0, processed.bitmap.width, processed.bitmap.height, 
+                    (x, y, idx) => {
+                        const r = processed.bitmap.data[idx];
+                        const g = processed.bitmap.data[idx + 1];
+                        const b = processed.bitmap.data[idx + 2];
+                        const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6));
+                        binaryData.push(encoded);
+                    }
+                );
+
+                resolve(new Uint8Array(binaryData));
+            } catch (error) {
+                reject(error);
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
 // Image Upload Handler
 async function handleImageUpload(file, ip, targetFileName) {
     // Validate target filename first
@@ -6,9 +46,11 @@ async function handleImageUpload(file, ip, targetFileName) {
         return;
     }
     
-    const fileName = targetFileName; // Use validated grid filename
-    const reader = new FileReader();
-    
+    if (!/^[a-zA-Z0-9-_.]{1,50}\.bin$/i.test(targetFileName)) {
+        createMessage('Invalid target tile filename', 'error');
+        return;
+    }
+
     // Store original pattern and turn off LEDs for upload
     let originalPattern;
     try {
@@ -23,69 +65,36 @@ async function handleImageUpload(file, ip, targetFileName) {
         return;
     }
 
-    reader.onload = async (event) => {
-        try {
-            const image = await Jimp.read(event.target.result);
-            
-            // Match exact rotation and resize logic from original implementation
-            const rotatedImage = image.rotate(-90);
-            const rotatedWidth = rotatedImage.bitmap.width;
-            const rotatedHeight = rotatedImage.bitmap.height;
-            
-            // Original aspect ratio calculation
-            const aspectRatio = rotatedWidth / (state.wsStrip ? rotatedHeight/2 : rotatedHeight);
-            const targetHeight = Math.floor(state.settings.pixels / aspectRatio);
-            
-            // Match original resize approach
-            const processed = rotatedImage.resize(
-                state.settings.pixels,  // width
-                targetHeight           // height
-            );
+    try {
+        const binaryData = await processImageFile(file);
+        
+        const formData = new FormData();
+        formData.append('file', new Blob([binaryData], {
+            type: 'application/octet-stream'
+        }), targetFileName);
 
-            const binaryData = [];
-            processed.scan(0, 0, processed.bitmap.width, processed.bitmap.height, 
-                (x, y, idx) => {
-                    const r = processed.bitmap.data[idx];
-                    const g = processed.bitmap.data[idx + 1];
-                    const b = processed.bitmap.data[idx + 2];
-                    const encoded = ((r & 0xE0) | ((g & 0xE0) >> 3) | (b >> 6));
-                    binaryData.push(encoded);
-                }
-            );
-
-            const formData = new FormData();
-            // Use the provided filename directly (already validated from tile)
-            const validFilename = fileName;
-            
-            formData.append('file', new Blob([new Uint8Array(binaryData)], {
-                type: 'application/octet-stream'
-            }), validFilename);
-
-            const uploadResponse = await fetch(`http://${ip}/edit`, {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (!uploadResponse.ok) {
-                throw new Error(`Upload failed: ${uploadResponse.statusText}`);
-            }
-            
-            createMessage(`Image ${validFilename} uploaded successfully`);
-            decompressAndDisplay(ip, validFilename);
-        } catch (error) {
-            console.error('Upload failed:', error);
-            createMessage(`Upload failed: ${error.message}`, 'error');
-        } finally {
-            // Restore original pattern
-            try {
-                await fetch(`http://${ip}/pattern?patternChooserChange=${originalPattern}`);
-            } catch (error) {
-                console.error('Failed to restore pattern:', error);
-            }
+        const uploadResponse = await fetch(`http://${ip}/edit`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!uploadResponse.ok) {
+            throw new Error(`Upload failed: ${uploadResponse.statusText}`);
         }
-    };
-
-    reader.readAsDataURL(file);
+        
+        createMessage(`Image ${targetFileName} uploaded successfully`);
+        decompressAndDisplay(ip, targetFileName);
+    } catch (error) {
+        console.error('Upload failed:', error);
+        createMessage(`Upload failed: ${error.message}`, 'error');
+    } finally {
+        // Restore original pattern
+        try {
+            await fetch(`http://${ip}/pattern?patternChooserChange=${originalPattern}`);
+        } catch (error) {
+            console.error('Failed to restore pattern:', error);
+        }
+    }
 }
 
 // Image Management Functions
@@ -471,19 +480,27 @@ async function processBatch(batchFiles, ip, label, batchNumber, totalBatches) {
 }
 
 async function processSingleFile(fileData, ip) {
-    const formData = new FormData();
-    const blob = new Blob([fileData.file], { type: 'application/octet-stream' });
-    
-    // Use the generated target name from fileData
-    formData.append('file', blob, fileData.targetName);
+    try {
+        const binaryData = await processImageFile(fileData.file);
+        
+        const formData = new FormData();
+        const blob = new Blob([binaryData], { 
+            type: 'application/octet-stream' 
+        });
+        
+        formData.append('file', blob, fileData.targetName);
 
-    const response = await fetch(`http://${ip}/edit`, {
-        method: 'POST',
-        body: formData
-    });
+        const response = await fetch(`http://${ip}/edit`, {
+            method: 'POST',
+            body: formData
+        });
 
-    if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+        if (!response.ok) {
+            throw new Error(`Upload failed: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('File processing failed:', error);
+        throw error;
     }
 }
 
