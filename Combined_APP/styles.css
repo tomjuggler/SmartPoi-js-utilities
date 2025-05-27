@@ -420,6 +420,46 @@ body {
   margin-bottom: 15px;
 }
 
+/* File List Styles */
+.file-list-section {
+    padding: 15px;
+}
+
+.list-controls {
+    margin-bottom: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.list-containers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.list-box {
+    background: #1a1a1a;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.list-box h3 {
+    margin-top: 0;
+    color: #2c7a47;
+}
+
+.list-box textarea {
+    width: 100%;
+    height: 400px;
+    background: #333;
+    border: 1px solid #444;
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
 /* Status indicators */
 .status-indicator {
     padding: 8px;
