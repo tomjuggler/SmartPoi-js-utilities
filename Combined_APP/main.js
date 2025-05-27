@@ -221,6 +221,65 @@ const MAX_RETRY_COUNT = 3;
 let retryCount = 0;
 
 // Upload Bin Handlers
+async function verifyPoiConnection(ip) {
+  for(let attempt = 1; attempt <= state.upload.config.POI_CHECK_RETRIES; attempt++) {
+    try {
+      const response = await fetchWithTimeout(
+        `http://${ip}/get-pixels`,
+        state.upload.config.POI_CHECK_TIMEOUT
+      );
+      
+      if(response.ok) {
+        return true;
+      }
+    } catch(error) {
+      if(attempt === state.upload.config.POI_CHECK_RETRIES) {
+        return false;
+      }
+      await delay(state.upload.config.RETRY_BACKOFF[attempt-1]);
+    }
+  }
+  return false;
+}
+
+async function restoreOriginalPatterns(mainAvailable = true, auxAvailable = true) {
+  const restoreTasks = [];
+  if(mainAvailable) restoreTasks.push(setPatternSafe(originalPattern, state.poiIPs.mainIP));
+  if(auxAvailable) restoreTasks.push(setPatternSafe(originalPattern, state.poiIPs.auxIP));
+  
+  await Promise.allSettled(restoreTasks);
+  await delay(1000); // Final safety delay
+}
+
+let originalPattern; // Will store the original pattern during upload
+
+async function fetchOriginalPattern() {
+  try {
+    const response = await fetch(`http://${state.poiIPs.mainIP}/returnsettings`);
+    if (response.ok) {
+      const data = await response.text();
+      const parts = data.split(',');
+      originalPattern = parts[parts.length - 1].trim();
+    }
+  } catch (error) {
+    originalPattern = 1;
+  }
+}
+
+async function setPatternSafe(pattern, ip) {
+  await fetchWithTimeout(`http://${ip}/pattern?patternChooserChange=${pattern}`, 5000);
+  await delay(500); // Allow flash write cycle
+}
+
+async function fetchWithTimeout(resource, timeout=5000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  const response = await fetch(resource, { signal: controller.signal });
+  clearTimeout(id);
+  return response;
+}
+
+// Upload Bin Handlers
 async function handleUpload() {
   if (!state.upload.orderedFiles.length) {
     createMessage('Please select at least one file', 'warning');
