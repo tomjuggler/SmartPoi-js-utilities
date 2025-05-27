@@ -275,24 +275,26 @@ function handleImageDrop(event, ip) {
 }
 
 function generateNewFilename(ip, container) {
-    if (!container) {
-        const containerId = ip === state.poiIPs.mainIP ? 'mainImageGrid' : 'auxImageGrid';
-        container = document.getElementById(containerId);
-    }
+    // Determine which container to use
+    const containerId = ip === state.poiIPs.mainIP ? 'mainImageGrid' : 'auxImageGrid';
+    const targetContainer = container?.id === containerId ? container : document.getElementById(containerId);
     
-    const existingFiles = Array.from(container?.querySelectorAll('.image-wrapper') || [])
-        .map(el => el.dataset.fileName)
-        .filter(Boolean);
+    // Get all existing filenames in the container
+    const existingFiles = new Set(
+        Array.from(targetContainer.querySelectorAll('.image-wrapper'))
+            .map(el => el.dataset.fileName)
+            .filter(Boolean)
+    );
 
-    // Find first unused filename in standard sequence
+    // Find first available filename in standard sequence
     const validChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    for (let i = 0; i < validChars.length; i++) {
-        const testName = `${validChars[i]}.bin`;
-        if (!existingFiles.includes(testName)) {
+    for (const char of validChars) {
+        const testName = `${char}.bin`;
+        if (!existingFiles.has(testName)) {
             return testName;
         }
     }
-    return 'a.bin'; // fallback
+    return 'a.bin'; // fallback if all slots are full
 }
 
 function sanitizeFilename(name) {
