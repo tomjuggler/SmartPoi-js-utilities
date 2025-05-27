@@ -291,7 +291,11 @@ const state = {
         mainIP: "192.168.1.1", 
         auxIP: "192.168.1.78",
         routerMode: false,
-        subnet: ""
+        subnet: "",
+        savedRouterIPs: {
+            main: "",
+            aux: ""
+        }
     },
     currentTab: "controls",
     patterns: {
@@ -364,7 +368,27 @@ function validateIP(ip) {
 
 // State Persistence
 function loadState() {
-    const saved = JSON.parse(localStorage.getItem('poiState') || '{}');
+    const saved = JSON.parse(localStorage.getItem('poiState') || {});
+    
+    // Load router mode state
+    state.poiIPs.routerMode = saved.poiIPs?.routerMode || false;
+    state.poiIPs.savedRouterIPs = saved.poiIPs?.savedRouterIPs || {
+        main: "192.168.1.1",
+        aux: "192.168.1.78"
+    };
+
+    // Set IPs based on current mode
+    if (state.poiIPs.routerMode) {
+        state.poiIPs.mainIP = saved.poiIPs?.mainIP || "192.168.1.1";
+        state.poiIPs.auxIP = saved.poiIPs?.auxIP || "192.168.1.78";
+    } else {
+        state.poiIPs.mainIP = "192.168.1.1";
+        state.poiIPs.auxIP = "192.168.1.78";
+    }
+
+    // Update UI elements
+    document.getElementById('routerModeCheckbox').checked = state.poiIPs.routerMode;
+    updateNetworkModeDisplay();
     state.wsStrip = saved.wsStrip !== undefined ? saved.wsStrip : true;
     state.poiIPs = { ...state.poiIPs, ...saved.poiIPs };
     state.settings = { ...state.settings, ...saved.settings };
@@ -526,7 +550,13 @@ function generateScanOrder(subnet) {
 function saveState() {
     localStorage.setItem('poiState', JSON.stringify({
         wsStrip: state.wsStrip,
-        poiIPs: state.poiIPs,
+        poiIPs: {
+            mainIP: state.poiIPs.mainIP,
+            auxIP: state.poiIPs.auxIP,
+            routerMode: state.poiIPs.routerMode,
+            savedRouterIPs: state.poiIPs.savedRouterIPs,
+            subnet: state.poiIPs.subnet
+        },
         settings: state.settings
     }));
 }
@@ -1168,29 +1198,57 @@ function savePersistedState() {
 }
 
 // Danger Zone Functions
-function submitRouterMode() {
+async function submitRouterMode() {
     const routerMode = document.getElementById('routerModeCheckbox').checked;
-    state.poiIPs.routerMode = routerMode;
     
-    // Clear STA IPs when disabling router mode
-    if (!routerMode) {
-        state.poiIPs.mainIP = "192.168.1.1";
-        state.poiIPs.auxIP = "192.168.1.78";
-    }
+    try {
+        // Update both POIs first
+        await Promise.all([
+            fetch(`http://${state.poiIPs.mainIP}/router?router=${routerMode ? 1 : 0}`),
+            fetch(`http://${state.poiIPs.auxIP}/router?router=${routerMode ? 1 : 0}`)
+        ]);
 
-    localStorage.setItem('poiIPs', JSON.stringify(state.poiIPs));
-    
-    // Send to both POIs
-    Promise.all([
-        fetch(`http://${state.poiIPs.mainIP}/router?router=${routerMode ? 1 : 0}`),
-        fetch(`http://${state.poiIPs.auxIP}/router?router=${routerMode ? 1 : 0}`)
-    ]).then(() => {
-        createMessage('Router mode updated');
+        // Update local state
+        state.poiIPs.routerMode = routerMode;
+        
+        if (routerMode) {
+            // Restore saved router mode IPs
+            state.poiIPs.mainIP = state.poiIPs.savedRouterIPs.main || "192.168.1.1";
+            state.poiIPs.auxIP = state.poiIPs.savedRouterIPs.aux || "192.168.1.78";
+        } else {
+            // Save current IPs before switching to AP mode
+            state.poiIPs.savedRouterIPs = {
+                main: state.poiIPs.mainIP,
+                aux: state.poiIPs.auxIP
+            };
+            // Set hardcoded AP mode IPs
+            state.poiIPs.mainIP = "192.168.1.1";
+            state.poiIPs.auxIP = "192.168.1.78";
+        }
+
+        saveState();
+        updateNetworkModeDisplay();
+        createMessage(`Switched to ${routerMode ? 'Router' : 'AP'} mode`);
         updateStatusIndicators();
-    }).catch(error => {
+    } catch (error) {
         console.error('Error updating router mode:', error);
-        createMessage('Router mode update failed', 'error');
-    });
+        createMessage('Mode change failed - check POI connections', 'error');
+    }
+}
+
+function updateNetworkModeDisplay() {
+    const modeIndicator = document.getElementById('networkModeIndicator');
+    const ipInputs = document.querySelectorAll('.manual-ip-row input');
+    
+    if (state.poiIPs.routerMode) {
+        modeIndicator.textContent = "Router Mode";
+        modeIndicator.className = "status-indicator online";
+        ipInputs.forEach(input => input.disabled = false);
+    } else {
+        modeIndicator.textContent = "AP Mode";
+        modeIndicator.className = "status-indicator offline";
+        ipInputs.forEach(input => input.disabled = true);
+    }
 }
 
 function submitChannel() {
