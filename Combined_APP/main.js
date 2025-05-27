@@ -1000,6 +1000,14 @@ function handleDragEnd(e) {
   e.target.classList.remove('dragging');
 }
 
+function updateFilesOrder() {
+  const container = document.getElementById('fileListContainer');
+  const currentOrderNames = Array.from(container.children).map(item => item.dataset.fileName);
+  state.upload.orderedFiles = currentOrderNames.map(name => 
+    state.upload.orderedFiles.find(file => file.name === name)
+  ).filter(file => file !== undefined);
+}
+
 function getDragAfterElement(container, y) {
   const draggableElements = [...container.querySelectorAll('.draggable-file:not(.dragging)')];
   
