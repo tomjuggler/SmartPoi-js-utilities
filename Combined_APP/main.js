@@ -470,18 +470,35 @@ async function processBatch(batchFiles, ip, label, batchNumber, totalBatches) {
     logBatchCompletion(batchNumber, totalBatches, label);
 }
 
-async function processFileWithRetry(file, ip, label) {
-  for(let attempt = 1; attempt <= state.upload.config.MAX_RETRIES; attempt++) {
-    try {
-      await processSingleFile(file, ip);
-      return; // Success - exit retry loop
-    } catch(error) {
-      if(attempt === state.upload.config.MAX_RETRIES) {
-        throw new Error(`Failed after ${attempt} attempts: ${error.message}`);
-      }
-      await delay(state.upload.config.RETRY_BACKOFF[attempt-1]);
+async function processSingleFile(fileData, ip) {
+    const formData = new FormData();
+    const blob = new Blob([fileData.file], { type: 'application/octet-stream' });
+    
+    // Use the generated target name from fileData
+    formData.append('file', blob, fileData.targetName);
+
+    const response = await fetch(`http://${ip}/edit`, {
+        method: 'POST',
+        body: formData
+    });
+
+    if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
     }
-  }
+}
+
+async function processFileWithRetry(fileData, ip, label) {
+    for(let attempt = 1; attempt <= state.upload.config.MAX_RETRIES; attempt++) {
+        try {
+            await processSingleFile(fileData, ip);
+            return; // Success - exit retry loop
+        } catch(error) {
+            if (attempt === state.upload.config.MAX_RETRIES) {
+                throw new Error(`Failed after ${attempt} attempts: ${error.message}`);
+            }
+            await delay(state.upload.config.RETRY_BACKOFF[attempt-1]);
+        }
+    }
 }
 
 // State Management
