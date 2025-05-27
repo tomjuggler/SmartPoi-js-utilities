@@ -91,26 +91,42 @@ function refreshAllImages(fullRefresh = false) {
 
 function createBlackImages(containerId, ip) {
     const container = document.getElementById(containerId);
-    
-    // Clear existing images
     container.innerHTML = '';
 
     for (let i = 0; i < 62; i++) {
         const char = getCharFromIndex(i);
         const fileName = char + '.bin';
         
+        const wrapper = document.createElement('div');
+        wrapper.className = 'image-wrapper draggable-file';
+        wrapper.draggable = true;
+        wrapper.dataset.fileName = fileName;
+        
         const imgElement = document.createElement('img');
         imgElement.className = 'poi-image';
         imgElement.alt = fileName;
+        imgElement.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+        imgElement.title = fileName;
 
-        imgElement.addEventListener('click', function() {
+        const fileNameSpan = document.createElement('span');
+        fileNameSpan.className = 'bin-filename';
+        fileNameSpan.textContent = fileName;
+
+        wrapper.appendChild(imgElement);
+        wrapper.appendChild(fileNameSpan);
+        
+        // Drag handlers
+        wrapper.addEventListener('dragstart', handleDragStart);
+        wrapper.addEventListener('dragover', handleDragOver);
+        wrapper.addEventListener('drop', handleDrop);
+        wrapper.addEventListener('dragend', handleDragEnd);
+
+        // Click handler for preview
+        wrapper.addEventListener('click', function() {
             decompressAndDisplay(ip, fileName);
         });
 
-        imgElement.addEventListener('dragover', handleDragOver);
-        imgElement.addEventListener('drop', (event) => handleImageDrop(event, ip));
-
-        container.appendChild(imgElement);
+        container.appendChild(wrapper);
     }
 }
 
