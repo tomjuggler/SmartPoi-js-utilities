@@ -1165,7 +1165,7 @@ function handleDragOver(e) {
   if (afterElement) {
     container.insertBefore(dragging, afterElement);
   } else {
-    container.appendChild(dragging);
+    // container.appendChild(dragging);
   }
 }
 
