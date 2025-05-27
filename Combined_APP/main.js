@@ -49,17 +49,24 @@ async function handleImageUpload(file, ip, targetFileName) {
             );
 
             const formData = new FormData();
+            // Ensure filename is valid format before upload
+            const validFilename = /^[a-zA-Z0-9]\.bin$/.test(fileName) ? fileName : 'a.bin';
+            
             formData.append('file', new Blob([new Uint8Array(binaryData)], {
                 type: 'application/octet-stream'
-            }), fileName); // Use filename as-is
+            }), validFilename);
 
-            await fetch(`http://${ip}/edit`, {
+            const uploadResponse = await fetch(`http://${ip}/edit`, {
                 method: 'POST',
                 body: formData
             });
             
-            createMessage(`Image ${fileName} uploaded successfully`);
-            decompressAndDisplay(ip, `${fileName}.bin`);
+            if (!uploadResponse.ok) {
+                throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+            }
+            
+            createMessage(`Image ${validFilename} uploaded successfully`);
+            decompressAndDisplay(ip, validFilename);
         } catch (error) {
             console.error('Upload failed:', error);
             createMessage(`Upload failed: ${error.message}`, 'error');
@@ -158,7 +165,14 @@ function handleDragOver(e) {
 
 async function decompressAndDisplay(ip, fileName) {
     try {
-        const response = await fetch(`http://${ip}/edit?file=${fileName}`);
+        // Validate filename format before making request
+        if (!/^[a-zA-Z0-9]\.bin$/.test(fileName)) {
+            console.error(`Invalid filename format: ${fileName}`);
+            createMessage('Invalid image filename format', 'error');
+            return;
+        }
+        
+        const response = await fetch(`http://${ip}/edit?file=${encodeURIComponent(fileName)}`);
         const arrayBuffer = await response.arrayBuffer();
         const binaryData = new Uint8Array(arrayBuffer);
         const imageUrl = await decompress(binaryData);
