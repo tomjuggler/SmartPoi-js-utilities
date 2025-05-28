@@ -822,8 +822,7 @@ async function scanNetwork(subnet) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 1500);
             const response = await fetch(`http://${ip}/`, { 
-                signal: controller.signal,
-                mode: 'no-cors'
+                signal: controller.signal
             });
             clearTimeout(timeoutId);
             
