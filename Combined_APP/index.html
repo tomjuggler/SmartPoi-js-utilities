@@ -105,7 +105,12 @@
                             <div class="poi-status-group">
                                 <h4>Main Poi:</h4>
                                 <p>Router: <span id="router">N/A</span></p>
-                                <p>Password: <span id="password">N/A</span></p>
+                                <p>Password: 
+                                    <span class="password-container">
+                                        <span id="password" class="password-text">N/A</span>
+                                        <span class="toggle-password">👁</span>
+                                    </span>
+                                </p>
                                 <p>Channel: <span id="channel">N/A</span></p>
                                 <p>Pattern: <span id="pattern">N/A</span></p>
                                 <p>Pixels: <span id="pixels">?</span></p>
@@ -114,7 +119,12 @@
                             <div class="poi-status-group">
                                 <h4>Auxiliary Poi:</h4>
                                 <p>Router: <span id="routerTwo">N/A</span></p>
-                                <p>Password: <span id="passwordTwo">N/A</span></p>
+                                <p>Password: 
+                                    <span class="password-container">
+                                        <span id="passwordTwo" class="password-text">N/A</span>
+                                        <span class="toggle-password">👁</span>
+                                    </span>
+                                </p>
                                 <p>Channel: <span id="channelTwo">N/A</span></p>
                                 <p>Pattern: <span id="patternTwo">N/A</span></p>
                                 <p>Pixels: <span id="pixelsTwo">?</span></p>
@@ -131,7 +141,10 @@
                         <label>
                             Update Router Name and Password:
                             <input type="text" id="routerInput" placeholder="Enter Router Name">
-                            <input type="text" id="passwordInput" placeholder="Enter Router Password">
+                            <span class="password-container">
+                                <input type="password" id="passwordInput" placeholder="Enter Router Password">
+                                <span class="toggle-password">👁</span>
+                            </span>
                             <button type="button" onclick="submitRouter()">Submit</button>
                         </label>
                     </div>

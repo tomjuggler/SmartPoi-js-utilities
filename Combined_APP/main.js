@@ -1452,14 +1452,18 @@ function initializeFetchButton() {
 
             // Update Main POI Display
             document.getElementById('router').textContent = mainData.router;
-            document.getElementById('password').textContent = mainData.password;
+            const passwordMain = document.getElementById('password');
+            passwordMain.textContent = '******';
+            passwordMain.dataset.actualPassword = mainData.password;
             document.getElementById('channel').textContent = mainData.channel;
             document.getElementById('pattern').textContent = mainData.pattern;
             document.getElementById('pixels').textContent = mainData.pixels;
 
             // Update Aux POI Display
             document.getElementById('routerTwo').textContent = auxData.router;
-            document.getElementById('passwordTwo').textContent = auxData.password;
+            const passwordAux = document.getElementById('passwordTwo');
+            passwordAux.textContent = '******';
+            passwordAux.dataset.actualPassword = auxData.password;
             document.getElementById('channelTwo').textContent = auxData.channel;
             document.getElementById('patternTwo').textContent = auxData.pattern;
             document.getElementById('pixelsTwo').textContent = auxData.pixels;
@@ -1478,7 +1482,6 @@ function initializeFetchButton() {
             if (mainData) {
                 // Direct DOM updates first
                 document.getElementById('router').textContent = mainData.router;
-                document.getElementById('password').textContent = mainData.password;
                 document.getElementById('channel').textContent = mainData.channel;
                 document.getElementById('pattern').textContent = mainData.pattern;
                 document.getElementById('pixels').textContent = mainData.pixels || '?';
@@ -1504,7 +1507,6 @@ function initializeFetchButton() {
                 state.settings.pixelsTwo = await fetchNumberOfPixels(state.poiIPs.auxIP);
 
                 document.getElementById('routerTwo').textContent = state.settings.routerTwo;
-                document.getElementById('passwordTwo').textContent = state.settings.passwordTwo;
                 document.getElementById('channelTwo').textContent = state.settings.channelTwo;
                 document.getElementById('patternTwo').textContent = state.settings.patternTwo;
                 document.getElementById('pixelsTwo').textContent = state.settings.pixelsTwo || '?';
@@ -1522,10 +1524,19 @@ function initializeFetchButton() {
             updateStatusIndicators();
             // Update UI with cached state on error
             document.getElementById('router').textContent = state.settings.router;
-            document.getElementById('password').textContent = state.settings.password;
+            const passwordMain = document.getElementById('password');
+            passwordMain.textContent = '******';
+            passwordMain.dataset.actualPassword = state.settings.password;
             document.getElementById('channel').textContent = state.settings.channel;
             document.getElementById('pattern').textContent = state.settings.pattern;
             document.getElementById('pixels').textContent = state.settings.pixels || '?';
+            
+            // Also update aux POI display to show asterisks
+            const passwordAux = document.getElementById('passwordTwo');
+            if (passwordAux) {
+                passwordAux.textContent = '******';
+                passwordAux.dataset.actualPassword = state.settings.passwordTwo;
+            }
         }
     });
 }
@@ -1819,9 +1830,33 @@ function initializeEventListeners() {
     document.getElementById('channelInput').nextElementSibling.addEventListener('click', submitChannel);
     document.querySelector('[onclick="submitRouter()"]').addEventListener('click', submitRouter);
 
-  // Danger Zone controls
-  document.getElementById('routerModeCheckbox').addEventListener('change', submitRouterMode);
-  document.getElementById('channelInput').nextElementSibling.addEventListener('click', submitChannel);
-  document.querySelector('[onclick="submitRouter()"]').addEventListener('click', submitRouter);
+  // Password visibility toggles
+  document.querySelectorAll('.toggle-password').forEach(icon => {
+    icon.addEventListener('click', togglePasswordVisibility);
+  });
+}
+
+// New function: togglePasswordVisibility
+function togglePasswordVisibility(event) {
+  const container = event.target.closest('.password-container');
+  const passwordText = container.querySelector('.password-text');
+  const passwordInput = container.querySelector('input[type="password"], input[type="text"]');
+
+  if (passwordText) {
+    // Handle span elements
+    const currentDisplay = passwordText.textContent;
+    const realPassword = passwordText.dataset.actualPassword || 'N/A';
+    
+    if (currentDisplay === realPassword || currentDisplay === 'N/A') {
+      passwordText.textContent = '******';
+    } else {
+      passwordText.textContent = realPassword;
+    }
+  } 
+  else if (passwordInput) {
+    // Handle input field
+    const type = passwordInput.getAttribute('type');
+    passwordInput.setAttribute('type', type === 'password' ? 'text' : 'password');
+  }
 }
 
