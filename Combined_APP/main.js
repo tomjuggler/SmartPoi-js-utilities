@@ -785,36 +785,6 @@ function initializeNetworkDiscovery() {
             showLoadingState(false);
         }
     });
-  const discoverBtn = document.getElementById('discoverBtn');
-  discoverBtn.addEventListener('click', async () => {
-    const routerIp = document.getElementById('routerIpInput').value;
-    if (!validateIP(routerIp)) {
-      showError('ipError', 'Invalid IP address format!');
-      return;
-    }
-
-    const octets = routerIp.split('.').slice(0, 3);
-    const subnet = octets.join('.') + '.';
-    state.poiIPs.subnet = subnet;
-
-    showLoadingState(true);
-    
-    // Add slight delay to allow UI to update
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    try {
-      const { mainIP, auxIP } = await scanNetwork(subnet);
-      state.poiIPs.mainIP = mainIP;
-      state.poiIPs.auxIP = auxIP;
-      state.poiIPs.routerMode = true;
-      saveState();
-      updateStatusIndicators();
-    } catch (error) {
-      showError('result', 'No POI found on this subnet');
-    } finally {
-      showLoadingState(false);
-    }
-  });
 }
 
 async function scanNetwork(subnet) {
