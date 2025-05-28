@@ -1,4 +1,8 @@
 /* Base styles */
+.hidden {                                                                                                                                                                        
+  display: none;                                                                                                                                                                 
+}
+
 :root {
     --primary-color: #2c7a47;
     --danger-color: #dc3545;
@@ -279,6 +283,12 @@
     border-radius: 4px;
     background: #333;
     color: white;
+}
+
+.manual-ip-row input:disabled {
+    background: #333;
+    color: #777;
+    cursor: not-allowed;
 }
 
 /* Error Message Styles */

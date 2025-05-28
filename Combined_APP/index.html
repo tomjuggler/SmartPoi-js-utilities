@@ -163,8 +163,8 @@
                     <button class="dark-button" onclick="getFilesAndDisplay()">Fetch and Display All Images</button>
                     <button class="dark-button" onclick="window.location.reload()">Refresh Page</button>
                     <div class="pixel-control">
-                        <input type="number" id="pixelInput" min="1" max="1000">
-                        <button id="updatePixels">Update Pixels</button>
+                        <input class="hidden" type="number" id="pixelInput" min="1" max="1000">
+                        <button class="hidden" id="updatePixels">Update Pixels</button>
                         <span class="current-px" id="currentPx"></span>
                     </div>
                     <div class="fetch-buttons">
@@ -229,8 +229,8 @@
             </div>
             <div class="input-container">
               <h4>Number of Pixels</h4>
-              <input type="number" id="uploadPixelInput" value="120" min="1" max="1000">
-              <button id="uploadUpdatePixelButton" class="dark-button">Update manually</button>
+              <input class="hidden" type="number" id="uploadPixelInput" value="120" min="1" max="1000">
+              <button id="uploadUpdatePixelButton" class="hidden dark-button">Update manually</button>
               <span class="current-px" id="uploadCurrentPx">Current px: 120</span>
             </div>
             <div class="input-container">

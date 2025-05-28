@@ -739,9 +739,7 @@ function loadState() {
         routerInput.value = state.poiIPs.subnet + "1";
     }
     
-    // Update manual IP inputs
-    mainIpInput.placeholder = state.poiIPs.mainIP || '192.168.1.x';
-    auxIpInput.placeholder = state.poiIPs.auxIP || '192.168.1.x';
+    // Update manual IP inputs (already set above)
     
     // Update both pixel inputs and displays
     document.getElementById('pixelInput').value = state.settings.pixels;
@@ -1374,7 +1372,8 @@ document.addEventListener('DOMContentLoaded', () => {
     speedSlider.value = valueToSlider(state.settings.speed);
     brightnessSlider.value = state.settings.brightness;
 
-
+    // Ensure network mode display is updated
+    updateNetworkModeDisplay();
 });
 
 async function fetchSettings(ip) {
@@ -1698,10 +1697,6 @@ async function submitRouterMode() {
             // Restore saved router mode IPs
             state.poiIPs.mainIP = state.poiIPs.savedRouterIPs.main || "192.168.1.1";
             state.poiIPs.auxIP = state.poiIPs.savedRouterIPs.aux || "192.168.1.78";
-            
-            // Update inputs with saved values
-            mainIpInput.value = state.poiIPs.mainIP;
-            auxIpInput.value = state.poiIPs.auxIP;
         } else {
             // Save current IPs before switching to AP mode
             state.poiIPs.savedRouterIPs = {
@@ -1711,11 +1706,13 @@ async function submitRouterMode() {
             // Set hardcoded AP mode IPs
             state.poiIPs.mainIP = "192.168.1.1";
             state.poiIPs.auxIP = "192.168.1.78";
-            
-            // Clear and reset input fields to defaults
-            mainIpInput.value = "192.168.1.1";
-            auxIpInput.value = "192.168.1.78";
         }
+
+        // Update inputs and placeholders
+        mainIpInput.value = state.poiIPs.mainIP;
+        mainIpInput.placeholder = state.poiIPs.mainIP;
+        auxIpInput.value = state.poiIPs.auxIP;
+        auxIpInput.placeholder = state.poiIPs.auxIP;
 
         saveState();
         updateNetworkModeDisplay();
@@ -1744,6 +1741,10 @@ function updateNetworkModeDisplay() {
             input.value = input.placeholder;
         });
     }
+    
+    // Update placeholders to current values
+    document.getElementById('manualMainIp').placeholder = state.poiIPs.mainIP;
+    document.getElementById('manualAuxIp').placeholder = state.poiIPs.auxIP;
 }
 
 function submitChannel() {
