@@ -281,6 +281,12 @@
     color: white;
 }
 
+.manual-ip-row input:disabled {
+    background: #333;
+    color: #777;
+    cursor: not-allowed;
+}
+
 /* Error Message Styles */
 .error-message {
     color: #dc3545;
