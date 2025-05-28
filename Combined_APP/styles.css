@@ -1,4 +1,8 @@
 /* Base styles */
+.hidden {                                                                                                                                                                        
+  display: none;                                                                                                                                                                 
+}
+
 :root {
     --primary-color: #2c7a47;
     --danger-color: #dc3545;
