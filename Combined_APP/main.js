@@ -1623,32 +1623,6 @@ async function getFileListTwo() {
     }
 }
 
-// Initialize the application
-function init() {
-    loadState();
-    setupTabNavigation();
-    initializeNetworkDiscovery();
-    initializeEventListeners();
-    initializeModal();
-    initializeFetchButton();
-    checkInitialStatus();
-    
-    // Initialize upload tab
-    document.getElementById('uploadFileInput').addEventListener('change', handleFileInput);
-    document.getElementById('uploadBinButton').addEventListener('click', handleUpload);
-    initializeDragAndDrop();
-    
-    // Initialize slider positions from state
-    const speedSlider = document.getElementById('speedSlider');
-    const brightnessSlider = document.getElementById('brightnessSlider');
-    if (speedSlider && brightnessSlider) {
-        speedSlider.value = valueToSlider(state.settings.speed);
-        brightnessSlider.value = state.settings.brightness;
-    }
-    
-    // Load initial tab content
-    loadTabContent(state.currentTab);
-}
 
 // Tab management
 function setupTabNavigation() {
