@@ -794,15 +794,22 @@ input[type="range"] {
 .password-container {
   position: relative;
   display: inline-block;
+  padding-right: 20px; /* Add space for eye icon */
+}
+
+.password-text {
+  display: inline-block;
+  min-width: 80px; /* Ensure consistent width */
 }
 
 .toggle-password {
   position: absolute;
-  right: 8px;
+  right: 0;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
   user-select: none;
+  color: white; /* Make eye icon white */
 }
 
 #passwordInput {

@@ -1452,14 +1452,18 @@ function initializeFetchButton() {
 
             // Update Main POI Display
             document.getElementById('router').textContent = mainData.router;
-            document.getElementById('password').textContent = mainData.password;
+            const passwordMain = document.getElementById('password');
+            passwordMain.textContent = '******';
+            passwordMain.dataset.actualPassword = mainData.password;
             document.getElementById('channel').textContent = mainData.channel;
             document.getElementById('pattern').textContent = mainData.pattern;
             document.getElementById('pixels').textContent = mainData.pixels;
 
             // Update Aux POI Display
             document.getElementById('routerTwo').textContent = auxData.router;
-            document.getElementById('passwordTwo').textContent = auxData.password;
+            const passwordAux = document.getElementById('passwordTwo');
+            passwordAux.textContent = '******';
+            passwordAux.dataset.actualPassword = auxData.password;
             document.getElementById('channelTwo').textContent = auxData.channel;
             document.getElementById('patternTwo').textContent = auxData.pattern;
             document.getElementById('pixelsTwo').textContent = auxData.pixels;
@@ -1522,7 +1526,9 @@ function initializeFetchButton() {
             updateStatusIndicators();
             // Update UI with cached state on error
             document.getElementById('router').textContent = state.settings.router;
-            document.getElementById('password').textContent = state.settings.password;
+            const passwordMain = document.getElementById('password');
+            passwordMain.textContent = '******';
+            passwordMain.dataset.actualPassword = state.settings.password;
             document.getElementById('channel').textContent = state.settings.channel;
             document.getElementById('pattern').textContent = state.settings.pattern;
             document.getElementById('pixels').textContent = state.settings.pixels || '?';
@@ -1836,10 +1842,9 @@ function togglePasswordVisibility(event) {
     const currentDisplay = passwordText.textContent;
     const realPassword = passwordText.dataset.actualPassword || 'N/A';
     
-    if (currentDisplay === realPassword) {
+    if (currentDisplay === realPassword || currentDisplay === 'N/A') {
       passwordText.textContent = '******';
     } else {
-      passwordText.dataset.actualPassword = currentDisplay;
       passwordText.textContent = realPassword;
     }
   } 
