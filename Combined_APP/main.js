@@ -519,11 +519,23 @@ async function processFileWithRetry(fileData, ip, label) {
 }
 
 // State Management
-function checkInitialStatus() {
+function initializeStatusCheck() {
+    // First update: set to checking immediately
     updateStatusIndicators();
-    if (!state.poiIPs.mainIP || !state.poiIPs.auxIP) {
-        createMessage('Please configure POI IP addresses first', 'warning');
-    }
+    
+    // Second update after 2 seconds
+    setTimeout(updateStatusIndicators, 2000);
+    
+    // Third update after 5 seconds
+    setTimeout(updateStatusIndicators, 5000);
+    
+    // Periodic checks every 10 seconds
+    setInterval(updateStatusIndicators, 10000);
+    
+    // Also update when tab becomes visible
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) updateStatusIndicators();
+    });
 }
 
 function checkStatus(ip) {
@@ -551,15 +563,19 @@ function checkStatus(ip) {
 }
 
 function updateStatusIndicators() {
-    // Set initial state to offline
+    // Set initial state to checking
     const mainElement = document.getElementById('mainStatus');
     const auxElement = document.getElementById('auxStatus');
     
-    mainElement.className = 'status-indicator offline';
-    mainElement.textContent = 'Main POI: Checking...';
-    auxElement.className = 'status-indicator offline';
-    auxElement.textContent = 'Aux POI: Checking...';
+    if (!mainElement.classList.contains('online') && 
+        !mainElement.classList.contains('offline')) {
+        mainElement.className = 'status-indicator';
+        mainElement.textContent = 'Main POI: Checking...';
+        auxElement.className = 'status-indicator';
+        auxElement.textContent = 'Aux POI: Checking...';
+    }
 
+    // Actual status check
     Promise.allSettled([
         checkStatus(state.poiIPs.mainIP),
         checkStatus(state.poiIPs.auxIP)
@@ -628,15 +644,9 @@ function init() {
     initializeModal();
     initializeEventListeners();
     initializeSliders();
-    checkInitialStatus();
+    initializeStatusCheck();
     fetchInitialPixels();
     refreshAllImages();
-    
-    // Add periodic status checks
-    setInterval(updateStatusIndicators, 10000); // Check every 10 seconds
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) updateStatusIndicators();
-    });
 }
 
 // IP Setting Functions
