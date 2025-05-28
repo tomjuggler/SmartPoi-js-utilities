@@ -771,8 +771,16 @@ function initializeNetworkDiscovery() {
             state.poiIPs.routerMode = true;
             saveState();
             updateStatusIndicators();
+
+            // Update UI inputs immediately
+            document.getElementById('manualMainIp').value = mainIP;
+            document.getElementById('manualAuxIp').value = auxIP;
+        
+            // Show success message with IPs
+            createMessage(`Discovered Main POI: ${mainIP}, Aux POI: ${auxIP}`);
         } catch (error) {
             showError('result', 'No POI found on this subnet');
+            createMessage('Discovery failed - no POIs found', 'error');
         } finally {
             showLoadingState(false);
         }
