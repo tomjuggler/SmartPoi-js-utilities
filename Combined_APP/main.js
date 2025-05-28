@@ -647,6 +647,7 @@ function init() {
     initializeStatusCheck();
     fetchInitialPixels();
     refreshAllImages();
+    initializeFetchButton();
 }
 
 // IP Setting Functions
@@ -1794,6 +1795,7 @@ function submitRouter() {
 // Unified Event Listeners
 function initializeEventListeners() {
     document.getElementById('deleteAllButton').addEventListener('click', deleteAllImages);
+    document.getElementById('fetchBtn').addEventListener('click', initializeFetchButton);
   // WS2812/APA102 toggle handler
   document.getElementById('ws_apaBtn').addEventListener('click', function() {
     state.wsStrip = !state.wsStrip;
