@@ -1819,9 +1819,34 @@ function initializeEventListeners() {
     document.getElementById('channelInput').nextElementSibling.addEventListener('click', submitChannel);
     document.querySelector('[onclick="submitRouter()"]').addEventListener('click', submitRouter);
 
-  // Danger Zone controls
-  document.getElementById('routerModeCheckbox').addEventListener('change', submitRouterMode);
-  document.getElementById('channelInput').nextElementSibling.addEventListener('click', submitChannel);
-  document.querySelector('[onclick="submitRouter()"]').addEventListener('click', submitRouter);
+  // Password visibility toggles
+  document.querySelectorAll('.toggle-password').forEach(icon => {
+    icon.addEventListener('click', togglePasswordVisibility);
+  });
+}
+
+// New function: togglePasswordVisibility
+function togglePasswordVisibility(event) {
+  const container = event.target.closest('.password-container');
+  const passwordText = container.querySelector('.password-text');
+  const passwordInput = container.querySelector('input[type="password"], input[type="text"]');
+
+  if (passwordText) {
+    // Handle span elements
+    const currentDisplay = passwordText.textContent;
+    const realPassword = passwordText.dataset.actualPassword || 'N/A';
+    
+    if (currentDisplay === realPassword) {
+      passwordText.textContent = '******';
+    } else {
+      passwordText.dataset.actualPassword = currentDisplay;
+      passwordText.textContent = realPassword;
+    }
+  } 
+  else if (passwordInput) {
+    // Handle input field
+    const type = passwordInput.getAttribute('type');
+    passwordInput.setAttribute('type', type === 'password' ? 'text' : 'password');
+  }
 }
 

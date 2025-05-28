@@ -790,3 +790,21 @@ input[type="range"] {
     border: 1px solid #8b4444;
     color: #d98f8f;
 }
+
+.password-container {
+  position: relative;
+  display: inline-block;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  user-select: none;
+}
+
+#passwordInput {
+  padding-right: 30px;
+}
