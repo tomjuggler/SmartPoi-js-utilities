@@ -1482,7 +1482,6 @@ function initializeFetchButton() {
             if (mainData) {
                 // Direct DOM updates first
                 document.getElementById('router').textContent = mainData.router;
-                document.getElementById('password').textContent = mainData.password;
                 document.getElementById('channel').textContent = mainData.channel;
                 document.getElementById('pattern').textContent = mainData.pattern;
                 document.getElementById('pixels').textContent = mainData.pixels || '?';
@@ -1508,7 +1507,6 @@ function initializeFetchButton() {
                 state.settings.pixelsTwo = await fetchNumberOfPixels(state.poiIPs.auxIP);
 
                 document.getElementById('routerTwo').textContent = state.settings.routerTwo;
-                document.getElementById('passwordTwo').textContent = state.settings.passwordTwo;
                 document.getElementById('channelTwo').textContent = state.settings.channelTwo;
                 document.getElementById('patternTwo').textContent = state.settings.patternTwo;
                 document.getElementById('pixelsTwo').textContent = state.settings.pixelsTwo || '?';
@@ -1532,6 +1530,13 @@ function initializeFetchButton() {
             document.getElementById('channel').textContent = state.settings.channel;
             document.getElementById('pattern').textContent = state.settings.pattern;
             document.getElementById('pixels').textContent = state.settings.pixels || '?';
+            
+            // Also update aux POI display to show asterisks
+            const passwordAux = document.getElementById('passwordTwo');
+            if (passwordAux) {
+                passwordAux.textContent = '******';
+                passwordAux.dataset.actualPassword = state.settings.passwordTwo;
+            }
         }
     });
 }
