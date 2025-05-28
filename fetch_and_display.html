@@ -1553,12 +1553,14 @@
           const timeout = 3000;
           
           for(let attempt=1; attempt<=retries; attempt++) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
             try {
               const response = await fetch(`http://${ip}/get-pixels`, {
-                timeout: timeout,
+                signal: controller.signal,
                 headers: { 'Connection': 'close' }
               });
-              
+              clearTimeout(timeoutId);
               if(response.ok) {
                 const pixels = await response.text();
                 const label = isMain ? 'Main Poi' : 'Aux Poi';
@@ -1566,6 +1568,7 @@
                 return { online: true, pixels: parseInt(pixels, 10) };
               }
             } catch(error) {
+              clearTimeout(timeoutId);
               if(attempt === retries) return { online: false };
               await delay(1000 * attempt);
             }

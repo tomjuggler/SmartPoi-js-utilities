@@ -763,6 +763,12 @@ input[type="range"] {
 .pattern-buttons button:nth-child(6) { background-color: #00e1ff !important; }
 .pattern-buttons button:nth-child(7) { background-color: #3c3f3f !important; }
 
+.status-indicator {
+    background: #333;
+    border: 1px solid #666;
+    color: #aaa;
+}
+
 .status-indicator.online { 
     background: #1a472a;
     border: 1px solid #2c7a47;

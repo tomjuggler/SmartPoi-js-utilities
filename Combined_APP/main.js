@@ -519,11 +519,23 @@ async function processFileWithRetry(fileData, ip, label) {
 }
 
 // State Management
-function checkInitialStatus() {
+function initializeStatusCheck() {
+    // First update: set to checking immediately
     updateStatusIndicators();
-    if (!state.poiIPs.mainIP || !state.poiIPs.auxIP) {
-        createMessage('Please configure POI IP addresses first', 'warning');
-    }
+    
+    // Second update after 2 seconds
+    setTimeout(updateStatusIndicators, 2000);
+    
+    // Third update after 5 seconds
+    setTimeout(updateStatusIndicators, 5000);
+    
+    // Periodic checks every 10 seconds
+    setInterval(updateStatusIndicators, 10000);
+    
+    // Also update when tab becomes visible
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) updateStatusIndicators();
+    });
 }
 
 function checkStatus(ip) {
@@ -551,15 +563,19 @@ function checkStatus(ip) {
 }
 
 function updateStatusIndicators() {
-    // Set initial state to offline
+    // Set initial state to checking
     const mainElement = document.getElementById('mainStatus');
     const auxElement = document.getElementById('auxStatus');
     
-    mainElement.className = 'status-indicator offline';
-    mainElement.textContent = 'Main POI: Checking...';
-    auxElement.className = 'status-indicator offline';
-    auxElement.textContent = 'Aux POI: Checking...';
+    if (!mainElement.classList.contains('online') && 
+        !mainElement.classList.contains('offline')) {
+        mainElement.className = 'status-indicator';
+        mainElement.textContent = 'Main POI: Checking...';
+        auxElement.className = 'status-indicator';
+        auxElement.textContent = 'Aux POI: Checking...';
+    }
 
+    // Actual status check
     Promise.allSettled([
         checkStatus(state.poiIPs.mainIP),
         checkStatus(state.poiIPs.auxIP)
@@ -628,15 +644,10 @@ function init() {
     initializeModal();
     initializeEventListeners();
     initializeSliders();
-    checkInitialStatus();
+    initializeStatusCheck();
     fetchInitialPixels();
     refreshAllImages();
-    
-    // Add periodic status checks
-    setInterval(updateStatusIndicators, 10000); // Check every 10 seconds
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) updateStatusIndicators();
-    });
+    initializeFetchButton();
 }
 
 // IP Setting Functions
@@ -771,42 +782,20 @@ function initializeNetworkDiscovery() {
             state.poiIPs.routerMode = true;
             saveState();
             updateStatusIndicators();
+
+            // Update UI inputs immediately
+            document.getElementById('manualMainIp').value = mainIP;
+            document.getElementById('manualAuxIp').value = auxIP;
+        
+            // Show success message with IPs
+            createMessage(`Discovered Main POI: ${mainIP}, Aux POI: ${auxIP}`);
         } catch (error) {
             showError('result', 'No POI found on this subnet');
+            createMessage('Discovery failed - no POIs found', 'error');
         } finally {
             showLoadingState(false);
         }
     });
-  const discoverBtn = document.getElementById('discoverBtn');
-  discoverBtn.addEventListener('click', async () => {
-    const routerIp = document.getElementById('routerIpInput').value;
-    if (!validateIP(routerIp)) {
-      showError('ipError', 'Invalid IP address format!');
-      return;
-    }
-
-    const octets = routerIp.split('.').slice(0, 3);
-    const subnet = octets.join('.') + '.';
-    state.poiIPs.subnet = subnet;
-
-    showLoadingState(true);
-    
-    // Add slight delay to allow UI to update
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    try {
-      const { mainIP, auxIP } = await scanNetwork(subnet);
-      state.poiIPs.mainIP = mainIP;
-      state.poiIPs.auxIP = auxIP;
-      state.poiIPs.routerMode = true;
-      saveState();
-      updateStatusIndicators();
-    } catch (error) {
-      showError('result', 'No POI found on this subnet');
-    } finally {
-      showLoadingState(false);
-    }
-  });
 }
 
 async function scanNetwork(subnet) {
@@ -822,8 +811,7 @@ async function scanNetwork(subnet) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 1500);
             const response = await fetch(`http://${ip}/`, { 
-                signal: controller.signal,
-                mode: 'no-cors'
+                signal: controller.signal
             });
             clearTimeout(timeoutId);
             
@@ -1636,32 +1624,6 @@ async function getFileListTwo() {
     }
 }
 
-// Initialize the application
-function init() {
-    loadState();
-    setupTabNavigation();
-    initializeNetworkDiscovery();
-    initializeEventListeners();
-    initializeModal();
-    initializeFetchButton();
-    checkInitialStatus();
-    
-    // Initialize upload tab
-    document.getElementById('uploadFileInput').addEventListener('change', handleFileInput);
-    document.getElementById('uploadBinButton').addEventListener('click', handleUpload);
-    initializeDragAndDrop();
-    
-    // Initialize slider positions from state
-    const speedSlider = document.getElementById('speedSlider');
-    const brightnessSlider = document.getElementById('brightnessSlider');
-    if (speedSlider && brightnessSlider) {
-        speedSlider.value = valueToSlider(state.settings.speed);
-        brightnessSlider.value = state.settings.brightness;
-    }
-    
-    // Load initial tab content
-    loadTabContent(state.currentTab);
-}
 
 // Tab management
 function setupTabNavigation() {
@@ -1833,6 +1795,7 @@ function submitRouter() {
 // Unified Event Listeners
 function initializeEventListeners() {
     document.getElementById('deleteAllButton').addEventListener('click', deleteAllImages);
+    document.getElementById('fetchBtn').addEventListener('click', initializeFetchButton);
   // WS2812/APA102 toggle handler
   document.getElementById('ws_apaBtn').addEventListener('click', function() {
     state.wsStrip = !state.wsStrip;
