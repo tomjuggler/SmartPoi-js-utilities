@@ -127,8 +127,8 @@
         }
 
         .black-image {
-            width: 36px;
-            height: 36px;
+            width: 120px;
+            height: 120px;
             background-color: black;
             display: inline-block;
             margin: 5px;
@@ -278,6 +278,22 @@
             </label>
         </div>
 
+        <div class="manual-ip-section">
+          <label>Manually Set Poi IP (Router Mode)</label>
+          <div class="manual-ip-group">
+            <div class="manual-ip-row">
+              <input type="text" id="manualMainIp" placeholder="192.168.1.x">
+              <button class="dark-button" onclick="setMainIp()">Set Main</button>
+              <span id="mainIpError" style="color: red; display: none;">Invalid IP!</span>
+            </div>
+            <div class="manual-ip-row">
+              <input type="text" id="manualAuxIp" placeholder="192.168.1.x">
+              <button class="dark-button" onclick="setAuxIp()">Set Aux</button>
+              <span id="auxIpError" style="color: red; display: none;">Invalid IP!</span>
+            </div>
+          </div>
+        </div>
+
         <div class="bordered-box">
             <input type="number" id="pixelInput" value="120" min="1" max="1000">
             <button id="updatePixelButton">Update →</button>
@@ -373,12 +389,54 @@
          * @type {string}
          */
         let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
-        // const poi_one_ip = "10.0.0.5"
         /**
          * Default Auxillary Poi IP (AP Mode).
          * @type {string}
          */
-        const poi_two_ip = "192.168.1.78"; // Default Auxillary Poi IP (AP Mode)
+        let poi_two_ip = "192.168.1.78"; // Default Auxillary Poi IP (AP Mode)
+
+        document.addEventListener('DOMContentLoaded', () => {
+          const savedIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
+          
+          if (savedIPs.routerMode) {
+            if (savedIPs.mainIP) poi_one_ip = savedIPs.mainIP;
+            if (savedIPs.auxIP) poi_two_ip = savedIPs.auxIP;
+            
+            // Update manual IP placeholders if elements exist
+            const mainInput = document.getElementById('manualMainIp');
+            const auxInput = document.getElementById('manualAuxIp');
+            if (mainInput) mainInput.placeholder = savedIPs.mainIP || "192.168.1.x";
+            if (auxInput) auxInput.placeholder = savedIPs.auxIP || "192.168.1.x";
+            
+            // Auto-fill router IP input if element exists
+            const routerInput = document.getElementById('routerIpInput');
+            if (routerInput && savedIPs.subnet) {
+              routerInput.value = savedIPs.subnet.replace(/\.$/, '') + '.1';
+            }
+          }
+          
+          // Initialize status checks
+          checkAndUpdateStatus();
+        });
+
+        // Add this status check function
+        async function checkAndUpdateStatus() {
+          const checkStatus = async (ip, isMain) => {
+            try {
+              const response = await fetch(`http://${ip}/get-pixels`, { timeout: 2000 });
+              updatePoiStatus(ip, response.ok);
+              return response.ok;
+            } catch (error) {
+              updatePoiStatus(ip, false);
+              return false;
+            }
+          };
+
+          await Promise.all([
+            checkStatus(poi_one_ip, true),
+            checkStatus(poi_two_ip, false)
+          ]);
+        }
 
         /**
          * Updates the pixel size based on the input value.
@@ -396,53 +454,46 @@
          * @param {string} containerId - The ID of the container to append images to.
          * @param {string} ip - The IP address of the POI.
          */
-        function createBlackImages(containerId, ip) {
+        function createBlackImages(containerId) {
             const container = document.getElementById(containerId);
+            container.innerHTML = '';
 
-            // Loop through characters and create image elements
             for (let i = 0; i < 62; i++) {
-                const char = getCharFromIndex(i);
-                const fileName = char + '.bin'; // Add ".bin" extension
-
                 try {
-                    // Create image element
+                    const char = getCharFromIndex(i);
+                    const fileName = char + '.bin';
+                    
                     const imgElement = document.createElement('img');
-                    imgElement.className = 'black-image'; // Add class for styling
-                    imgElement.alt = fileName; // Set alt attribute with filename
-                    imgElement.style.width = `${number_of_pixels}px`; // Set width
-                    imgElement.style.height = `${number_of_pixels}px`; // Set height
+                    imgElement.className = 'black-image';
+                    imgElement.alt = fileName;
+                    imgElement.style.width = `${number_of_pixels}px`;
+                    imgElement.style.height = `${number_of_pixels}px`;
 
-                    // Attach click event listener to the image element
-                    imgElement.addEventListener('click', function () {
-                        decompressAndDisplay(ip, fileName);
-                        // displayImageInModal(imgElement.src, imgElement.alt);
+                    imgElement.addEventListener('click', function() {
+                        const targetPoiIP = containerId === 'imageContainer' 
+                            ? poi_one_ip 
+                            : poi_two_ip;
+                        decompressAndDisplay(targetPoiIP, fileName);
                     });
 
-                    // Attach dragover and drop event listeners to the image element
-                    imgElement.addEventListener('dragover', function (event) {
+                    imgElement.addEventListener('dragover', function(event) {
                         event.preventDefault();
                     });
 
-                    imgElement.addEventListener('drop', function (event) {
+                    imgElement.addEventListener('drop', function(event) {
                         event.preventDefault();
-                        // Accessing the first file from the dropped files
                         const droppedFile = event.dataTransfer.files[0];
                         const draggedFileBlob = droppedFile ? URL.createObjectURL(droppedFile) : '';
                         const imageName = imgElement.alt;
-                        try {
-                            // uploadDraggedFile(draggedFileBlob, imageName, ip);
-                            // imgElement.src = draggedFileBlob;
-                            uploadDraggedFile(draggedFileBlob, imageName, ip).then((success) => {
-                                if (success) {
-                                    console.log("dragging succeeded? replacing image");
-                                    imgElement.src = draggedFileBlob;
-                                }
-                            }).catch((error) => {
-                                console.error('Error uploading: ', error);
+                        
+                        const targetPoiIP = containerId === 'imageContainer' 
+                            ? poi_one_ip 
+                            : poi_two_ip;
+                        
+                        uploadDraggedFile(draggedFileBlob, imageName, targetPoiIP)
+                            .then(success => {
+                                if (success) imgElement.src = draggedFileBlob;
                             });
-                        } catch (error) {
-                            console.error('Error uploading: ', error);
-                        }
                     });
 
                     // Append image element to container
@@ -454,8 +505,8 @@
         }
 
         // Call the function to create black images:
-        createBlackImages('imageContainer', poi_one_ip);
-        createBlackImages('imageContainertwo', poi_two_ip);
+        createBlackImages('imageContainer');
+        createBlackImages('imageContainertwo');
 
         /**
          * Increases the brightness of the image.
@@ -1243,83 +1294,193 @@
         // processFiles();
         let ip = "";
         document.getElementById('discoverBtn').addEventListener('click', async function () {
-            const routerIp = document.getElementById('routerIpInput').value;
-            const ipError = document.getElementById('ipError');
+          const routerIp = document.getElementById('routerIpInput').value;
+          const ipError = document.getElementById('ipError');
+          
+          ipError.style.display = 'none';
+          
+          if (!isValidIP(routerIp)) {
+            ipError.style.display = 'inline';
+            return;
+          }
+
+          const octets = routerIp.split('.').slice(0, 3);
+          const subnet = octets.join('.') + '.';
+          const currentSubnet = octets.slice(0, 3).join('.') + '.';
+
+          spinner.style.display = 'block';
+          counter.style.display = 'block';
+
+          const timeout = 1500;
+          let foundDevices = 0;
+          const cachedIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
+          let scanOrder = [];
+
+          if (cachedIPs.subnet === currentSubnet && cachedIPs.mainIP) {
+            const baseIP = cachedIPs.mainIP.split('.').pop();
+            let current = parseInt(baseIP, 10);
+            let offset = 0;
             
-            // Reset error state
-            ipError.style.display = 'none';
-            
-            // Validate IP format
-            if (!isValidIP(routerIp)) {
-                ipError.style.display = 'inline';
-                return;
+            while (scanOrder.length < 254) {
+              const low = current - offset;
+              const high = current + offset;
+              
+              if (low >= 1 && !scanOrder.includes(low)) scanOrder.push(low);
+              if (high <= 254 && high !== low && !scanOrder.includes(high)) scanOrder.push(high);
+              offset++;
             }
-
-            // Extract subnet from first 3 octets
-            const octets = routerIp.split('.').slice(0, 3);
-            if (octets.length !== 3) {
-                ipError.style.display = 'inline';
-                return;
-            }
             
-            const subnet = octets.join('.') + '.';
+            scanOrder = [current, current, current, ...scanOrder.filter(ip => ip !== current)];
+          } else {
+            scanOrder = Array.from({length: 254}, (_, i) => i + 1);
+          }
+
+          try {
+            const fullScanOrder = scanOrder.map(octet => `${subnet}${octet}`);
             
-            // Show loading state
-            spinner.style.display = 'block';
-            counter.style.display = 'block';
-
-            const timeout = 1500;
-            let foundDevices = 0;
-
-            try {
-                for (let i = 1; i <= 254; i++) {
-                    const ip = subnet + i;
-                    currentIPSpan.innerText = ip;
-
-                    try {
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), timeout);
-                        
-                        const response = await fetch(`http://${ip}/`, { signal: controller.signal });
-                        clearTimeout(timeoutId);
-
-                        if (response.ok) {
-                            if (foundDevices === 0) {
-                                poi_one_ip = ip;
-                                document.getElementById('result').innerText = `First POI: ${ip}`;
-                                foundDevices++;
-                            } else {
-                                poi_two_ip = ip;
-                                document.getElementById('result').innerText += ` | Second POI: ${ip}`;
-                                foundDevices++;
-                                break;
-                            }
-                        }
-                    } catch (error) {
-                        // Expected timeout, continue scanning
+            if (cachedIPs.mainIP && cachedIPs.subnet === currentSubnet) {
+              for (let i = 0; i < 3; i++) {
+                currentIPSpan.innerText = cachedIPs.mainIP;
+                try {
+                  const response = await fetch(`http://${cachedIPs.mainIP}/`, { timeout });
+                  if (response.ok) {
+                    if (foundDevices === 0) {
+                      poi_one_ip = cachedIPs.mainIP;
+                      foundDevices++;
+                    } else {
+                      poi_two_ip = cachedIPs.mainIP;
+                      foundDevices++;
+                      break;
                     }
-                }
-            } finally {
-                spinner.style.display = 'none';
-                counter.style.display = 'none';
-                
-                if (foundDevices === 0) {
-                    document.getElementById('result').innerText = 'No POI found on this subnet';
-                }
-                
-                // Update status indicators after discovery
-                const [mainStatus, auxStatus] = await Promise.all([
-                    checkPoiHealth(poi_one_ip),
-                    checkPoiHealth(poi_two_ip, false)
-                ]);
-                updatePoiStatus(poi_one_ip, mainStatus.online);
-                updatePoiStatus(poi_two_ip, auxStatus.online);
+                  }
+                } catch (error) {}
+              }
             }
+
+            for (const ip of fullScanOrder) {
+              if (foundDevices >= 2) break;
+              currentIPSpan.innerText = ip;
+              
+              try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeout);
+                const response = await fetch(`http://${ip}/`, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                  if (foundDevices === 0) {
+                    poi_one_ip = ip;
+                    foundDevices++;
+                    localStorage.setItem('poiIPs', JSON.stringify({
+                      subnet: currentSubnet,
+                      mainIP: ip,
+                      auxIP: ''
+                    }));
+                  } else {
+                    poi_two_ip = ip;
+                    foundDevices++;
+                    localStorage.setItem('poiIPs', JSON.stringify({
+                      subnet: currentSubnet,
+                      mainIP: poi_one_ip,
+                      auxIP: ip,
+                      routerMode: true
+                    }));
+                    break;
+                  }
+                }
+              } catch (error) {}
+            }
+          } finally {
+            spinner.style.display = 'none';
+            counter.style.display = 'none';
+            
+            if (foundDevices === 0) {
+              document.getElementById('result').innerText = 'No POI found on this subnet';
+            }
+            
+            // Update status indicators
+            const [mainStatus, auxStatus] = await Promise.all([
+              checkPoiHealth(poi_one_ip),
+              checkPoiHealth(poi_two_ip, false)
+            ]);
+            updatePoiStatus(poi_one_ip, mainStatus.online);
+            updatePoiStatus(poi_two_ip, auxStatus.online);
+          }
         });
 
         // Add validation function
         function isValidIP(ip) {
-            return /^(?!0)(?!.*\.$)((25[0-5]|2[0-4][0-9]|[01]?[0-9]{1,3})(\.|$)){4}/.test(ip);
+          return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip);
+        }
+
+        function setMainIp() {
+          const ipInput = document.getElementById('manualMainIp');
+          const errorSpan = document.getElementById('mainIpError');
+          const ip = ipInput.value.trim();
+          
+          errorSpan.style.display = 'none';
+          
+          if (!isValidIP(ip)) {
+            errorSpan.style.display = 'inline';
+            return;
+          }
+
+          const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
+          const subnet = ip.split('.').slice(0, 3).join('.') + '.';
+          
+          // Update global variable immediately
+          poi_one_ip = ip;
+          
+          // Persist to storage
+          localStorage.setItem('poiIPs', JSON.stringify({
+            ...currentIPs,
+            subnet: subnet,
+            mainIP: ip,
+            routerMode: true
+          }));
+          
+          ipInput.placeholder = ip;
+          ipInput.value = '';
+          updatePoiStatus(ip, true);
+          createMessage('Main IP set and router mode enabled');
+          
+          // Refresh images with new IP
+          createBlackImages('imageContainer');
+        }
+
+        function setAuxIp() {
+          const ipInput = document.getElementById('manualAuxIp');
+          const errorSpan = document.getElementById('auxIpError');
+          const ip = ipInput.value.trim();
+          
+          errorSpan.style.display = 'none';
+          
+          if (!isValidIP(ip)) {
+            errorSpan.style.display = 'inline';
+            return;
+          }
+
+          const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
+          const subnet = ip.split('.').slice(0, 3).join('.') + '.';
+          
+          // Update global variable immediately
+          poi_two_ip = ip;
+          
+          // Persist to storage
+          localStorage.setItem('poiIPs', JSON.stringify({
+            ...currentIPs,
+            subnet: subnet,
+            auxIP: ip,
+            routerMode: true
+          }));
+          
+          ipInput.placeholder = ip;
+          ipInput.value = '';
+          updatePoiStatus(ip, true);
+          createMessage('Aux IP set and router mode enabled');
+          
+          // Refresh images with new IP
+          createBlackImages('imageContainertwo');
         }
 
         // Add WS2812/APA102 toggle handler
@@ -1392,12 +1553,14 @@
           const timeout = 3000;
           
           for(let attempt=1; attempt<=retries; attempt++) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
             try {
               const response = await fetch(`http://${ip}/get-pixels`, {
-                timeout: timeout,
+                signal: controller.signal,
                 headers: { 'Connection': 'close' }
               });
-              
+              clearTimeout(timeoutId);
               if(response.ok) {
                 const pixels = await response.text();
                 const label = isMain ? 'Main Poi' : 'Aux Poi';
@@ -1405,6 +1568,7 @@
                 return { online: true, pixels: parseInt(pixels, 10) };
               }
             } catch(error) {
+              clearTimeout(timeoutId);
               if(attempt === retries) return { online: false };
               await delay(1000 * attempt);
             }

@@ -14,7 +14,7 @@
       padding: 20px;
       margin: 15px 0;
       background: #f8f9fa;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .danger-zone {
@@ -200,653 +200,900 @@
       margin-left: 10px;
       font-size: 0.9em;
     }
+
+    .manual-ip-controls {
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .manual-ip-controls input[type="text"] {
+      width: 120px;
+      margin-right: 10px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    /* Network Discovery Styles */
+    .discovery-section {
+      margin-bottom: 20px;
+    }
+
+    .discovery-input-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .manual-ip-section {
+      margin-top: 20px;
+    }
+
+    .manual-ip-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .manual-ip-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .manual-ip-section label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    #routerIpInput {
+      width: 150px;
+    }
+
+    .manual-ip-row input[type="text"] {
+      width: 140px;
+    }
   </style>
 </head>
 
 <body>
   <div class="centered-container">
     <img id="poiImage" class="center-image" src="smaller-logo.jpg" alt="Smaller Logo">
-    
+
     <div class="control-block">
       <h2 class="section-title">Poi Controls</h2>
 
-    <div class="control-block">
-      <h3 class="section-title">Pattern Selection</h3>
-      <form id="routerForm" onsubmit="submitForm(event)">
-      <div class="pattern-buttons">
-        <label>
-          Change Pattern:
-          <button type="button" onclick="submitPattern('1')" style="background-color: #ff0000;">Generated</button>
-          <button type="button" onclick="submitPattern('2')" style="background-color: #00ff00;">IMG 1-5</button>
-          <button type="button" onclick="submitPattern('3')" style="background-color: #0000ff;">IMG 6-10</button>
-          <button type="button" onclick="submitPattern('4')" style="background-color: #ffff00;">IMG 10-20</button>
-          <button type="button" onclick="submitPattern('5')" style="background-color: #ff00ff;">IMG 1-52</button>
-          <button type="button" onclick="submitPattern('6')" style="background-color: #00e1ff;">On/Off Switch
-            Mode*</button>
-          <button type="button" onclick="submitPattern('7')" style="background-color: #3c3f3f;">LED's OFF</button>
-        </label>
-        <p>
-          <i>*Now you can switch poi on/off to change modes. Make sure to restart both poi at the same time to make sure
-            modes are in sync!</i>
-        </p>
-        <p><i>*Recommended: select LED's OFF before uploading or fetching images</i></p>
+      <div class="control-block">
+        <h3 class="section-title">Pattern Selection</h3>
+        <form id="routerForm" onsubmit="submitForm(event)">
+          <div class="pattern-buttons">
+            <label>
+              Change Pattern:
+              <button type="button" onclick="submitPattern('1')" style="background-color: #ff0000;">Generated</button>
+              <button type="button" onclick="submitPattern('2')" style="background-color: #00ff00;">IMG 1-5</button>
+              <button type="button" onclick="submitPattern('3')" style="background-color: #0000ff;">IMG 6-10</button>
+              <button type="button" onclick="submitPattern('4')" style="background-color: #ffff00;">IMG 10-20</button>
+              <button type="button" onclick="submitPattern('5')" style="background-color: #ff00ff;">IMG 1-52</button>
+              <button type="button" onclick="submitPattern('6')" style="background-color: #00e1ff;">On/Off Switch
+                Mode*</button>
+              <button type="button" onclick="submitPattern('7')" style="background-color: #3c3f3f;">LED's OFF</button>
+            </label>
+            <p>
+              <i>*Now you can switch poi on/off to change modes. Make sure to restart both poi at the same time to make
+                sure
+                modes are in sync!</i>
+            </p>
+            <p><i>*Recommended: select LED's OFF before uploading or fetching images</i></p>
+          </div>
+
+          <label>
+            Change Speed (0.5-1800s):
+            <div class="slider-container">
+              <input type="range" id="speedSlider" min="0" max="100" step="1" value="0">
+              <div id="speedTooltip" class="tooltip"></div>
+            </div>
+          </label>
+
+          <label>
+            Change Brightness (20-255):
+            <div class="slider-container brightness-slider-container">
+              <input type="range" id="brightnessSlider" min="20" max="255" value="20">
+              <div id="brightnessTooltip" class="tooltip"></div>
+            </div>
+          </label>
+
+        </form>
       </div>
 
-      <label>
-        Change Speed (0.5-1800s):
-        <div class="slider-container">
-          <input type="range" id="speedSlider" min="0" max="100" step="1" value="0">
-          <div id="speedTooltip" class="tooltip"></div>
+      <div class="control-block">
+        <h3 class="section-title">Synchronization</h3>
+        <button type="button" onclick="sync()">Sync Poi</button>
+      </div>
+
+      <div class="danger-zone">
+        <h3 class="danger-title">DANGER ZONE</h3>
+        <div>
+          <label>
+            Update Router Name and Password:
+            <input type="text" id="routerInput" placeholder="Enter Router Name">
+            <input type="text" id="passwordInput" placeholder="Enter Router Password">
+            <button type="button" onclick="submitRouter()">Submit</button>
+          </label>
         </div>
-      </label>
-
-      <label>
-        Change Brightness (20-255):
-        <div class="slider-container brightness-slider-container">
-          <input type="range" id="brightnessSlider" min="20" max="255" value="20">
-          <div id="brightnessTooltip" class="tooltip"></div>
+        <div>
+          <label>
+            Switch for Router Mode (submit unchecked to turn off):
+            <input type="checkbox" id="routerModeCheckbox" value="0">
+            <button type="button" onclick="submitRouterMode()">Submit</button>
+          </label>
         </div>
-      </label>
+        <div>
+          <label>
+            Update WiFi Channel (1-13):
+            <input type="number" id="channelInput" min="1" max="13" placeholder="1-13">
+            <button type="button" onclick="submitChannel()">Update Channel</button>
+          </label>
+        </div>
+      </div>
 
-      </form>
-    </div>
+      <div class="control-block">
+        <h3 class="section-title">Network Discovery</h3>
+        
+        <!-- Spinner and counter elements -->
+        <div class="spinner" id="spinner"></div>
+        <p id="counter">Scanning IP: <span id="currentIP">0</span> for poi!</p>
 
-    <div class="control-block">
-      <h3 class="section-title">Synchronization</h3>
-      <button type="button" onclick="sync()">Sync Poi</button>
-    </div>
+        <!-- Discovery Section -->
+        <div class="discovery-section">
+          <label>WiFi Poi IP Address Discovery (Router Mode) - enter router IP address first</label>
+          <div class="discovery-input-group">
+            <input type="text" id="routerIpInput" placeholder="192.168.1.1" pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$">
+            <button type="button" id="discoverBtn">Discover POI</button>
+            <span id="ipError" style="color: red; display: none;">Invalid IP address format!</span>
+          </div>
+          <span id="result"></span>
+        </div>
 
-    <div class="danger-zone">
-      <h3 class="danger-title">DANGER ZONE</h3>
-    <div>
-      <label>
-        Update Router Name and Password:
-        <input type="text" id="routerInput" placeholder="Enter Router Name">
-        <input type="text" id="passwordInput" placeholder="Enter Router Password">
-        <button type="button" onclick="submitRouter()">Submit</button>
-      </label>
-    </div>
-  <div>
-      <label>
-        Switch for Router Mode (submit unchecked to turn off):
-        <input type="checkbox" id="routerModeCheckbox" value="0">
-        <button type="button" onclick="submitRouterMode()">Submit</button>
-      </label>
-    </div>
-  <div>
-      <label>
-        Update WiFi Channel (1-13):
-        <input type="number" id="channelInput" min="1" max="13" placeholder="1-13">
-        <button type="button" onclick="submitChannel()">Update Channel</button>
-      </label>
-    </div>
-    </div>
+        <!-- Manual IP Section -->
+        <div class="manual-ip-section">
+          <label>Manually Set Poi IP (Router Mode)</label>
+          <div class="manual-ip-group">
+            <div class="manual-ip-row">
+              <input type="text" id="manualMainIp" placeholder="192.168.1.x">
+              <button type="button" onclick="setMainIp()">Set Main</button>
+              <span id="mainIpError" style="color: red; display: none;">Invalid IP!</span>
+            </div>
+            <div class="manual-ip-row">
+              <input type="text" id="manualAuxIp" placeholder="192.168.1.x">
+              <button type="button" onclick="setAuxIp()">Set Aux</button>
+              <span id="auxIpError" style="color: red; display: none;">Invalid IP!</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="status-section">
+        <h3 class="section-title">Poi Status</h3>
+        <button id="fetchBtn">Fetch Settings</button>
+        <h4>Main Poi:</h4>
+        <p>Router: <span id="router">N/A</span></p>
+        <p>Password: <span id="password">N/A</span></p>
+        <p>Channel: <span id="channel">N/A</span></p>
+        <p>Pattern: <span id="pattern">N/A</span></p>
+        <p>Pixels: <span id="pixels">?</span></p>
 
-    <div class="control-block">
-      <h3 class="section-title">Network Discovery</h3>
-      <!-- Spinner and counter elements -->
-    <div class="spinner" id="spinner"></div>
-    <p id="counter">Scanning IP: <span id="currentIP">0</span> for poi!</p>
+        <h4>Auxillary Poi:</h4>
+        <p>Router: <span id="routerTwo">N/A</span></p>
+        <p>Password: <span id="passwordTwo">N/A</span></p>
+        <p>Channel: <span id="channelTwo">N/A</span></p>
+        <p>Pattern: <span id="patternTwo">N/A</span></p>
+        <p>Pixels: <span id="pixelsTwo">?</span></p>
+      </div>
 
-    <label>
-      WiFi Poi IP Address Discovery (Router Mode) - enter router IP address first</label>
-      <input type="text" id="routerIpInput" placeholder="192.168.1.1" pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$">
-      <button type="button" id="discoverBtn">Discover POI</button>
-      <span id="ipError" style="color: red; display: none;">Invalid IP address format!</span>
-      <span id="result"></span>
-    </label>
-  </div>
-  <div class="status-section">
-    <h3 class="section-title">Poi Status</h3>
-  <button id="fetchBtn">Fetch Settings</button>
-  <h4>Main Poi:</h4>
-  <p>Router: <span id="router">N/A</span></p>
-  <p>Password: <span id="password">N/A</span></p>
-  <p>Channel: <span id="channel">N/A</span></p>
-  <p>Pattern: <span id="pattern">N/A</span></p>
-  <p>Pixels: <span id="pixels">?</span></p>
-
-  <h4>Auxillary Poi:</h4>
-  <p>Router: <span id="routerTwo">N/A</span></p>
-  <p>Password: <span id="passwordTwo">N/A</span></p>
-  <p>Channel: <span id="channelTwo">N/A</span></p>
-  <p>Pattern: <span id="patternTwo">N/A</span></p>
-  <p>Pixels: <span id="pixelsTwo">?</span></p>
-    </div>
-
-  <script>
-    /**
-     * The spinner element used to indicate loading state.
-     * @type {HTMLElement}
-     */
-    const spinner = document.getElementById('spinner');
-    /**
-     * The counter element used to display the current IP being scanned.
-     * @type {HTMLElement}
-     */
-    const counter = document.getElementById('counter');
-    /**
-     * The span element used to display the current IP address during discovery.
-     * @type {HTMLElement}
-     */
-    const currentIPSpan = document.getElementById('currentIP');
-
-    /**
-     * The IP address of the main Poi device.
-     * @type {string}
-     */
-    let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
-    // const poi_one_ip = "10.0.0.5"
-    /**
-     * The IP address of the auxiliary Poi device.
-     * @type {string}
-     */
-    let poi_two_ip = "192.168.1.78"; // Default Auxillary Poi IP (AP Mode)
-
-    /**
-     * The number of pixels in the Poi device.
-     * @type {number}
-     */
-    let number_of_pixels = 120;
-
-    // todo: get ip addresses handler here
-
-    // settings globals: 
-    /**
-     * The data fetched from the main Poi device.
-     * @type {string}
-     */
-    let data = "";
-    /**
-     * The parts of the data fetched from the main Poi device.
-     * @type {Array<string>}
-     */
-    let parts = "";
-
-    /**
-     * The router name fetched from the main Poi device.
-     * @type {string}
-     */
-    let router = "";
-    /**
-     * The password fetched from the main Poi device.
-     * @type {string}
-     */
-    let password = "";
-    /**
-     * The channel fetched from the main Poi device.
-     * @type {string}
-     */
-    let channel = "";
-    /**
-     * The number of pixels fetched from the main Poi device.
-     * @type {string}
-     */
-     let pixels = "";
-    /**
-     * The pattern fetched from the main Poi device.
-     * @type {string}
-     */
-    let pattern = "";
-
-    /**
-     * The data fetched from the auxiliary Poi device.
-     * @type {string}
-     */
-    let data_two = "";
-    /**
-     * The parts of the data fetched from the auxiliary Poi device.
-     * @type {Array<string>}
-     */
-    let parts_two = "";
-
-    /**
-     * The router name fetched from the auxiliary Poi device.
-     * @type {string}
-     */
-    let router_two = "";
-    /**
-     * The password fetched from the auxiliary Poi device.
-     * @type {string}
-     */
-    let password_two = "";
-    /**
-     * The channel fetched from the auxiliary Poi device.
-     * @type {string}
-     */
-    let channel_two = "";
-    /**
-     * The number of pixels fetched from the auxiliary Poi device.
-     * @type {string}
-     */
-     let pixels_two = "";
-    /**
-     * The pattern fetched from the auxiliary Poi device.
-     * @type {string}
-     */
-    let pattern_two = "";
-
-    // Display the values
-    document.getElementById('routerTwo').textContent = router_two;
-    document.getElementById('passwordTwo').textContent = password_two;
-    document.getElementById('channelTwo').textContent = channel_two;
-    document.getElementById('patternTwo').textContent = pattern_two;
-
-    /**
-     * Event listener for when the DOM content is fully loaded.
-     * Fetches the current settings and highlights the active pattern button.
-     */
-    document.addEventListener('DOMContentLoaded', () => {
-      // Fetch the current settings when the page loads
-      document.getElementById('fetchBtn').click();
-
-      // Add a slight delay to ensure the fetch completes before updating the UI
-      setTimeout(() => {
-        // Highlight the button based on the fetched pattern
-        console.log(`pattern: ${pattern}`);
-        highlightActiveButton(pattern);
-      }, 6000); // Adjust the delay if necessary
-    });
-
-    /**
-         * Fetches the number of pixels from the specified IP.
-         * @param {string} ip - The IP address of the POI.
-         * @returns {Promise<number|null>} - The number of pixels or null if an error occurs.
+      <script>
+        /**
+         * The spinner element used to indicate loading state.
+         * @type {HTMLElement}
          */
-         async function fetchNumberOfPixels(ip) {
-            try {
-                const label = ip === poi_one_ip ? 'Main Poi' : 'Aux Poi';
-                // createMessage(`Getting pixels from ${label}`);
-                const response = await fetch(`http://${ip}/get-pixels`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const pixels_tmp = await response.text();
-                return parseInt(pixels_tmp, 10);
-            } catch (error) {
-                console.error(`Error fetching number of pixels from ${ip}:`, error);
-                return null;
-            }
-        }
+        const spinner = document.getElementById('spinner');
+        /**
+         * The counter element used to display the current IP being scanned.
+         * @type {HTMLElement}
+         */
+        const counter = document.getElementById('counter');
+        /**
+         * The span element used to display the current IP address during discovery.
+         * @type {HTMLElement}
+         */
+        const currentIPSpan = document.getElementById('currentIP');
 
-    /**
-     * Synchronizes the Poi devices by sending a reset request to both.
-     * @returns {Promise<void>}
-     */
-    async function sync() {
-      // Handle both sync requests separately
-      sendRequest(`http://${poi_two_ip}/resetimagetouse`)
-          .then(() => console.log('Aux sync successful'))
-          .catch(error => console.error('Aux sync failed:', error));
-      
-      sendRequest(`http://${poi_one_ip}/resetimagetouse`)
-          .then(() => console.log('Main sync successful'))
-          .catch(error => console.error('Main sync failed:', error));
-    }
+        /**
+         * The IP address of the main Poi device.
+         * @type {string}
+         */
+        let poi_one_ip = "192.168.1.1"; // Default Main Poi IP (AP Mode)
+        // const poi_one_ip = "10.0.0.5"
+        /**
+         * The IP address of the auxiliary Poi device.
+         * @type {string}
+         */
+        let poi_two_ip = "192.168.1.78"; // Default Auxillary Poi IP (AP Mode)
 
-    /**
-     * Submits the router name and password to both Poi devices.
-     * @returns {void}
-     */
-    function submitRouter() {
-      const routerInput = document.getElementById('routerInput').value;
-      const passwordInput = document.getElementById('passwordInput').value;
-      
-      // Handle each request independently
-      sendRequest(`http://${poi_two_ip}/setting?ssid=${routerInput}&pwd=${passwordInput}`)
-          .catch(error => console.error('Aux Poi router update failed:', error));
-      
-      sendRequest(`http://${poi_one_ip}/setting?ssid=${routerInput}&pwd=${passwordInput}`)
-          .catch(error => console.error('Main Poi router update failed:', error));
+        /**
+         * The number of pixels in the Poi device.
+         * @type {number}
+         */
+        let number_of_pixels = 120;
 
-      setTimeout(() => {
-        document.getElementById('fetchBtn').click();
-      }, 2500);
-    }
+        // todo: get ip addresses handler here
 
-    /**
-     * Submits the router mode to both Poi devices.
-     * @returns {void}
-     */
-    function submitChannel() {
-      const channelInput = document.getElementById('channelInput');
-      const channelValue = parseInt(channelInput.value);
+        // settings globals: 
+        /**
+         * The data fetched from the main Poi device.
+         * @type {string}
+         */
+        let data = "";
+        /**
+         * The parts of the data fetched from the main Poi device.
+         * @type {Array<string>}
+         */
+        let parts = "";
 
-      if (isNaN(channelValue) || channelValue < 1 || channelValue > 13) {
-        alert("Invalid channel! WiFi channels must be between 1-13");
-        channelInput.value = ""; // Clear invalid input
-        return;
-      }
+        /**
+         * The router name fetched from the main Poi device.
+         * @type {string}
+         */
+        let router = "";
+        /**
+         * The password fetched from the main Poi device.
+         * @type {string}
+         */
+        let password = "";
+        /**
+         * The channel fetched from the main Poi device.
+         * @type {string}
+         */
+        let channel = "";
+        /**
+         * The number of pixels fetched from the main Poi device.
+         * @type {string}
+         */
+        let pixels = "";
+        /**
+         * The pattern fetched from the main Poi device.
+         * @type {string}
+         */
+        let pattern = "";
 
-      // Handle each request independently
-      sendRequest(`http://${poi_one_ip}/setting?channel=${channelValue}`)
-          .catch(error => console.error('Main Poi channel update failed:', error));
-      sendRequest(`http://${poi_two_ip}/setting?channel=${channelValue}`)
-          .catch(error => console.error('Aux Poi channel update failed:', error));
+        /**
+         * The data fetched from the auxiliary Poi device.
+         * @type {string}
+         */
+        let data_two = "";
+        /**
+         * The parts of the data fetched from the auxiliary Poi device.
+         * @type {Array<string>}
+         */
+        let parts_two = "";
 
-      setTimeout(() => {
-        document.getElementById('fetchBtn').click();
-        channelInput.value = "";
-      }, 2000);
-    }
+        /**
+         * The router name fetched from the auxiliary Poi device.
+         * @type {string}
+         */
+        let router_two = "";
+        /**
+         * The password fetched from the auxiliary Poi device.
+         * @type {string}
+         */
+        let password_two = "";
+        /**
+         * The channel fetched from the auxiliary Poi device.
+         * @type {string}
+         */
+        let channel_two = "";
+        /**
+         * The number of pixels fetched from the auxiliary Poi device.
+         * @type {string}
+         */
+        let pixels_two = "";
+        /**
+         * The pattern fetched from the auxiliary Poi device.
+         * @type {string}
+         */
+        let pattern_two = "";
 
-    function submitRouterMode() {
-      const routerMode = document.getElementById('routerModeCheckbox').checked ? '1' : '0';
-      sendRequest(`http://${poi_two_ip}/router?router=${routerMode}`);
-      sendRequest(`http://${poi_one_ip}/router?router=${routerMode}`);
-    }
+        // Display the values
+        document.getElementById('routerTwo').textContent = router_two;
+        document.getElementById('passwordTwo').textContent = password_two;
+        document.getElementById('channelTwo').textContent = channel_two;
+        document.getElementById('patternTwo').textContent = pattern_two;
 
-    /**
-     * Submits the chosen pattern to both Poi devices.
-     * @param {string} chosen_pattern - The pattern to be set.
-     * @returns {void}
-     */
-    function submitPattern(chosen_pattern) {
-      // Use separate error handling for each request
-      sendRequest(`http://${poi_two_ip}/pattern?patternChooserChange=${chosen_pattern}`)
-          .catch(error => console.error('Aux Poi pattern failed:', error));
+        /**
+         * Event listener for when the DOM content is fully loaded.
+         * Fetches the current settings and highlights the active pattern button.
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+          const savedIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
           
-      sendRequest(`http://${poi_one_ip}/pattern?patternChooserChange=${chosen_pattern}`)
-          .catch(error => console.error('Main Poi pattern failed:', error));
-
-      // Add a slight delay to ensure the fetch completes before proceeding
-      setTimeout(() => {
-        document.getElementById('fetchBtn').click();
-      }, 1500);
-
-      setTimeout(() => {
-        highlightActiveButton(pattern);
-      }, 2500);
-    }
-
-    // Function to highlight the active pattern button
-    /**
-     * Highlights the active pattern button based on the selected pattern.
-     * @param {string} selectedPattern - The pattern to highlight.
-     * @returns {void}
-     */
-    function highlightActiveButton(selectedPattern) {
-      // Get all the pattern buttons
-      const buttons = document.querySelectorAll('.pattern-buttons button');
-
-      // Remove the 'active' class from all buttons
-      buttons.forEach(button => {
-        button.classList.remove('active');
-      });
-
-      // Add the 'active' class to the selected button
-      if (selectedPattern >= 1 && selectedPattern <= 6) {
-        buttons[selectedPattern - 1].classList.add('active'); // Arrays are 0-indexed, hence -1
-      }
-    }
-
-    // Add these conversion functions
-    function sliderToValue(sliderPercent) {
-      if (sliderPercent <= 50) {
-        // Exact 0.5 increments for first half: 0-50% => 0.5-30
-        return 0.5 + Math.floor((sliderPercent / 50) * 60) * 0.5;
-      }
-      // Exponential mapping remains the same
-      return 30 * Math.pow(1800 / 30, (sliderPercent - 50) / 50);
-    }
-
-    function valueToSlider(value) {
-      if (value <= 30) {
-        // Reverse calculation for 0.5 increments
-        return ((value - 0.5) / 29.5) * 50 * (30 / 29.5);
-      }
-      // Keep existing exponential calculation
-      return 50 + (Math.log(value / 30) / Math.log(60)) * 50;
-    }
-
-    // Update slider initialization
-    const speedSlider = document.getElementById('speedSlider');
-    const speedTooltip = document.getElementById('speedTooltip');
-    let submitTimeout;
-
-    // Add these event listeners
-    speedSlider.addEventListener('input', (e) => {
-      const value = sliderToValue(e.target.value);
-      speedTooltip.textContent = value.toFixed(1) + 's';
-      speedTooltip.style.opacity = '1';
-      
-      // Update tooltip position
-      const percent = (e.target.value / 100);
-      speedTooltip.style.left = `calc(${percent * 100}% - ${percent * 20}px)`;
-      
-      // Debounce submission
-      clearTimeout(submitTimeout);
-      submitTimeout = setTimeout(() => {
-        submitSpeed(value);
-      }, 500);
-    });
-
-    speedSlider.addEventListener('change', () => {
-      speedTooltip.style.opacity = '0';
-    });
-
-    // Modified submitSpeed function
-    function submitSpeed(value) {
-      sendRequest(`http://${poi_two_ip}/intervalChange?interval=${value}`);
-      sendRequest(`http://${poi_one_ip}/intervalChange?interval=${value}`);
-    }
-
-    // Brightness slider logic
-    const brightnessSlider = document.getElementById('brightnessSlider');
-    const brightnessTooltip = document.getElementById('brightnessTooltip');
-    let brightnessTimeout;
-
-    brightnessSlider.addEventListener('input', (e) => {
-      const value = parseInt(e.target.value);
-      brightnessTooltip.textContent = value;
-      brightnessTooltip.style.opacity = '1';
-      
-      const percent = ((value - 20) / (255 - 20)) * 100;
-      brightnessTooltip.style.left = `calc(${percent}% - ${percent * 0.2}px)`;
-      
-      clearTimeout(brightnessTimeout);
-      brightnessTimeout = setTimeout(() => {
-        submitBrightness(value);
-      }, 500);
-    });
-
-    brightnessSlider.addEventListener('change', () => {
-      brightnessTooltip.style.opacity = '0';
-    });
-
-    function submitBrightness(value) {
-      sendRequest(`http://${poi_two_ip}/brightness?brt=${value}`)
-          .catch(error => console.error('Aux Poi brightness update failed:', error));
-      sendRequest(`http://${poi_one_ip}/brightness?brt=${value}`)
-          .catch(error => console.error('Main Poi brightness update failed:', error));
-    }
-
-    /**
-     * Sends a request to the specified URL with retry functionality.
-     * @param {string} url - The URL to send the request to.
-     * @param {number} [retries=3] - Number of retry attempts
-     * @returns {Promise<void>}
-     */
-    async function sendRequest(url, retries = 3) {
-        for (let attempt = 1; attempt <= retries; attempt++) {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                console.log('Request succeeded to:', url);
-                return; // Success - exit the function
-            } catch (error) {
-                console.error(`Attempt ${attempt} failed for ${url}:`, error);
-                if (attempt === retries) {
-                    console.error(`Giving up after ${retries} attempts for ${url}`);
-                    throw error; // Final failure
-                }
-                // Wait with exponential backoff before retrying
-                await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
-            }
-        }
-    }
-
-    let ip = "";
-    /**
-     * Event listener for the discover button click.
-     * Discovers the Poi devices on the network.
-     * @returns {Promise<void>}
-     */
-    document.getElementById('discoverBtn').addEventListener('click', async function () {
-      const routerIp = document.getElementById('routerIpInput').value;
-      const ipError = document.getElementById('ipError');
-      
-      // Reset error state
-      ipError.style.display = 'none';
-      
-      // Validate IP format
-      if (!isValidIP(routerIp)) {
-        ipError.style.display = 'inline';
-        return;
-      }
-
-      // Extract subnet from first 3 octets
-      const octets = routerIp.split('.').slice(0, 3);
-      if (octets.length !== 3) {
-        ipError.style.display = 'inline';
-        return;
-      }
-      
-      const subnet = octets.join('.') + '.';
-      
-      // Show loading state
-      spinner.style.display = 'block';
-      counter.style.display = 'block';
-
-      const timeout = 1500;
-      let foundDevices = 0;
-
-      try {
-        for (let i = 1; i <= 254; i++) {
-          const ip = subnet + i;
-          currentIPSpan.innerText = ip;
-
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), timeout);
+          // Initialize router mode checkbox
+          if (savedIPs.routerMode) {
+            document.getElementById('routerModeCheckbox').checked = true;
             
-            const response = await fetch(`http://${ip}/`, { signal: controller.signal });
-            clearTimeout(timeoutId);
-
-            if (response.ok) {
-              if (foundDevices === 0) {
-                poi_one_ip = ip;
-                document.getElementById('result').innerText = `First POI: ${ip}`;
-                foundDevices++;
-              } else {
-                poi_two_ip = ip;
-                document.getElementById('result').innerText += ` | Second POI: ${ip}`;
-                foundDevices++;
-                break;
-              }
+            // Only use STA IPs if router mode is active
+            if (savedIPs.mainIP) {
+              poi_one_ip = savedIPs.mainIP;
+              document.getElementById('manualMainIp').placeholder = savedIPs.mainIP;
             }
+            if (savedIPs.auxIP) {
+              poi_two_ip = savedIPs.auxIP;
+              document.getElementById('manualAuxIp').placeholder = savedIPs.auxIP;
+            }
+          } else {
+            // Force AP Mode defaults
+            poi_one_ip = "192.168.1.1";
+            poi_two_ip = "192.168.1.78";
+            document.getElementById('manualMainIp').placeholder = "192.168.1.x";
+            document.getElementById('manualAuxIp').placeholder = "192.168.1.x";
+          }
+
+          // Auto-fill router IP input with subnet if available
+          if (savedIPs.subnet) {
+            const baseIp = savedIPs.subnet.replace(/\.$/, '') + '.1';
+            document.getElementById('routerIpInput').value = baseIp;
+          }
+
+          // Fetch the current settings when the page loads
+          document.getElementById('fetchBtn').click();
+
+          // Add a slight delay to ensure the fetch completes before updating the UI
+          setTimeout(() => {
+            // Highlight the button based on the fetched pattern
+            console.log(`pattern: ${pattern}`);
+            highlightActiveButton(pattern);
+          }, 6000); // Adjust the delay if necessary
+        });
+
+        /**
+             * Fetches the number of pixels from the specified IP.
+             * @param {string} ip - The IP address of the POI.
+             * @returns {Promise<number|null>} - The number of pixels or null if an error occurs.
+             */
+        async function fetchNumberOfPixels(ip) {
+          try {
+            const label = ip === poi_one_ip ? 'Main Poi' : 'Aux Poi';
+            // createMessage(`Getting pixels from ${label}`);
+            const response = await fetch(`http://${ip}/get-pixels`);
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const pixels_tmp = await response.text();
+            return parseInt(pixels_tmp, 10);
           } catch (error) {
-            // Expected timeout, continue scanning
+            console.error(`Error fetching number of pixels from ${ip}:`, error);
+            return null;
           }
         }
-      } finally {
-        spinner.style.display = 'none';
-        counter.style.display = 'none';
-        
-        if (foundDevices === 0) {
-          document.getElementById('result').innerText = 'No POI found on this subnet';
+
+        /**
+         * Synchronizes the Poi devices by sending a reset request to both.
+         * @returns {Promise<void>}
+         */
+        async function sync() {
+          // Handle both sync requests separately
+          sendRequest(`http://${poi_two_ip}/resetimagetouse`)
+            .then(() => console.log('Aux sync successful'))
+            .catch(error => console.error('Aux sync failed:', error));
+
+          sendRequest(`http://${poi_one_ip}/resetimagetouse`)
+            .then(() => console.log('Main sync successful'))
+            .catch(error => console.error('Main sync failed:', error));
         }
-      }
-    });
 
-    // Add this validation function
-    function isValidIP(ip) {
-      return /^(?!0)(?!.*\.$)((25[0-5]|2[0-4][0-9]|[01]?[0-9]{1,3})(\.|$)){4}/.test(ip);
-    }
+        /**
+         * Submits the router name and password to both Poi devices.
+         * @returns {void}
+         */
+        function submitRouter() {
+          const routerInput = document.getElementById('routerInput').value;
+          const passwordInput = document.getElementById('passwordInput').value;
 
-    /**
-     * Event listener for the fetch button click.
-     * Fetches the settings from both Poi devices.
-     * @returns {Promise<void>}
-     */
-    document.getElementById('fetchBtn').addEventListener('click', async function () {
-      try {
-        const response = await fetch(`http://${poi_one_ip}/returnsettings`, { mode: 'cors' });
-        if (response.ok) {
-          data = await response.text();
-          parts = data.split(',');
+          // Handle each request independently
+          sendRequest(`http://${poi_two_ip}/setting?ssid=${routerInput}&pwd=${passwordInput}`)
+            .catch(error => console.error('Aux Poi router update failed:', error));
 
-          // format is: router, password, channel, ip1, ip2, ip3, ip4, pattern
-          router = parts[0].trim();
-          password = parts[1].trim();
-          channel = parts[2].trim();
-          // Get fresh pixel count from dedicated endpoint
-          pixels = await fetchNumberOfPixels(poi_one_ip);
-          pattern = parts[parts.length - 1].trim();
+          sendRequest(`http://${poi_one_ip}/setting?ssid=${routerInput}&pwd=${passwordInput}`)
+            .catch(error => console.error('Main Poi router update failed:', error));
 
-          // Update pixels display with fresh data
-          document.getElementById('pixels').textContent = pixels || '?';
+          setTimeout(() => {
+            document.getElementById('fetchBtn').click();
+          }, 2500);
+        }
 
-          // Display the values
-          document.getElementById('router').textContent = router;
-          document.getElementById('password').textContent = password;
-          document.getElementById('channel').textContent = channel;
-          document.getElementById('pattern').textContent = pattern;
+        /**
+         * Submits the router mode to both Poi devices.
+         * @returns {void}
+         */
+        function submitChannel() {
+          const channelInput = document.getElementById('channelInput');
+          const channelValue = parseInt(channelInput.value);
 
-          // Update the placeholders for input fields
-          document.getElementById('routerInput').placeholder = router;
-          document.getElementById('passwordInput').placeholder = password;
+          if (isNaN(channelValue) || channelValue < 1 || channelValue > 13) {
+            alert("Invalid channel! WiFi channels must be between 1-13");
+            channelInput.value = ""; // Clear invalid input
+            return;
+          }
 
-          console.log(`got pattern in click function: ${pattern}`);
+          // Handle each request independently
+          sendRequest(`http://${poi_one_ip}/setting?channel=${channelValue}`)
+            .catch(error => console.error('Main Poi channel update failed:', error));
+          sendRequest(`http://${poi_two_ip}/setting?channel=${channelValue}`)
+            .catch(error => console.error('Aux Poi channel update failed:', error));
+
+          setTimeout(() => {
+            document.getElementById('fetchBtn').click();
+            channelInput.value = "";
+          }, 2000);
+        }
+
+        function submitRouterMode() {
+          const routerMode = document.getElementById('routerModeCheckbox').checked;
+          const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
           
-          // // Initialize slider positions
-          // if (parts.length > 0) {
-          //   const currentSpeed = parseFloat(parts[3]); // Adjust index if needed
-          //   speedSlider.value = valueToSlider(currentSpeed);
-          // }
-          // if (parts.length > 3) {
-          //   const currentBrightness = parseInt(parts[3]); // Adjust index if needed
-          //   brightnessSlider.value = currentBrightness;
-          // }
-        } else {
-          console.error('Fetch error:', response.statusText);
+          const newIPs = {
+            ...currentIPs,
+            routerMode: routerMode,
+            // Clear STA IPs when disabling router mode
+            ...(routerMode ? {} : { mainIP: null, auxIP: null })
+          };
+          localStorage.setItem('poiIPs', JSON.stringify(newIPs));
+
+          // Update global IPs immediately
+          if (routerMode) {
+            poi_one_ip = currentIPs.mainIP || poi_one_ip;
+            poi_two_ip = currentIPs.auxIP || poi_two_ip;
+          } else {
+            // Revert to AP Mode defaults
+            poi_one_ip = "192.168.1.1";
+            poi_two_ip = "192.168.1.78";
+          }
+
+          const routerModeValue = routerMode ? '1' : '0';
+          sendRequest(`http://${poi_two_ip}/router?router=${routerModeValue}`);
+          sendRequest(`http://${poi_one_ip}/router?router=${routerModeValue}`);
         }
-      } catch (error) {
-        console.error('Error:', error);
-      }
 
-      try {
-        const response_two = await fetch(`http://${poi_two_ip}/returnsettings`, { mode: 'cors' });
-        if (response_two.ok) {
-          data_two = await response_two.text();
-          parts_two = data_two.split(',');
+        /**
+         * Submits the chosen pattern to both Poi devices.
+         * @param {string} chosen_pattern - The pattern to be set.
+         * @returns {void}
+         */
+        function submitPattern(chosen_pattern) {
+          // Use separate error handling for each request
+          sendRequest(`http://${poi_two_ip}/pattern?patternChooserChange=${chosen_pattern}`)
+            .catch(error => console.error('Aux Poi pattern failed:', error));
 
-          // format is: router, password, channel, pixels, ip1, ip2, ip3, ip4, pattern
-          router_two = parts_two[0].trim();
-          password_two = parts_two[1].trim();
-          channel_two = parts_two[2].trim();
-          pixels_two = await fetchNumberOfPixels(poi_two_ip);
-          pattern_two = parts_two[parts_two.length - 1].trim();
+          sendRequest(`http://${poi_one_ip}/pattern?patternChooserChange=${chosen_pattern}`)
+            .catch(error => console.error('Main Poi pattern failed:', error));
 
-          // Update pixels display with fresh data
-          document.getElementById('pixelsTwo').textContent = pixels_two || '?';
+          // Add a slight delay to ensure the fetch completes before proceeding
+          setTimeout(() => {
+            document.getElementById('fetchBtn').click();
+          }, 1500);
 
-          // Display the values
-          document.getElementById('routerTwo').textContent = router_two;
-          document.getElementById('passwordTwo').textContent = password_two;
-          document.getElementById('channelTwo').textContent = channel_two;
-          document.getElementById('patternTwo').textContent = pattern_two;
-
-        } else {
-          console.error('Fetch error:', response_two.statusText);
+          setTimeout(() => {
+            highlightActiveButton(pattern);
+          }, 2500);
         }
-      } catch (error) {
-        console.error('Error:', error);
-      }
 
-    });
+        // Function to highlight the active pattern button
+        /**
+         * Highlights the active pattern button based on the selected pattern.
+         * @param {string} selectedPattern - The pattern to highlight.
+         * @returns {void}
+         */
+        function highlightActiveButton(selectedPattern) {
+          // Get all the pattern buttons
+          const buttons = document.querySelectorAll('.pattern-buttons button');
 
-  </script>
+          // Remove the 'active' class from all buttons
+          buttons.forEach(button => {
+            button.classList.remove('active');
+          });
+
+          // Add the 'active' class to the selected button
+          if (selectedPattern >= 1 && selectedPattern <= 6) {
+            buttons[selectedPattern - 1].classList.add('active'); // Arrays are 0-indexed, hence -1
+          }
+        }
+
+        // Add these conversion functions
+        function sliderToValue(sliderPercent) {
+          if (sliderPercent <= 50) {
+            // Exact 0.5 increments for first half: 0-50% => 0.5-30
+            return 0.5 + Math.floor((sliderPercent / 50) * 60) * 0.5;
+          }
+          // Exponential mapping remains the same
+          return 30 * Math.pow(1800 / 30, (sliderPercent - 50) / 50);
+        }
+
+        function valueToSlider(value) {
+          if (value <= 30) {
+            // Reverse calculation for 0.5 increments
+            return ((value - 0.5) / 29.5) * 50 * (30 / 29.5);
+          }
+          // Keep existing exponential calculation
+          return 50 + (Math.log(value / 30) / Math.log(60)) * 50;
+        }
+
+        // Update slider initialization
+        const speedSlider = document.getElementById('speedSlider');
+        const speedTooltip = document.getElementById('speedTooltip');
+        let submitTimeout;
+
+        // Add these event listeners
+        speedSlider.addEventListener('input', (e) => {
+          const value = sliderToValue(e.target.value);
+          speedTooltip.textContent = value.toFixed(1) + 's';
+          speedTooltip.style.opacity = '1';
+
+          // Update tooltip position
+          const percent = (e.target.value / 100);
+          speedTooltip.style.left = `calc(${percent * 100}% - ${percent * 20}px)`;
+
+          // Debounce submission
+          clearTimeout(submitTimeout);
+          submitTimeout = setTimeout(() => {
+            submitSpeed(value);
+          }, 500);
+        });
+
+        speedSlider.addEventListener('change', () => {
+          speedTooltip.style.opacity = '0';
+        });
+
+        // Modified submitSpeed function
+        function submitSpeed(value) {
+          sendRequest(`http://${poi_two_ip}/intervalChange?interval=${value}`);
+          sendRequest(`http://${poi_one_ip}/intervalChange?interval=${value}`);
+        }
+
+        // Brightness slider logic
+        const brightnessSlider = document.getElementById('brightnessSlider');
+        const brightnessTooltip = document.getElementById('brightnessTooltip');
+        let brightnessTimeout;
+
+        brightnessSlider.addEventListener('input', (e) => {
+          const value = parseInt(e.target.value);
+          brightnessTooltip.textContent = value;
+          brightnessTooltip.style.opacity = '1';
+
+          const percent = ((value - 20) / (255 - 20)) * 100;
+          brightnessTooltip.style.left = `calc(${percent}% - ${percent * 0.2}px)`;
+
+          clearTimeout(brightnessTimeout);
+          brightnessTimeout = setTimeout(() => {
+            submitBrightness(value);
+          }, 500);
+        });
+
+        brightnessSlider.addEventListener('change', () => {
+          brightnessTooltip.style.opacity = '0';
+        });
+
+        function submitBrightness(value) {
+          sendRequest(`http://${poi_two_ip}/brightness?brt=${value}`)
+            .catch(error => console.error('Aux Poi brightness update failed:', error));
+          sendRequest(`http://${poi_one_ip}/brightness?brt=${value}`)
+            .catch(error => console.error('Main Poi brightness update failed:', error));
+        }
+
+        /**
+         * Sends a request to the specified URL with retry functionality.
+         * @param {string} url - The URL to send the request to.
+         * @param {number} [retries=3] - Number of retry attempts
+         * @returns {Promise<void>}
+         */
+        async function sendRequest(url, retries = 3) {
+          for (let attempt = 1; attempt <= retries; attempt++) {
+            try {
+              const response = await fetch(url);
+              if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+              console.log('Request succeeded to:', url);
+              return; // Success - exit the function
+            } catch (error) {
+              console.error(`Attempt ${attempt} failed for ${url}:`, error);
+              if (attempt === retries) {
+                console.error(`Giving up after ${retries} attempts for ${url}`);
+                throw error; // Final failure
+              }
+              // Wait with exponential backoff before retrying
+              await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+            }
+          }
+        }
+
+        let ip = "";
+        /**
+         * Event listener for the discover button click.
+         * Discovers the Poi devices on the network.
+         * @returns {Promise<void>}
+         */
+        document.getElementById('discoverBtn').addEventListener('click', async function () {
+          const routerIp = document.getElementById('routerIpInput').value;
+          const ipError = document.getElementById('ipError');
+
+          ipError.style.display = 'none';
+
+          if (!isValidIP(routerIp)) {
+            ipError.style.display = 'inline';
+            return;
+          }
+
+          const octets = routerIp.split('.').slice(0, 3);
+          if (octets.length !== 3) {
+            ipError.style.display = 'inline';
+            return;
+          }
+
+          const subnet = octets.join('.') + '.';
+          const currentSubnet = octets.slice(0, 3).join('.') + '.';
+
+          spinner.style.display = 'block';
+          counter.style.display = 'block';
+
+          const timeout = 1500;
+          let foundDevices = 0;
+
+          // Get cached IPs
+          const cachedIPs = getCookie('poiIPs') || {};
+          let scanOrder = [];
+
+          // Generate scanning order based on cache
+          if (cachedIPs.subnet === currentSubnet && cachedIPs.mainIP) {
+            const baseIP = cachedIPs.mainIP.split('.').pop();
+            let current = parseInt(baseIP, 10);
+            let offset = 0;
+
+            // Create scanning pattern: cached IP, then expanding outward
+            while (scanOrder.length < 254) {
+              const low = current - offset;
+              const high = current + offset;
+
+              if (low >= 1 && !scanOrder.includes(low)) scanOrder.push(low);
+              if (high <= 254 && high !== low && !scanOrder.includes(high)) scanOrder.push(high);
+
+              offset++;
+            }
+
+            // Check cached IP 3 times first
+            scanOrder = [current, current, current, ...scanOrder.filter(ip => ip !== current)];
+          } else {
+            // Fallback to sequential scan
+            scanOrder = Array.from({ length: 254 }, (_, i) => i + 1);
+          }
+
+          try {
+            // Convert scan order to full IPs
+            const fullScanOrder = scanOrder.map(octet => `${subnet}${octet}`);
+
+            // Check cached IP first if available
+            if (cachedIPs.mainIP && cachedIPs.subnet === currentSubnet) {
+              for (let i = 0; i < 3; i++) {
+                currentIPSpan.innerText = cachedIPs.mainIP;
+                try {
+                  const response = await fetch(`http://${cachedIPs.mainIP}/`, { timeout });
+                  if (response.ok) {
+                    if (foundDevices === 0) {
+                      poi_one_ip = cachedIPs.mainIP;
+                      foundDevices++;
+                    } else {
+                      poi_two_ip = cachedIPs.mainIP;
+                      foundDevices++;
+                      break;
+                    }
+                  }
+                } catch (error) { }
+              }
+            }
+
+            // Scan remaining IPs
+            for (const ip of fullScanOrder) {
+              if (foundDevices >= 2) break;
+              currentIPSpan.innerText = ip;
+
+              try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeout);
+                const response = await fetch(`http://${ip}/`, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                  if (foundDevices === 0) {
+                    poi_one_ip = ip;
+                    foundDevices++;
+                    // Update cookie with new findings
+                    localStorage.setItem('poiIPs', JSON.stringify({
+                      subnet: currentSubnet,
+                      mainIP: ip,
+                      auxIP: ''
+                    }));
+                  } else {
+                    poi_two_ip = ip;
+                    foundDevices++;
+                    // Update cookie with both IPs
+                    localStorage.setItem('poiIPs', JSON.stringify({
+                      subnet: currentSubnet,
+                      mainIP: poi_one_ip,
+                      auxIP: ip,
+                      routerMode: true // Automatically enable router mode
+                    }));
+                    document.getElementById('routerModeCheckbox').checked = true;
+                    break;
+                  }
+                }
+              } catch (error) { }
+            }
+          } finally {
+            spinner.style.display = 'none';
+            counter.style.display = 'none';
+
+            if (foundDevices === 0) {
+              document.getElementById('result').innerText = 'No POI found on this subnet';
+            }
+          }
+        });
+
+        // Add this validation function
+        function setMainIp() {
+          const ipInput = document.getElementById('manualMainIp');
+          const errorSpan = document.getElementById('mainIpError');
+          const ip = ipInput.value.trim();
+
+          errorSpan.style.display = 'none';
+
+          if (!isValidIP(ip)) {
+            errorSpan.style.display = 'inline';
+            return;
+          }
+
+          // Only update if in router mode
+          const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
+          if (currentIPs.routerMode) {
+            const subnet = ip.split('.').slice(0, 3).join('.') + '.';
+            const newIPs = {
+              ...currentIPs,
+              subnet: subnet,
+              mainIP: ip
+            };
+            localStorage.setItem('poiIPs', JSON.stringify(newIPs));
+            poi_one_ip = ip;
+            ipInput.placeholder = ip;
+            ipInput.value = '';
+          } else {
+            alert("Enable Router Mode first!");
+          }
+        }
+
+        function setAuxIp() {
+          const ipInput = document.getElementById('manualAuxIp');
+          const errorSpan = document.getElementById('auxIpError');
+          const ip = ipInput.value.trim();
+
+          errorSpan.style.display = 'none';
+
+          if (!isValidIP(ip)) {
+            errorSpan.style.display = 'inline';
+            return;
+          }
+
+          const currentIPs = JSON.parse(localStorage.getItem('poiIPs') || '{}');
+          if (currentIPs.routerMode) {
+            const subnet = ip.split('.').slice(0, 3).join('.') + '.';
+            const newIPs = {
+              ...currentIPs,
+              subnet: subnet,
+              auxIP: ip
+            };
+            localStorage.setItem('poiIPs', JSON.stringify(newIPs));
+            poi_two_ip = ip;
+            ipInput.placeholder = ip;
+            ipInput.value = '';
+          } else {
+            alert("Enable Router Mode first!");
+          }
+        }
+
+        function isValidIP(ip) {
+          return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip);
+        }
+
+
+        /**
+         * Event listener for the fetch button click.
+         * Fetches the settings from both Poi devices.
+         * @returns {Promise<void>}
+         */
+        document.getElementById('fetchBtn').addEventListener('click', async function () {
+          try {
+            const response = await fetch(`http://${poi_one_ip}/returnsettings`, { mode: 'cors' });
+            if (response.ok) {
+              data = await response.text();
+              parts = data.split(',');
+
+              // format is: router, password, channel, ip1, ip2, ip3, ip4, pattern
+              router = parts[0].trim();
+              password = parts[1].trim();
+              channel = parts[2].trim();
+              // Get fresh pixel count from dedicated endpoint
+              pixels = await fetchNumberOfPixels(poi_one_ip);
+              pattern = parts[parts.length - 1].trim();
+
+              // Update pixels display with fresh data
+              document.getElementById('pixels').textContent = pixels || '?';
+
+              // Display the values
+              document.getElementById('router').textContent = router;
+              document.getElementById('password').textContent = password;
+              document.getElementById('channel').textContent = channel;
+              document.getElementById('pattern').textContent = pattern;
+
+              // Update the placeholders for input fields
+              document.getElementById('routerInput').placeholder = router;
+              document.getElementById('passwordInput').placeholder = password;
+
+              console.log(`got pattern in click function: ${pattern}`);
+
+              // // Initialize slider positions
+              // if (parts.length > 0) {
+              //   const currentSpeed = parseFloat(parts[3]); // Adjust index if needed
+              //   speedSlider.value = valueToSlider(currentSpeed);
+              // }
+              // if (parts.length > 3) {
+              //   const currentBrightness = parseInt(parts[3]); // Adjust index if needed
+              //   brightnessSlider.value = currentBrightness;
+              // }
+            } else {
+              console.error('Fetch error:', response.statusText);
+            }
+          } catch (error) {
+            console.error('Error:', error);
+          }
+
+          try {
+            const response_two = await fetch(`http://${poi_two_ip}/returnsettings`, { mode: 'cors' });
+            if (response_two.ok) {
+              data_two = await response_two.text();
+              parts_two = data_two.split(',');
+
+              // format is: router, password, channel, pixels, ip1, ip2, ip3, ip4, pattern
+              router_two = parts_two[0].trim();
+              password_two = parts_two[1].trim();
+              channel_two = parts_two[2].trim();
+              pixels_two = await fetchNumberOfPixels(poi_two_ip);
+              pattern_two = parts_two[parts_two.length - 1].trim();
+
+              // Update pixels display with fresh data
+              document.getElementById('pixelsTwo').textContent = pixels_two || '?';
+
+              // Display the values
+              document.getElementById('routerTwo').textContent = router_two;
+              document.getElementById('passwordTwo').textContent = password_two;
+              document.getElementById('channelTwo').textContent = channel_two;
+              document.getElementById('patternTwo').textContent = pattern_two;
+
+            } else {
+              console.error('Fetch error:', response_two.statusText);
+            }
+          } catch (error) {
+            console.error('Error:', error);
+          }
+
+        });
+
+      </script>
 </body>
 
 </html>

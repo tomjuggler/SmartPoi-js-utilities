@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartPoi Controls</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="ic_launcher-web.png">
+    <script src="jimp.min.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <div class="header">
+            <img src="smartpoi-name-logo.png" alt="POI Logo" class="logo">
+            <div class="tabs">
+                <button class="tab-button active" data-tab="controls">Controls</button>
+                <button class="tab-button" data-tab="images">Image Management</button>
+                <button class="tab-button" data-tab="upload">Upload Bin</button>
+                <button class="tab-button" data-tab="files">File Lists</button>
+                <button class="tab-button" data-tab="about">About Us</button>
+            </div>
+            <div id="networkModeIndicator" class="status-indicator"></div>
+        </div>
+
+        <!-- Controls Tab -->
+        <div id="controls" class="tab-content active">
+            <div class="control-block">
+                <h2 class="section-title">Poi Controls</h2>
+
+                <div class="status-indicators">
+                    <div id="mainStatus" class="status-indicator online">Main POI: Online</div>
+                    <div id="auxStatus" class="status-indicator online">Aux POI: Online</div>
+                </div>
+
+                <div class="control-block">
+                    <h3 class="section-title">Pattern Selection</h3>
+                    <div class="pattern-buttons">
+                        <button data-pattern="1" onclick="submitPattern('1')">Generated</button>
+                        <button data-pattern="2" onclick="submitPattern('2')">IMG 1-5</button>
+                        <button data-pattern="3" onclick="submitPattern('3')">IMG 6-10</button>
+                        <button data-pattern="4" onclick="submitPattern('4')">IMG 10-20</button>
+                        <button data-pattern="5" onclick="submitPattern('5')">IMG 1-52</button>
+                        <button data-pattern="6" onclick="submitPattern('6')">On/Off Switch</button>
+                        <button data-pattern="7" onclick="submitPattern('7')">LEDs OFF</button>
+                    </div>
+                </div>
+
+                <div class="control-block">
+                    <h3 class="section-title">Synchronization</h3>
+                    <button id="syncButton">Sync Poi</button>
+                </div>
+
+                <div class="control-block">
+                    <h3 class="section-title">Adjustments</h3>
+                    <div class="slider-group">
+                        <div class="slider-container speed-slider">
+                            <label>Speed (0.5-1800s)</label>
+                            <input type="range" id="speedSlider" min="0" max="100" value="0">
+                            <div id="speedTooltip" class="tooltip"></div>
+                        </div>
+
+                        <div class="slider-container brightness-slider">
+                            <label>Brightness (20-255)</label>
+                            <input type="range" id="brightnessSlider" min="20" max="255" value="20">
+                            <div id="brightnessTooltip" class="tooltip"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Network Discovery -->
+                <div class="control-block">
+                    <h3 class="section-title">Network Discovery</h3>
+                    <div class="discovery-section">
+                        <label>WiFi Poi IP Address Discovery (Router Mode)</label>
+                        <div class="discovery-input-group">
+                            <input type="text" id="routerIpInput" placeholder="192.168.1.1" value="">
+                            <button type="button" id="discoverBtn">Discover POI</button>
+                            <span id="ipError" class="error-message"></span>
+                        </div>
+                        <div class="manual-ip-section">
+                            <div class="manual-ip-group">
+                                <div class="manual-ip-row">
+                                    <input type="text" id="manualMainIp" placeholder="192.168.1.x" value="">
+                                    <button onclick="setMainIp()">Set Main</button>
+                                    <span id="mainIpError" class="error-message"></span>
+                                </div>
+                                <div class="manual-ip-row">
+                                    <input type="text" id="manualAuxIp" placeholder="192.168.1.x" value="">
+                                    <button onclick="setAuxIp()">Set Aux</button>
+                                    <span id="auxIpError" class="error-message"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Add Spinner and Counter -->
+                        <div class="spinner" id="spinner"></div>
+                        <p id="counter">Scanning IP: <span id="currentIP">0</span> for poi!</p>
+
+                        <!-- Add Status Section -->
+                        <div class="status-section">
+                            <h3 class="section-title">Poi Status</h3>
+                            <button id="fetchBtn">Fetch Settings</button>
+                            <div class="poi-status-group">
+                                <h4>Main Poi:</h4>
+                                <p>Router: <span id="router">N/A</span></p>
+                                <p>Password: 
+                                    <span class="password-container">
+                                        <span id="password" class="password-text">N/A</span>
+                                        <span class="toggle-password">👁</span>
+                                    </span>
+                                </p>
+                                <p>Channel: <span id="channel">N/A</span></p>
+                                <p>Pattern: <span id="pattern">N/A</span></p>
+                                <p>Pixels: <span id="pixels">?</span></p>
+                            </div>
+
+                            <div class="poi-status-group">
+                                <h4>Auxiliary Poi:</h4>
+                                <p>Router: <span id="routerTwo">N/A</span></p>
+                                <p>Password: 
+                                    <span class="password-container">
+                                        <span id="passwordTwo" class="password-text">N/A</span>
+                                        <span class="toggle-password">👁</span>
+                                    </span>
+                                </p>
+                                <p>Channel: <span id="channelTwo">N/A</span></p>
+                                <p>Pattern: <span id="patternTwo">N/A</span></p>
+                                <p>Pixels: <span id="pixelsTwo">?</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <div class="danger-zone">
+                    <h3 class="danger-title">DANGER ZONE</h3>
+                    <div>
+                        <label>
+                            Update Router Name and Password:
+                            <input type="text" id="routerInput" placeholder="Enter Router Name">
+                            <span class="password-container">
+                                <input type="password" id="passwordInput" placeholder="Enter Router Password">
+                                <span class="toggle-password">👁</span>
+                            </span>
+                            <button type="button" onclick="submitRouter()">Submit</button>
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            Switch for Router Mode (submit unchecked to turn off):
+                            <input type="checkbox" id="routerModeCheckbox" value="0">
+                            <button type="button" onclick="submitRouterMode()">Submit</button>
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            Update WiFi Channel (1-13):
+                            <input type="number" id="channelInput" min="1" max="13" placeholder="1-13">
+                            <button type="button" onclick="submitChannel()">Update Channel</button>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+        </div> <!-- Close controls tab content -->
+
+        <!-- Images Tab -->
+        <div id="images" class="tab-content">
+            <div class="image-management">
+                <h2 class="section-title">Image Management</h2>
+                <div class="image-controls">
+                    <button id="refreshImages">Refresh Images</button>
+                    <button class="dark-button" onclick="getFilesAndDisplay()">Fetch and Display All Images</button>
+                    <button class="dark-button" onclick="window.location.reload()">Refresh Page</button>
+                    <div class="pixel-control">
+                        <input class="hidden" type="number" id="pixelInput" min="1" max="1000">
+                        <button class="hidden" id="updatePixels">Update Pixels</button>
+                        <span class="current-px" id="currentPx"></span>
+                    </div>
+                    <div class="fetch-buttons">
+                        <button class="dark-button" onclick="getFilesOne()">Fetch Main Poi Images</button>
+                        <span class="alert-indicator" id="get-files-one-indicator"></span>
+                        <button class="dark-button" onclick="getFilesTwo()">Fetch Aux Poi Images</button>
+                        <span class="alert-indicator" id="get-files-two-indicator"></span>
+                        <button class="dark-button" id="ws_apaBtn">WS2812?</button>
+                        <span class="alert-indicator" id="ws_apa_indicator">Current: WS2812</span>
+                    </div>
+                    <p><i>Default is WS2812, click to change to APA102 (raw mode)</i></p>
+                </div>
+
+
+                <div class="image-grid">
+                    <div class="poi-images">
+                        <h3 class="section-title">Main Poi</h3>
+                        <div id="mainImageGrid" class="image-grid-container"></div>
+                    </div>
+                    <div class="poi-images">
+                        <h3 class="section-title">Aux Poi</h3>
+                        <div id="auxImageGrid" class="image-grid-container"></div>
+                    </div>
+                </div>
+
+            </div>
+            <button id="deleteAllButton" class="dark-button" style="background-color: #4a1e1e;">
+                ! DELETE ALL IMAGES ON BOTH POIs !
+            </button>
+            <p><i>This will permanently remove all images from both POIs!</i></p>
+        </div>
+
+        <!-- Modal -->
+        <div class="modal-overlay hidden">
+            <div class="modal-content">
+                <img class="modal-image" alt="Enlarged View">
+                <div class="modal-footer">
+                    <span class="filename"></span>
+                    <div class="modal-controls">
+                        <button class="delete-button">Delete</button>
+                        <input type="number" id="brightnessAdjust" min="-1" max="1" step="0.1" value="0">
+                        <button onclick="applyBrightness()">Adjust Brightness</button>
+                        <button class="close-button">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Bin Tab -->
+        <div id="upload" class="tab-content">
+          <div class="upload-container">
+            <h1>Upload Pics</h1>
+            <div class="input-container">
+              <input type="file" id="uploadFileInput" accept="image/*" multiple>
+              <div id="fileListContainer"></div>
+              <button id="uploadBinButton" class="dark-button">Upload and convert</button>
+            </div>
+            <div class="input-container">
+              <h4>LED Strip Type</h4>
+              <button id="uploadWsApaBtn" class="dark-button">Toggle WS2812/APA102</button>
+              <span id="uploadWsApaIndicator" class="current-px">Current: WS2812</span>
+            </div>
+            <div class="input-container">
+              <h4>Number of Pixels</h4>
+              <input class="hidden" type="number" id="uploadPixelInput" value="120" min="1" max="1000">
+              <button id="uploadUpdatePixelButton" class="hidden dark-button">Update manually</button>
+              <span class="current-px" id="uploadCurrentPx">Current px: 120</span>
+            </div>
+            <div class="input-container">
+              <span class="note">1. Select files 2. Drag to reorder 3. Click upload</span>
+              <span class="note">Correct number of pixels should be updated from poi.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- File Lists Tab -->
+        <div id="files" class="tab-content">
+            <div class="file-list-section">
+                <h2 class="section-title">POI File Lists</h2>
+                
+                <div class="list-controls">
+                    <button class="dark-button" onclick="getFileList()">Get Main POI Files</button>
+                    <button class="dark-button" onclick="getFileListTwo()">Get Aux POI Files</button>
+                </div>
+
+                <div class="list-containers">
+                    <div class="list-box">
+                        <h3>Main POI Files</h3>
+                        <textarea id="fileListTextArea" readonly></textarea>
+                    </div>
+                    <div class="list-box">
+                        <h3>Aux POI Files</h3>
+                        <textarea id="fileListTextAreatwo" readonly></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Tab -->
+    <div id="about" class="tab-content">
+        <div class="about-container">
+            <h1 class="about-title">Our Partnership</h1>
+            
+            <div class="about-section">
+                <h2>Bringing Innovation to Performance</h2>
+                <p>The SmartPoi and Magic Poi systems are the result of an international collaboration between:</p>
+                
+                <div class="about-collab">
+                    <h3>DevSoft</h3>
+                    <p>South African software specialists in IoT and embedded systems<br>
+                    Bringing expertise in:<br>
+                    - LED synchronization technology<br>
+                    - Wireless communication systems<br>
+                    - Performance optimization algorithms</p>
+                    <img src="devsoft-logo.png" alt="DevSoft Logo" class="about-logo">
+                    <a href="https://devsoft.co.za" target="_blank" class="about-link">company website</a>
+                </div>
+
+                <div class="about-collab">
+                    <h3>EnterAction</h3>
+                    <p>Australian engineering and manufacturing experts<br>
+                    Contributing:<br>
+                    - Rugged hardware design<br>
+                    - Precision manufacturing<br>
+                    - Performance-grade materials</p>
+                    <img src="ea-logo.png" alt="EnterAction Logo" class="about-logo">
+                    <a href="https://enteraction.com.au" target="_blank" class="about-link">company website</a>
+                </div>
+
+                <div class="about-commitment">
+                    <h3>Shared Commitment</h3>
+                    <p>Together we deliver:<br>
+                    ✔️ Professional-grade performance equipment<br>
+                    ✔️ Cutting-edge LED synchronization<br>
+                    ✔️ Reliable wireless control systems<br>
+                    ✔️ Continuous firmware improvements</p>
+                    <button onclick="window.open('index.html', '_self')" class="about-button">Back to Main Menu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+    <div class="message-modal" id="messageModal"></div>
+</body>
+
+</html>
