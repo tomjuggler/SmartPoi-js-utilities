@@ -689,9 +689,18 @@ function validateIP(ip) {
 
 // State Persistence
 function loadState() {
-    const saved = JSON.parse(localStorage.getItem('poiState') || {});
-    
-    // Load router mode state
+    // Get saved state safely
+    let saved = {};
+    try {
+        const savedString = localStorage.getItem('poiState');
+        if (savedString) {
+            saved = JSON.parse(savedString);
+        }
+    } catch (e) {
+        console.error('Failed to parse saved state, using defaults', e);
+    }
+
+    // Load router mode state - WITH DEFAULTS
     state.poiIPs.routerMode = saved.poiIPs?.routerMode || false;
     state.poiIPs.savedRouterIPs = saved.poiIPs?.savedRouterIPs || {
         main: "192.168.1.1",
