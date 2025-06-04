@@ -631,7 +631,17 @@ const state = {
         speed: 0.5,
         stripType: "WS2812"
     },
-    currentModalImage: null
+    currentModalImage: null,
+    magicBridge: {
+        CONFIG: {
+            BATCH_SIZE: 1,
+            INTER_FILE_DELAY: 1500,
+            INTER_BATCH_DELAY: 3000,
+            MAX_RETRIES: 5,
+            RETRY_BACKOFF: [1000, 3000, 5000, 7000, 10000],
+            POI_CHECK_TIMEOUT: 5000
+        }
+    }
 };
 
 // Initialize App
@@ -963,6 +973,174 @@ async function fetchInitialPixels() {
     }
   } catch (error) {
     console.error('Error fetching initial pixels:', error);
+  }
+}
+
+// Smart Magic Bridge functionality
+async function processAndUploadZip() {
+    const fileInput = document.getElementById('zip-input');
+    const statusEl = document.getElementById('upload-status-standalone');
+    const uploadBtn = document.getElementById('magic-bridge-upload');
+    
+    if (!fileInput.files[0]) {
+        statusEl.textContent = 'Please select a ZIP file first';
+        statusEl.style.color = 'red';
+        return;
+    }
+
+    uploadBtn.disabled = true;
+    statusEl.textContent = 'Processing ZIP file...';
+    statusEl.style.color = 'inherit';
+
+    try {
+        // Read and process ZIP file
+        const zip = await JSZip.loadAsync(fileInput.files[0]);
+        const files = await Promise.all(
+            Object.values(zip.files)
+                .filter(file => {
+                    // Extract just the filename without path
+                    const fileName = file.name.split('/').pop().trim();
+                    
+                    // Check ONLY the final extension using a regex
+                    const hasBinExtension = /\.bin$/i.test(fileName);
+                    
+                    return !file.dir && 
+                           hasBinExtension &&
+                           !file.name.includes('__MACOSX/'); // More thorough macOS check
+                })
+                .sort((a,b) => a.name.localeCompare(b.name)) // Sort alphabetically
+                .map(async (file, index) => {
+                    const blob = await file.async('blob');
+                    return new File([blob], `${String.fromCharCode(97 + index)}.bin`, {
+                        type: 'application/octet-stream'
+                    });
+                })
+        );
+
+        if (files.length === 0) {
+            throw new Error('No .bin files found in ZIP archive');
+        }
+
+        // Show file list
+        document.getElementById('file-list').style.display = 'block';
+        document.getElementById('file-names').innerHTML = files
+            .map(f => `<li>${f.name}</li>`)
+            .join('');
+
+        // Proceed with upload
+        statusEl.textContent = 'Checking POI connectivity...';
+        
+        let mainAvailable = false;
+        let auxAvailable = false;
+
+        // Connectivity check
+        [mainAvailable, auxAvailable] = await Promise.all([
+            verifyPoiConnection(state.poiIPs.mainIP),
+            verifyPoiConnection(state.poiIPs.auxIP)
+        ]);
+
+        if (!mainAvailable && !auxAvailable) {
+            throw new Error("No POIs available for upload");
+        }
+
+        statusEl.textContent = `Uploading ${files.length} files...`;
+        
+        // Upload to available POIs
+        const uploadPromises = [];
+        if (mainAvailable) {
+            uploadPromises.push(uploadToPoiWithProgress(files, state.poiIPs.mainIP, 'Main POI'));
+        }
+        if (auxAvailable) {
+            uploadPromises.push(uploadToPoiWithProgress(files, state.poiIPs.auxIP, 'Aux POI'));
+        }
+
+        await Promise.all(uploadPromises);
+        statusEl.textContent = 'Upload completed successfully!';
+        statusEl.style.color = 'green';
+    } catch (error) {
+        console.error('Upload error:', error);
+        statusEl.textContent = `Upload failed: ${error.message}`;
+        statusEl.style.color = 'red';
+    } finally {
+        uploadBtn.disabled = false;
+    }
+}
+
+async function verifyPoiConnection(ip) {
+  // New simplified check that just verifies basic connectivity
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+  try {
+    // Try HEAD request first as it's lighter
+    await fetch(`http://${ip}/edit`, {
+      method: 'HEAD',
+      mode: 'no-cors',
+      signal: controller.signal
+    });
+    return true;
+  } catch (error) {
+    // If HEAD fails, try GET as fallback
+    try {
+      await fetch(`http://${ip}/get-pixels`, {
+        method: 'GET', 
+        mode: 'no-cors',
+        signal: controller.signal
+      });
+      return true;
+    } catch (e) {
+      // Final fallback - just attempt to connect
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onerror = () => resolve(true); // Even 404 means POI is reachable
+        img.onabort = () => resolve(false);
+        setTimeout(() => resolve(false), 2000);
+        img.src = `http://${ip}/favicon.ico?t=${Date.now()}`;
+      });
+    }
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function uploadToPoiWithProgress(files, ip, label) {
+  const statusEl = document.getElementById('upload-status-standalone');
+  const config = state.magicBridge.CONFIG;
+  
+  try {
+    const batchCount = Math.ceil(files.length / config.BATCH_SIZE);
+    
+    for (let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
+      const batchStart = batchIndex * config.BATCH_SIZE;
+      const batchFiles = files.slice(batchStart, batchStart + config.BATCH_SIZE);
+      
+      statusEl.textContent = `Uploading to ${label}: Batch ${batchIndex+1}/${batchCount}`;
+      
+      for (let fileIndex = 0; fileIndex < batchFiles.length; fileIndex++) {
+        const file = batchFiles[fileIndex];
+        const formData = new FormData();
+        formData.append('file', file, file.name);
+        
+        await fetch(`http://${ip}/edit`, {
+          method: 'POST',
+          body: formData
+        });
+        await delay(config.INTER_FILE_DELAY);
+      }
+      
+      if (batchIndex < batchCount - 1) {
+        await delay(config.INTER_BATCH_DELAY);
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('POI Upload Failure:', {
+      ip,
+      error: error.message,
+      stack: error.stack
+    });
+    throw error;
   }
 }
 
@@ -1383,6 +1561,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Ensure network mode display is updated
     updateNetworkModeDisplay();
+
+    // Initialize magic bridge upload button
+    document.getElementById('magic-bridge-upload').addEventListener('click', processAndUploadZip);
 });
 
 async function fetchSettings(ip) {

@@ -20,6 +20,7 @@
                 <button class="tab-button" data-tab="upload">Upload Bin</button>
                 <button class="tab-button" data-tab="files">File Lists</button>
                 <button class="tab-button" data-tab="about">About Us</button>
+                <button class="tab-button" data-tab="magic-bridge">Smart Magic Bridge</button>
             </div>
             <div id="networkModeIndicator" class="status-indicator"></div>
         </div>
@@ -272,6 +273,24 @@
                         <h3>Aux POI Files</h3>
                         <textarea id="fileListTextAreatwo" readonly></textarea>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Smart Magic Bridge Tab -->
+    <div id="magic-bridge" class="tab-content">
+        <div class="container">
+            <div class="step-card step-active">
+                <h2>⚡ Direct ZIP Upload to POI</h2>
+                <div class="input-container">
+                    <input type="file" id="zip-input" accept=".zip">
+                    <div id="file-list" style="margin: 10px 0; display: none;">
+                        <h3>Files to upload:</h3>
+                        <ul id="file-names"></ul>
+                    </div>
+                    <button id="magic-bridge-upload">Upload to POI</button>
+                    <div id="upload-status-standalone" style="margin-top: 10px;"></div>
                 </div>
             </div>
         </div>
