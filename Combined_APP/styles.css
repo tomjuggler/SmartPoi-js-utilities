@@ -154,6 +154,19 @@
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
+    .tabs {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .tab-button {
+        flex: 1 1 30%;
+        min-width: 100px;
+        margin-bottom: 8px;
+        font-size: 0.9em;
+        padding: 8px 12px;
+    }
+    
     .image-grid {
         grid-template-columns: 1fr;
     }
@@ -170,6 +183,24 @@
     .image-grid-container {
         grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
         gap: 6px;
+    }
+    
+    .pattern-buttons {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .dark-button, 
+    .manual-ip-row button,
+    #discoverBtn,
+    #syncButton {
+        padding: 12px 16px;
+        font-size: 1.1em;
+    }
+    
+    .control-block > h3 + button {
+        display: block;
+        margin: 15px auto 0;
+        min-width: 150px;
     }
 }
 
