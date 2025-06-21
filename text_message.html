@@ -198,17 +198,10 @@
     document.getElementById('create-btn').addEventListener('click', function() {
       const text = document.getElementById('text-input').value;
       const filename = text ? `${sanitizeFilename(text)}.png` : 'text-image.png';
-      const maxWidth = canvas.width - 20; // Add some padding
+      const maxWidth = canvas.width - 20;
       const maxHeight = canvas.height - 20;
-      const minFontSize = 10; // Minimum font size
-      let fontSize = 60; // Start with a large font size
-
-      // Clear the canvas before drawing
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Set background color to black
-      ctx.fillStyle = 'black';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const minFontSize = 10;
+      let fontSize = 60;
 
       // Load custom font
       const font = new FontFace('CustomFont', 'url(./font.otf)');
@@ -216,33 +209,89 @@
       font.load().then(function(loadedFont) {
         document.fonts.add(loadedFont);
 
-        // Function to determine if the text fits
-        function fitsInCanvas(text, fontSize) {
-          ctx.font = `${fontSize}px CustomFont`;
-          const textWidth = ctx.measureText(text).width;
-          const textHeight = fontSize; // Approximate height based on font size
-          return textWidth <= maxWidth && textHeight <= maxHeight;
+        // Function to wrap text into multiple lines
+        function wrapText(context, text, maxWidth) {
+          const words = text.split(' ');
+          const lines = [];
+          let currentLine = words[0];
+
+          for (let i = 1; i < words.length; i++) {
+            const word = words[i];
+            const testLine = currentLine + ' ' + word;
+            const metrics = context.measureText(testLine);
+            
+            if (metrics.width <= maxWidth) {
+              currentLine = testLine;
+            } else {
+              lines.push(currentLine);
+              currentLine = word;
+            }
+          }
+          lines.push(currentLine);
+          return lines;
         }
 
-        // Dynamically reduce font size until text fits
-        while (!fitsInCanvas(text, fontSize) && fontSize > minFontSize) {
-          fontSize--;
+        // Function to check if wrapped text fits in canvas
+        function fitsInCanvas(lines, fontSize, maxWidth, maxHeight) {
+          const lineHeight = fontSize * 1.2;
+          const totalHeight = lines.length * lineHeight;
+          
+          // Check if any single line is too wide
+          for (const line of lines) {
+            if (ctx.measureText(line).width > maxWidth) {
+              return false;
+            }
+          }
+          return totalHeight <= maxHeight;
         }
 
-        // Set text color and apply the calculated font size
-        ctx.font = `${fontSize}px CustomFont`;
+        // Determine best font size with wrapping
+        let lines = [];
+        let bestLines = [];
+        let bestFontSize = minFontSize;
+        
+        for (let size = fontSize; size >= minFontSize; size--) {
+          ctx.font = `${size}px CustomFont`;
+          lines = wrapText(ctx, text, maxWidth);
+          
+          if (fitsInCanvas(lines, size, maxWidth, maxHeight)) {
+            bestFontSize = size;
+            bestLines = lines;
+            break;
+          }
+        }
+
+        // If no good size found, use minimum size
+        if (bestLines.length === 0) {
+          ctx.font = `${minFontSize}px CustomFont`;
+          bestLines = wrapText(ctx, text, maxWidth);
+          bestFontSize = minFontSize;
+        }
+
+        // Clear the canvas and draw background
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw wrapped text
+        ctx.font = `${bestFontSize}px CustomFont`;
         ctx.fillStyle = selectedColor;
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        ctx.textBaseline = 'top';
         
-        // Draw the text on the canvas
-        ctx.fillText(text, canvas.width/2, canvas.height/2);
+        const lineHeight = bestFontSize * 1.2;
+        const startY = (canvas.height - (bestLines.length * lineHeight)) / 2;
+        
+        for (let i = 0; i < bestLines.length; i++) {
+          ctx.fillText(bestLines[i], canvas.width/2, startY + (i * lineHeight));
+        }
 
         // Export canvas as an image
         const imageUrl = canvas.toDataURL('image/png');
         const downloadLink = document.getElementById('download-link');
         downloadLink.href = imageUrl;
         downloadLink.download = filename;
+        
       }).catch(function(err) {
         console.error('Font loading error:', err);
       });
