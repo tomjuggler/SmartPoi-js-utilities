@@ -163,6 +163,13 @@
   </div>
 
   <script>
+    function sanitizeFilename(input) {
+      return input
+        .replace(/\s+/g, '')      // Remove spaces
+        .replace(/[^\w-]/g, '')   // Remove non-word characters except hyphens
+        .toLowerCase();            // Convert to lowercase
+    }
+
     const canvas = document.getElementById('textCanvas');
     const ctx = canvas.getContext('2d');
     let selectedColor = '#ff0000';
@@ -190,6 +197,7 @@
 
     document.getElementById('create-btn').addEventListener('click', function() {
       const text = document.getElementById('text-input').value;
+      const filename = text ? `${sanitizeFilename(text)}.png` : 'text-image.png';
       const maxWidth = canvas.width - 20; // Add some padding
       const maxHeight = canvas.height - 20;
       const minFontSize = 10; // Minimum font size
@@ -234,6 +242,7 @@
         const imageUrl = canvas.toDataURL('image/png');
         const downloadLink = document.getElementById('download-link');
         downloadLink.href = imageUrl;
+        downloadLink.download = filename;
       }).catch(function(err) {
         console.error('Font loading error:', err);
       });
