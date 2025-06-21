@@ -113,16 +113,21 @@
       margin: 1.5rem 0;
     }
 
-    #download-link {
-      display: inline-block;
-      padding: 1rem 2rem;
+    #download-btn {
       background: #28a745;
       color: white;
-      text-decoration: none;
+      border: none;
+      padding: 1rem 2rem;
       border-radius: 8px;
+      cursor: pointer;
       transition: all 0.3s;
       width: 100%;
       text-align: center;
+    }
+
+    #download-btn:hover {
+      background: #218838;
+      transform: translateY(-2px);
     }
 
     #textCanvas {
@@ -192,9 +197,7 @@
     <button id="create-btn">Generate Image</button>
     
     <canvas id="textCanvas" width="180" height="120"></canvas>
-    <button>
-    <a id="download-link" download="text-image.png">Download Image</a>
-    </button>
+    <button id="download-btn">Download Image</button>
   </div>
 
   <script>
@@ -365,9 +368,13 @@
 
         // Export canvas as an image
         const imageUrl = canvas.toDataURL('image/png');
-        const downloadLink = document.getElementById('download-link');
-        downloadLink.href = imageUrl;
-        downloadLink.download = filename;
+        const downloadBtn = document.getElementById('download-btn');
+        downloadBtn.onclick = function() {
+          const downloadLink = document.createElement('a');
+          downloadLink.href = imageUrl;
+          downloadLink.download = filename;
+          downloadLink.click();
+        };
         
       }).catch(function(err) {
         console.error('Font loading error:', err);
