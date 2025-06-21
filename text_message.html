@@ -213,21 +213,46 @@
         function wrapText(context, text, maxWidth) {
           const words = text.split(' ');
           const lines = [];
-          let currentLine = words[0];
+          let currentLine = '';
 
-          for (let i = 1; i < words.length; i++) {
+          for (let i = 0; i < words.length; i++) {
             const word = words[i];
-            const testLine = currentLine + ' ' + word;
-            const metrics = context.measureText(testLine);
-            
-            if (metrics.width <= maxWidth) {
-              currentLine = testLine;
+            if (currentLine === '') {
+              // Try to put the word on the current line
+              if (context.measureText(word).width <= maxWidth) {
+                currentLine = word;
+              } else {
+                // Word is too long, break it
+                let tempWord = '';
+                for (let j = 0; j < word.length; j++) {
+                  const testSegment = tempWord + word[j];
+                  if (context.measureText(testSegment).width > maxWidth) {
+                    lines.push(tempWord);
+                    tempWord = word[j];
+                  } else {
+                    tempWord = testSegment;
+                  }
+                }
+                if (tempWord) {
+                  currentLine = tempWord;
+                }
+              }
             } else {
-              lines.push(currentLine);
-              currentLine = word;
+              const testLine = currentLine + ' ' + word;
+              if (context.measureText(testLine).width <= maxWidth) {
+                currentLine = testLine;
+              } else {
+                // Word doesn't fit, so break the line
+                lines.push(currentLine);
+                currentLine = word;
+              }
             }
           }
-          lines.push(currentLine);
+
+          if (currentLine) {
+            lines.push(currentLine);
+          }
+
           return lines;
         }
 
